@@ -1,0 +1,20 @@
+#여기있는 파일이 동작하는게 아님 실제 docker compose는 따로 존재함
+services:
+  server:
+    image: post-here:latest
+    container_name: postHere
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
+    volumes:
+      - ~/postHere/log/testTT-log:/var/log/testTT-log
+      - ~/postHere/config/:/var/config/ #application-secret.yml 파일 및 각종 설정 파일 바인딩 마운트
+    networks:
+      - testnet
+    ports:
+      - 8081:8081
+    restart: no
+
+networks:
+  testnet:
+    external: true

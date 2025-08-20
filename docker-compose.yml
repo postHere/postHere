@@ -10,11 +10,11 @@ services:
       - ~/postHere/log/testTT-log:/var/log/testTT-log
       - ~/postHere/config/:/var/config/ #application-secret.yml 파일 및 각종 설정 파일 바인딩 마운트
     networks:
-      - testnet
+      - postHereNet
     ports:
       - 8081:8081
     restart: no
 
 networks:
-  testnet:
+  postHereNet:
     external: true

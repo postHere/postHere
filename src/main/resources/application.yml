@@ -1,1 +1,32 @@
-spring.application.name=post-here
+spring:
+  profiles:
+    default: default
+  config:
+    import: optional:application-secret.yml
+  output:
+    ansi:
+      enabled: ALWAYS
+
+  jpa:
+    hibernate:
+      #이걸 create로 바꾸시면 JPA가 테이블을 만들어줍니다
+      #create로 한 번 돌리시고 반드시 none으로 바꿔야 합니다
+      ddl-auto: none
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+    import: optional:/var/config/application-secret.yml
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+  file:
+    path: /var/log/testTT-log

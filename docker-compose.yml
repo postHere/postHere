@@ -1,7 +1,7 @@
-#여기있는 파일이 동작하는게 아님 실제 docker compose는 따로 존재함
+#기존엔 여기 있는거 안 썼는데 secret file을 따로 관리하기 때문에 이거 그대로 써도 됨
 services:
   server:
-    image: post-here:latest
+    image: post-here:test
     container_name: postHere
     environment:
       - TZ=Asia/Seoul
@@ -17,4 +17,3 @@ services:
 
 networks:
   postHereNet:
-    external: true

@@ -57,7 +57,7 @@ pipeline {
 
         stage('Create New Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'forDockerHub',
+                withCredentials([usernamePassword(credentialsId: 'forDockerhub',
                                                     usernameVariable: 'USERNAME',
                                                     passwordVariable: 'PASSWORD')]) {
                     dir("./postHere") {

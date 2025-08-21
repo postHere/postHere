@@ -8,7 +8,7 @@ pipeline {
         BRANCH = 'main'
         JENKINS_GIT_CLONE_PATH = '/var/jenkins_home/workspace/postHere'
 
-        DOCKER_REPO = 'postHere/postHere'
+        DOCKER_REPO = 'whffu762/posthere'
         IMAGE_NAME = 'post-here'
 
         HOST_SERVER = 'ubuntu@13.209.28.230'

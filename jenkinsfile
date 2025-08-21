@@ -57,14 +57,22 @@ pipeline {
 
         stage('Create New Image') {
             steps {
-                sh "docker buildx build -t ${IMAGE_NAME}:init ."
-                echo "tag : ${env.version}"
-                sh """
-		            docker image tag ${IMAGE_NAME}:init ${DOCKER_REPO}:init
-		            docker image tag ${IMAGE_NAME}:init ${DOCKER_REPO}:latest
-		            docker push ${DOCKER_REPO}:init
-		            docker push ${DOCKER_REPO}:latest
-		        """
+                withCredentials([usernamePassword(credentialsId: 'forDockerHub',
+                                                    usernameVariable: 'USERNAME',
+                                                    passwordVariable: 'PASSWORD')]) {
+                    dir("./postHere") {
+                        sh "docker build -t ${IMAGE_NAME}:${env.version} ."
+                    }
+                    sh '''
+		                    docker login -u ${USERNAME} -p ${PASSWORD}
+		                    docker image tag ${IMAGE_NAME}:${env.version} ${DOCKER_REPO}:${env.version}
+		                    docker image tag ${IMAGE_NAME}:${env.version} ${DOCKER_REPO}:latest
+		                    docker push ${DOCKER_REPO}:${env.version}
+		                    docker push ${DOCKER_REPO}:latest
+		                    docker logout
+		                '''
+                }
+                sh "docker rmi ${IMAGE_NAME}:${env.version}"
             }
         }
 

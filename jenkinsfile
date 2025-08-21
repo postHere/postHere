@@ -1,0 +1,86 @@
+pipeline {
+
+    agent any
+
+    environment{
+        GIT_REPO = 'https://github.com/postHere/postHere.git'
+        GIT_REPO_NAME = 'postHere'
+        BRANCH = 'main'
+        JENKINS_GIT_CLONE_PATH = '/var/jenkins_home/workspace/postHere'
+
+        DOCKER_REPO = 'postHere/postHere'
+        IMAGE_NAME = 'post-here'
+
+        HOST_SERVER = 'ubuntu@13.209.28.230'
+        HOST_DOCKER_COMPOSE_PATH = '/home/ubuntu/postHere/postHere'
+    }
+
+    triggers {
+        // generic webhook trigger 설정
+        GenericTrigger(
+
+    	    //전역 변수로 활용할 값을 JSON에서 추출
+    		genericVariables: [
+    		    [key: 'version', value: '$.ref'],
+    	        [key: 'ref_type', value: '$.ref_type']
+    		],
+
+            // GitHub Webhook에 설정한 토큰
+            token: 'postHere',
+
+    		// branch 또는 tag 생성 시 실행
+            causeString: 'Triggered on $ref_type creation: $version',
+            regexpFilterText: '$ref_type',
+    	    regexpFilterExpression: 'branch|tag',
+
+            //콘솔 로그 출력 관련
+            printContributedVariables: true,
+            printPostContent: true
+        )
+    }
+
+    stages {
+        stage('Git Pull') {
+            steps {
+                sh "git pull origin main"
+            }
+        }
+
+        stage('BE-Build') {
+            steps {
+                //dir("./${GIT_REPO_NAME}") {
+                    sh "chmod +x ./gradlew "
+                    sh "./gradlew clean build"
+                //}
+            }
+        }
+
+        stage('Create New Image') {
+            steps {
+                sh "docker buildx build -t ${IMAGE_NAME}:${env.version} ."
+                echo "tag : ${env.version}"
+                sh """
+		            docker image tag ${IMAGE_NAME}:${env.version} ${DOCKER_REPO}:${env.version}
+		            docker image tag ${IMAGE_NAME}:${env.version} ${DOCKER_REPO}:latest
+		            docker push ${DOCKER_REPO}:${env.version}
+		            docker push ${DOCKER_REPO}:latest
+		        """
+            }
+        }
+
+//테스트 서버
+        stage('Deploy') {
+            steps {
+                sshagent(credentials: ['forAWS']) {
+                    sh """
+                        ssh ${HOST_SERVER} << EOF
+                        cd ${HOST_DOCKER_COMPOSE_PATH}
+                        docker compose down
+                        docker compose up -d
+                        docker image prune -af
+                    """
+                }
+            }
+        }
+    }
+}

@@ -60,10 +60,8 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'forDockerhub',
                                                     usernameVariable: 'USERNAME',
                                                     passwordVariable: 'PASSWORD')]) {
-                    dir("./postHere") {
-                        sh "docker build -t ${IMAGE_NAME}:${env.version} ."
-                    }
                     sh '''
+                            docker build -t ${IMAGE_NAME}:${env.version} .
 		                    docker login -u ${USERNAME} -p ${PASSWORD}
 		                    docker image tag ${IMAGE_NAME}:${env.version} ${DOCKER_REPO}:${env.version}
 		                    docker image tag ${IMAGE_NAME}:${env.version} ${DOCKER_REPO}:latest

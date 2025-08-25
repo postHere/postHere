@@ -1,5 +1,6 @@
 package io.github.nokasegu.post_here.forum.controller;
 
+import io.github.nokasegu.post_here.forum.service.ForumLikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 
@@ -7,5 +8,5 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class ForumLikeController {
 
-    private final ForumLikeController forumLikeController;
+    private final ForumLikeService forumLikeService;
 }

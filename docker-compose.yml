@@ -3,7 +3,7 @@
 #host server에 docker compose 파일만 따로 두고 그 파일을 이용하는 방식으로 활용
 services:
   server:
-    image: post-here:test
+    image: post-here:latest
     container_name: postHere
     environment:
       - TZ=Asia/Seoul

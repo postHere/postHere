@@ -12,7 +12,7 @@ pipeline {
         IMAGE_NAME = 'post-here'
 
         HOST_SERVER = 'ubuntu@13.209.28.230'
-        HOST_DOCKER_COMPOSE_PATH = '/home/ubuntu/postHere/postHere'
+        HOST_DOCKER_COMPOSE_PATH = '/home/ubuntu/postHere/config'
     }
 
     triggers {

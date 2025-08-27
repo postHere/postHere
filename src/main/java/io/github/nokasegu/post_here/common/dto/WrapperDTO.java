@@ -7,9 +7,9 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ResponseDTO<T> {
+public class WrapperDTO<T> {
 
-    private int status;
+    private String status;
 
     private String message;
 

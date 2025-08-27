@@ -3,7 +3,7 @@ package io.github.nokasegu.post_here.common.exception;
 import lombok.Getter;
 
 @Getter
-public enum Status {
+public enum Code {
 
     OK("000", "요청 처리에 성공했습니다"),
 
@@ -13,7 +13,7 @@ public enum Status {
     private final String code;
     private final String value;
 
-    Status(String code, String value) {
+    Code(String code, String value) {
         this.code = code;
         this.value = value;
     }

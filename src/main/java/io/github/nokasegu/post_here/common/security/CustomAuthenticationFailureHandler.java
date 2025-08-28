@@ -24,13 +24,10 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-
-        UserInfoEntity userInfoEntity = new UserInfoEntity();
+        
         WrapperDTO<UserInfoEntity> error = new WrapperDTO<>();
         error.setStatus(Code.LOGIN_FAIL.getCode());
         error.setMessage(Code.LOGIN_FAIL.getValue());
-
-        error.setData(userInfoEntity);
 
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(error));

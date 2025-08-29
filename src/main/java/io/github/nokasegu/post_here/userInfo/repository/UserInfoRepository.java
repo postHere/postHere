@@ -11,8 +11,8 @@ public interface UserInfoRepository extends JpaRepository<UserInfoEntity, Long> 
 
     @Query(value = "SELECT u " +
             "FROM UserInfoEntity u " +
-            "WHERE u.loginId = :loginId")
-    public UserInfoEntity findByLoginId(@Param("loginId") String loginId);
+            "WHERE u.email = :email")
+    public UserInfoEntity findByLoginId(@Param("email") String email);
 
 
 }

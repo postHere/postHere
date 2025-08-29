@@ -2,7 +2,10 @@ package io.github.nokasegu.post_here.forum.domain;
 
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -19,7 +22,8 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class ForumEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "forum_pk")
     private Long id;
 
@@ -42,9 +46,9 @@ public class ForumEntity {
 
     @CreatedDate                   // 생성 시 자동 저장
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdDate;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate              // 수정 시 자동 갱신
     @Column(nullable = false)
-    private LocalDateTime updatedDate;
+    private LocalDateTime updatedAt;
 }

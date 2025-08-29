@@ -3,7 +3,6 @@ package io.github.nokasegu.post_here.common.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.nokasegu.post_here.common.dto.WrapperDTO;
 import io.github.nokasegu.post_here.common.exception.Code;
-import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,7 +24,7 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         
-        WrapperDTO<UserInfoEntity> error = new WrapperDTO<>();
+        WrapperDTO<String> error = new WrapperDTO<>();
         error.setStatus(Code.LOGIN_FAIL.getCode());
         error.setMessage(Code.LOGIN_FAIL.getValue());
 

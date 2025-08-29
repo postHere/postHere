@@ -15,8 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final String [] WHITELIST_URL = {
-      "/", "/signup/**", "/login", "/css/**", "/js/**"
+    private final String[] WHITELIST_URL = {
+            "/", "/signup/**", "/login", "/css/**", "/js/**"
     };
 
     private final CustomAuthenticationFailureHandler failureHandler;

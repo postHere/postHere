@@ -1,7 +1,10 @@
 package io.github.nokasegu.post_here.userInfo.domain;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -17,21 +20,18 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class UserInfoEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_info_pk")
     private Long id;
 
 
-    @Column(name = "login_id", nullable = false, length = 100)
-    private String loginId;
+    @Column(name = "email", nullable = false)
+    private String email;
 
 
     @Column(name = "login_pw", nullable = false)
     private String loginPw;
-
-
-    @Column(name = "email", nullable = false)
-    private String email;
 
 
     @Column(name = "nickname", nullable = false, length = 60)

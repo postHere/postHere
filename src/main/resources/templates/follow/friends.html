@@ -1,9 +1,13 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <title>Friends</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+    <!-- ✅ CSRF가 없을 때도 파싱 에러 나지 않도록 null-safe -->
+    <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
+    <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
     <style>
         :root {
             --border: #e5e7eb;
@@ -214,7 +218,7 @@
     </div>
 </section>
 
-<!-- Search (임시: 클라이언트 필터, 후에 서버 검색 API로 교체) -->
+<!-- Search (서버 API 기반) -->
 <section class="panel" id="panel-search">
     <div class="searchbar">
         <input id="searchInput" placeholder="닉네임으로 검색" type="text"/>
@@ -230,7 +234,7 @@
 
 <script>
     // ===== (옵션) 로그인 없이 테스트하려면 내 PK를 적어 X-USER-ID로 보냄 =====
-    const DEV_USER_ID = null; // 예: 1 로 바꾸면 비로그인 테스트 가능
+    const DEV_USER_ID = null; // 예: 1
 
     // ===== 공통 DOM =====
     const tabs = document.querySelectorAll('.tab');
@@ -285,8 +289,7 @@
     let state = {
         active: 'followers',
         page: {followers: 0, followings: 0, search: 0},
-        followingSet: new Set(), // 내가 팔로우 중인 유저 id
-        searchPool: []           // 검색용 풀(초기엔 followers+followings 합집합)
+        followingSet: new Set()
     };
 
     // ===== 아이콘 =====
@@ -305,8 +308,14 @@
 
     // ===== 헬퍼 =====
     function authHeaders(base = {}) {
-        if (DEV_USER_ID != null) return {...base, 'X-USER-ID': String(DEV_USER_ID)};
-        return base;
+        const headers = {...base};
+        if (DEV_USER_ID != null) headers['X-USER-ID'] = String(DEV_USER_ID);
+
+        // ✅ CSRF가 있으면 자동으로 붙여줌(없으면 무시)
+        const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+        const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+        if (token) headers[headerName] = token;
+        return headers;
     }
 
     function applyPager(el, d, type) {
@@ -384,7 +393,6 @@
         return row;
     }
 
-
     function renderList(container, pageData, mode, statusMap) {
         const d = pageData;
         if (!d || !d.content || d.content.length === 0) {
@@ -398,7 +406,8 @@
     // ===== 탭 로더 =====
     async function loadFollowers() {
         listFollowers.innerHTML = '<div class="empty">로딩 중...</div>';
-        const res = await fetch(`/api/friends/followers?page=${state.page.followers}&size=20`, {headers: authHeaders({'Accept': 'application/json'})});
+        const res = await fetch(`/api/friends/followers?page=${state.page.followers}&size=20`,
+            {headers: authHeaders({'Accept': 'application/json'})});
         if (!res.ok) return listFollowers.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
         const d = await res.json();
         const ids = (d.content || []).map(u => u.id);
@@ -409,7 +418,8 @@
 
     async function loadFollowings() {
         listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
-        const res = await fetch(`/api/friends/followings?page=${state.page.followings}&size=20`, {headers: authHeaders({'Accept': 'application/json'})});
+        const res = await fetch(`/api/friends/followings?page=${state.page.followings}&size=20`,
+            {headers: authHeaders({'Accept': 'application/json'})});
         if (!res.ok) return listFollowings.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
         const d = await res.json();
         if (state.page.followings === 0) state.followingSet = new Set((d.content || []).map(u => u.id));
@@ -417,42 +427,30 @@
         applyPager(pageFollowingsEl, d, 'followings');
     }
 
+    // ✅ 서버 검색 API 사용 (/api/friends/search)
     async function loadSearch() {
-        const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+        const q = (document.getElementById('searchInput').value || '').trim();
         const page = state.page.search, size = 20;
 
-        if (!state.searchPool.length) {
-            const [fRes, gRes] = await Promise.all([
-                fetch('/api/friends/followers?page=0&size=1000', {headers: authHeaders({'Accept': 'application/json'})}),
-                fetch('/api/friends/followings?page=0&size=1000', {headers: authHeaders({'Accept': 'application/json'})})
-            ]);
-            if (fRes.ok && gRes.ok) {
-                const [f, g] = await Promise.all([fRes.json(), gRes.json()]);
-                const map = new Map();
-                (f.content || []).forEach(u => map.set(u.id, u));
-                (g.content || []).forEach(u => map.set(u.id, u));
-                state.searchPool = Array.from(map.values());
-                state.followingSet = new Set((g.content || []).map(u => u.id));
-            }
+        if (!q) {
+            listSearch.innerHTML = '<div class="empty">닉네임을 입력해주세요.</div>';
+            pageSearchEl.textContent = '';
+            document.getElementById('prev-search').disabled = true;
+            document.getElementById('next-search').disabled = true;
+            return;
         }
 
-        let all = state.searchPool;
-        if (q) all = all.filter(u => (u.nickname || '').toLowerCase().includes(q));
-        const total = all.length, totalPages = Math.max(1, Math.ceil(total / size));
-        const slice = all.slice(page * size, page * size + size);
-
-        const ids = slice.map(u => u.id);
+        listSearch.innerHTML = '<div class="empty">검색 중...</div>';
+        const url = `/api/friends/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`;
+        const res = await fetch(url, {headers: authHeaders({'Accept': 'application/json'})});
+        if (!res.ok) {
+            listSearch.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
+            return;
+        }
+        const d = await res.json();
+        const ids = (d.content || []).map(u => u.id);
         const status = await fetchStatus(ids);
 
-        const d = {
-            content: slice,
-            number: page,
-            size,
-            totalElements: total,
-            totalPages,
-            first: page <= 0,
-            last: (page + 1) >= totalPages
-        };
         renderList(listSearch, d, 'search', status);
         applyPager(pageSearchEl, d, 'search');
     }
@@ -469,7 +467,7 @@
         else loadSearch();
     }));
 
-    // 초기 로딩: followers & followings 병렬 호출 (번들 API 불필요)
+    // 초기 로딩: followers & followings 병렬 호출
     (async function init() {
         listFollowers.innerHTML = listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
         const [fRes, gRes] = await Promise.all([
@@ -492,11 +490,6 @@
 
         renderList(listFollowings, followings, 'followings');
         applyPager(pageFollowingsEl, followings, 'followings');
-
-        const map = new Map();
-        (followers.content || []).forEach(u => map.set(u.id, u));
-        (followings.content || []).forEach(u => map.set(u.id, u));
-        state.searchPool = Array.from(map.values());
     })();
 </script>
 </body>

@@ -45,7 +45,7 @@ public class FollowingApiController {
         try {
             return Long.valueOf(name); // 숫자면 PK로 간주
         } catch (NumberFormatException ignore) {
-            // 로그인 아이디로 조회 (현재 DB/코드 호환용)
+            // 로그인 아이디로 조회 (현재 DB/코드 호환용)  ※ 메서드명은 findByLoginId 지만 쿼리는 email 기준
             UserInfoEntity user = userInfoRepository.findByLoginId(name);
             if (user == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자(loginId) 없음: " + name);
             return user.getId();
@@ -115,5 +115,20 @@ public class FollowingApiController {
         return FollowingStatusResponseDto.from(
                 followingService.getFollowingStatus(me, req.getIds())
         );
+    }
+
+    // ===== ✅ 닉네임 검색 (로그인 사용자 제외)
+    @GetMapping("/search")
+    public Page<UserBriefResponseDto> search(
+            Principal principal,
+            @RequestHeader(name = "X-USER-ID", required = false) Long userHeader,
+            @RequestParam("q") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Long me = resolveUserId(principal, userHeader);
+        return followingService
+                .getUsersByNickname(me, keyword, PageRequest.of(page, size))
+                .map(UserBriefResponseDto::convertToDto);
     }
 }

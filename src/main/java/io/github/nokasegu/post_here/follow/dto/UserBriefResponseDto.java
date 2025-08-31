@@ -24,6 +24,8 @@ public class UserBriefResponseDto {
                 .build();
     }
 
-    public static UserInfoEntity convertToEntity(UserBriefResponseDto d) { return null; }
+    public static UserInfoEntity convertToEntity(UserBriefResponseDto d) {
+        return null;
+    }
 }
 

@@ -30,6 +30,7 @@ public interface FollowingRepository extends JpaRepository<FollowingEntity, Long
 
     // 팔로우 여부/언팔에 사용
     boolean existsByFollowerAndFollowed(UserInfoEntity follower, UserInfoEntity followed);
+
     void deleteByFollowerAndFollowed(UserInfoEntity follower, UserInfoEntity followed);
 
     // 배치 상태 API용: targetIds 중 내가 팔로잉한 id 목록

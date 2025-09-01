@@ -5,9 +5,10 @@
     <title>Friends</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
 
-    <!-- ✅ CSRF가 없을 때도 파싱 에러 나지 않도록 null-safe -->
+    <!-- CSRF (null-safe) -->
     <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
     <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
+
     <style>
         :root {
             --border: #e5e7eb;
@@ -191,14 +192,12 @@
 <body>
 <h1>Friends</h1>
 
-<!-- 탭 -->
 <div class="tabs">
     <button class="tab active" data-tab="followers">Follower</button>
     <button class="tab" data-tab="followings">Following</button>
     <button class="tab" data-tab="search">Search</button>
 </div>
 
-<!-- Followers -->
 <section class="panel active" id="panel-followers">
     <div aria-live="polite" class="list" id="list-followers"></div>
     <div class="pager">
@@ -208,7 +207,6 @@
     </div>
 </section>
 
-<!-- Followings -->
 <section class="panel" id="panel-followings">
     <div aria-live="polite" class="list" id="list-followings"></div>
     <div class="pager">
@@ -218,7 +216,6 @@
     </div>
 </section>
 
-<!-- Search (서버 API 기반) -->
 <section class="panel" id="panel-search">
     <div class="searchbar">
         <input id="searchInput" placeholder="닉네임으로 검색" type="text"/>
@@ -233,10 +230,7 @@
 </section>
 
 <script>
-    // ===== (옵션) 로그인 없이 테스트하려면 내 PK를 적어 X-USER-ID로 보냄 =====
-    const DEV_USER_ID = null; // 예: 1
-
-    // ===== 공통 DOM =====
+    const DEV_USER_ID = null; // 필요 시 숫자 (X-USER-ID 헤더)
     const tabs = document.querySelectorAll('.tab');
     const panels = {
         followers: document.getElementById('panel-followers'),
@@ -285,33 +279,28 @@
         loadSearch();
     });
 
-    // ===== 상태 =====
     let state = {
         active: 'followers',
         page: {followers: 0, followings: 0, search: 0},
         followingSet: new Set()
     };
 
-    // ===== 아이콘 =====
     const personAddSvg = `
-      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        <path d="M19 8v6M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>`;
+    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M19 8v6M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>`;
     const personRemoveSvg = `
-      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        <path d="M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>`;
+    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>`;
 
-    // ===== 헬퍼 =====
     function authHeaders(base = {}) {
         const headers = {...base};
         if (DEV_USER_ID != null) headers['X-USER-ID'] = String(DEV_USER_ID);
-
-        // ✅ CSRF가 있으면 자동으로 붙여줌(없으면 무시)
         const token = document.querySelector('meta[name="_csrf"]')?.content || '';
         const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
         if (token) headers[headerName] = token;
@@ -326,7 +315,7 @@
 
     async function fetchStatus(ids) {
         if (!ids || !ids.length) return {};
-        const res = await fetch('/api/friends/status', {
+        const res = await fetch('/friend/status', {
             method: 'POST',
             headers: authHeaders({'Content-Type': 'application/json', 'Accept': 'application/json'}),
             body: JSON.stringify({ids})
@@ -336,7 +325,30 @@
         return data?.status || {};
     }
 
-    // 한 줄 렌더 (mode: 'followers' | 'followings' | 'search')
+    async function apiFollow(userId) {
+        const res = await fetch('/friend/addfollowing', {
+            method: 'POST',
+            headers: authHeaders({
+                'Content': 'application/json',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }),
+            body: JSON.stringify({userId})
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    }
+
+    async function apiUnfollow(userId) {
+        const res = await fetch('/friend/unfollowing', {
+            method: 'DELETE',
+            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
+            body: JSON.stringify({userId})
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    }
+
     function rowEl(user, mode, statusMap) {
         const row = document.createElement('div');
         row.className = 'row';
@@ -346,7 +358,7 @@
         img.src = user.profilePhotoUrl || `https://picsum.photos/seed/${user.id}/100/100`;
         img.alt = '';
         img.onclick = () => {
-            window.location.href = `/profile/${user.id}`
+            window.location.href = `/profile/${user.id}`;
         };
         img.onerror = () => img.style.visibility = 'hidden';
 
@@ -368,10 +380,14 @@
                 btn.className = 'icon-btn';
                 btn.title = '친구 추가';
                 btn.innerHTML = personAddSvg;
-                btn.addEventListener('click', () => {
-                    // TODO: follow API 연결
-                    btn.remove();
-                    state.followingSet.add(user.id);
+                btn.addEventListener('click', async () => {
+                    try {
+                        await apiFollow(user.id);
+                        btn.remove(); // 규칙: 이 화면에서는 버튼 사라짐
+                        state.followingSet.add(user.id);
+                    } catch (e) {
+                        alert('팔로우 실패: ' + (e.message || ''));
+                    }
                 });
             }
         } else if (mode === 'followings') {
@@ -379,10 +395,14 @@
             btn.className = 'icon-btn';
             btn.title = '친구 삭제';
             btn.innerHTML = personRemoveSvg;
-            btn.addEventListener('click', () => {
-                // TODO: unfollow API 연결
-                btn.remove();
-                state.followingSet.delete(user.id);
+            btn.addEventListener('click', async () => {
+                try {
+                    await apiUnfollow(user.id);
+                    row.remove(); // 규칙: 이 화면에서는 행 제거
+                    state.followingSet.delete(user.id);
+                } catch (e) {
+                    alert('언팔로우 실패: ' + (e.message || ''));
+                }
             });
         }
 
@@ -403,10 +423,9 @@
         for (const u of d.content) container.appendChild(rowEl(u, mode, statusMap));
     }
 
-    // ===== 탭 로더 =====
     async function loadFollowers() {
         listFollowers.innerHTML = '<div class="empty">로딩 중...</div>';
-        const res = await fetch(`/api/friends/followers?page=${state.page.followers}&size=20`,
+        const res = await fetch(`/friend/followlist?page=${state.page.followers}&size=20`,
             {headers: authHeaders({'Accept': 'application/json'})});
         if (!res.ok) return listFollowers.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
         const d = await res.json();
@@ -418,7 +437,7 @@
 
     async function loadFollowings() {
         listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
-        const res = await fetch(`/api/friends/followings?page=${state.page.followings}&size=20`,
+        const res = await fetch(`/friend/followinglist?page=${state.page.followings}&size=20`,
             {headers: authHeaders({'Accept': 'application/json'})});
         if (!res.ok) return listFollowings.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
         const d = await res.json();
@@ -427,7 +446,6 @@
         applyPager(pageFollowingsEl, d, 'followings');
     }
 
-    // ✅ 서버 검색 API 사용 (/api/friends/search)
     async function loadSearch() {
         const q = (document.getElementById('searchInput').value || '').trim();
         const page = state.page.search, size = 20;
@@ -441,7 +459,7 @@
         }
 
         listSearch.innerHTML = '<div class="empty">검색 중...</div>';
-        const url = `/api/friends/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`;
+        const url = `/friend/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`;
         const res = await fetch(url, {headers: authHeaders({'Accept': 'application/json'})});
         if (!res.ok) {
             listSearch.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
@@ -450,12 +468,10 @@
         const d = await res.json();
         const ids = (d.content || []).map(u => u.id);
         const status = await fetchStatus(ids);
-
         renderList(listSearch, d, 'search', status);
         applyPager(pageSearchEl, d, 'search');
     }
 
-    // 탭 전환
     tabs.forEach(t => t.addEventListener('click', () => {
         const tab = t.dataset.tab;
         if (state.active === tab) return;
@@ -467,12 +483,11 @@
         else loadSearch();
     }));
 
-    // 초기 로딩: followers & followings 병렬 호출
     (async function init() {
         listFollowers.innerHTML = listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
         const [fRes, gRes] = await Promise.all([
-            fetch('/api/friends/followers?page=0&size=20', {headers: authHeaders({'Accept': 'application/json'})}),
-            fetch('/api/friends/followings?page=0&size=20', {headers: authHeaders({'Accept': 'application/json'})})
+            fetch('/friend/followlist?page=0&size=20', {headers: authHeaders({'Accept': 'application/json'})}),
+            fetch('/friend/followinglist?page=0&size=20', {headers: authHeaders({'Accept': 'application/json'})})
         ]);
         if (!fRes.ok || !gRes.ok) {
             const msg = `초기 로딩 실패: followers=${fRes.status}, followings=${gRes.status}`;
@@ -484,7 +499,6 @@
 
         const ids = (followers.content || []).map(u => u.id);
         const status = await fetchStatus(ids);
-
         renderList(listFollowers, followers, 'followers', status);
         applyPager(pageFollowersEl, followers, 'followers');
 

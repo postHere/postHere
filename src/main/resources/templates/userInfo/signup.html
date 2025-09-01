@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>PostHere - 회원가입</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+          rel="stylesheet">
+    <style>
+        /* --- 기본 스타일 및 레이아웃 --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .signup-container {
+            width: 100%;
+            max-width: 448px;
+            padding: 32px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- 헤더 (로고 및 제목) --- */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header .logo {
+            font-family: 'Lobster', cursive;
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .header p {
+            color: #a0a0a0;
+            margin-top: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 1.125rem;
+        }
+
+        .header .description {
+            font-size: 0.875rem;
+        }
+
+        /* --- 폼 관련 스타일 --- */
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #d1d5db;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            background-color: #333;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus {
+            background-color: #444;
+            border-color: #888;
+            outline: none;
+        }
+
+        /* --- 버튼 공통 스타일 --- */
+        .btn {
+            padding: 10px 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: 1px solid #555;
+            background-color: #1a1a1a;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            background-color: #4a4a4a;
+            color: #888;
+            cursor: not-allowed;
+            border-color: #4a4a4a;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: #333;
+        }
+
+        .btn-full-width {
+            width: 100%;
+        }
+
+        /* --- 피드백 메시지 스타일 --- */
+        .feedback-message {
+            font-size: 0.75rem;
+            margin-top: 8px;
+            height: 16px;
+        }
+
+        .feedback-success {
+            color: #2ecc71;
+        }
+
+        .feedback-error {
+            color: #e74c3c;
+        }
+
+        /* --- 기타 유틸리티 스타일 --- */
+        .hidden {
+            display: none;
+        }
+
+        #timer {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #e74c3c;
+            font-size: 0.875rem;
+        }
+
+        .relative-wrapper {
+            position: relative;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="signup-container">
+    <div class="header">
+        <h1 class="logo">PostHere</h1>
+        <p class="subtitle">Create an account</p>
+        <p class="description">Please fill in the fields below to sign up</p>
+    </div>
+
+    <form action="/signup" id="signupForm" method="POST">
+        <div class="form-section" id="emailSection">
+            <label for="email">E-mail</label>
+            <div class="input-group">
+                <input autocomplete="email" class="form-input" id="email" name="email" placeholder="example@email.com"
+                       required type="email">
+                <button class="btn" id="checkEmailBtn" type="button">Check availability</button>
+            </div>
+            <p class="feedback-message" id="emailFeedback"></p>
+            <button class="btn btn-full-width" disabled id="sendCodeBtn" style="margin-top: 16px;" type="button">Send
+                Verification Code
+            </button>
+        </div>
+
+        <div class="form-section hidden" id="verificationSection">
+            <label for="verificationCode">Verification code</label>
+            <div class="input-group">
+                <div class="relative-wrapper">
+                    <input class="form-input" id="verificationCode" placeholder="Enter your code" required type="text">
+                    <span id="timer"></span>
+                </div>
+                <button class="btn" id="verifyCodeBtn" type="button">Verify</button>
+            </div>
+            <p class="feedback-message" id="codeFeedback"></p>
+            <button class="btn btn-full-width hidden" id="resendCodeBtn" style="margin-top: 16px;" type="button">Resend
+                verification code
+            </button>
+        </div>
+
+        <div class="form-section hidden" id="userInfoSection">
+            <div style="margin-bottom: 16px;">
+                <label for="password">Password</label>
+                <input autocomplete="new-password" class="form-input" id="password" name="password" required
+                       type="password">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label for="passwordCheck">Password Check</label>
+                <input autocomplete="new-password" class="form-input" id="passwordCheck" required type="password">
+                <p class="feedback-message" id="passwordFeedback"></p>
+            </div>
+            <div>
+                <label for="nickname">Nickname</label>
+                <div class="input-group">
+                    <input class="form-input" id="nickname" name="nickname" placeholder="Enter your nickname" required
+                           type="text">
+                    <button class="btn" id="checkNicknameBtn" type="button">Check</button>
+                </div>
+                <p class="feedback-message" id="nicknameFeedback"></p>
+            </div>
+        </div>
+
+        <div style="margin-top: 24px;">
+            <button class="btn btn-full-width" disabled id="signupBtn" type="submit">Sign Up</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // --- 사용할 HTML 요소들을 미리 변수에 할당 ---
+    const emailInput = document.getElementById('email');
+    const checkEmailBtn = document.getElementById('checkEmailBtn');
+    const emailFeedback = document.getElementById('emailFeedback');
+    const sendCodeBtn = document.getElementById('sendCodeBtn');
+    const verificationSection = document.getElementById('verificationSection');
+    const verificationCodeInput = document.getElementById('verificationCode');
+    const timerDisplay = document.getElementById('timer');
+    const verifyCodeBtn = document.getElementById('verifyCodeBtn');
+    const codeFeedback = document.getElementById('codeFeedback');
+    const resendCodeBtn = document.getElementById('resendCodeBtn');
+    const userInfoSection = document.getElementById('userInfoSection');
+    const passwordInput = document.getElementById('password');
+    const passwordCheckInput = document.getElementById('passwordCheck');
+    const passwordFeedback = document.getElementById('passwordFeedback');
+    const nicknameInput = document.getElementById('nickname');
+    const checkNicknameBtn = document.getElementById('checkNicknameBtn');
+    const nicknameFeedback = document.getElementById('nicknameFeedback');
+    const signupBtn = document.getElementById('signupBtn');
+    const signupForm = document.getElementById('signupForm');
+
+    // --- 회원가입 단계별 성공 여부를 저장하는 변수 ---
+    let isEmailValid = false;
+    let isEmailVerified = false;
+    let isPasswordValid = false;
+    let isNicknameValid = false;
+
+    // --- 타이머 관련 변수 ---
+    let timer;
+    let timeRemaining = 180; // 3분
+
+    // --- 자주 사용하는 함수들 ---
+    function setFeedback(element, message, type) {
+        element.textContent = message;
+        element.className = `feedback-message feedback-${type}`;
+    }
+
+    function updateSignupButtonState() {
+        signupBtn.disabled = !(isEmailValid && isEmailVerified && isPasswordValid && isNicknameValid);
+    }
+
+    function startTimer() {
+        clearInterval(timer);
+        timeRemaining = 180;
+        timerDisplay.style.display = 'block';
+        resendCodeBtn.classList.add('hidden');
+        verifyCodeBtn.disabled = false;
+        verificationCodeInput.value = '';
+
+        timer = setInterval(() => {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            timeRemaining--;
+
+            if (timeRemaining < 0) {
+                clearInterval(timer);
+                timerDisplay.style.display = 'none';
+                setFeedback(codeFeedback, 'Verification time expired.', 'error');
+                verifyCodeBtn.disabled = true;
+                resendCodeBtn.classList.remove('hidden');
+            }
+        }, 1000);
+    }
+
+    // --- 각 버튼과 입력창에 대한 이벤트 리스너 설정 ---
+
+    // 1. 이메일 중복 확인 (서버 API 호출)
+    checkEmailBtn.addEventListener('click', async () => {
+        const email = emailInput.value;
+        if (!email || !email.includes('@')) {
+            setFeedback(emailFeedback, 'Please enter a valid email format.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/check-email?email=${encodeURIComponent(email)}`);
+            if (!response.ok) throw new Error('Server error');
+            const data = await response.json();
+
+            if (data.available) {
+                setFeedback(emailFeedback, 'This email is available.', 'success');
+                isEmailValid = true;
+                sendCodeBtn.disabled = false;
+            } else {
+                setFeedback(emailFeedback, 'This email is already in use.', 'error');
+                isEmailValid = false;
+                sendCodeBtn.disabled = true;
+            }
+        } catch (error) {
+            setFeedback(emailFeedback, 'An error occurred. Please try again.', 'error');
+            isEmailValid = false;
+            sendCodeBtn.disabled = true;
+        }
+        updateSignupButtonState();
+    });
+
+    // 2. 인증 코드 전송 (서버 API 호출)
+    sendCodeBtn.addEventListener('click', async () => {
+        sendCodeBtn.disabled = true;
+        sendCodeBtn.textContent = 'Sending...';
+
+        try {
+            const response = await fetch('/api/send-verification', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `email=${encodeURIComponent(emailInput.value)}`
+            });
+            if (!response.ok) throw new Error('Server error');
+            const data = await response.json();
+
+            if (data.success) {
+                verificationSection.classList.remove('hidden');
+                setFeedback(codeFeedback, 'A verification code has been sent to your email.', 'success');
+                startTimer();
+            } else {
+                setFeedback(emailFeedback, 'Failed to send code. Please try again.', 'error');
+            }
+        } catch (error) {
+            setFeedback(emailFeedback, 'An error occurred while sending the code.', 'error');
+        } finally {
+            sendCodeBtn.textContent = 'Send Verification Code';
+            // 성공 시에는 어차피 비활성화되므로, 실패 시에만 다시 활성화되도록 로직 구성 가능
+        }
+    });
+
+    resendCodeBtn.addEventListener('click', () => sendCodeBtn.click());
+
+    // 3. 인증 코드 확인 (서버 API 호출)
+    verifyCodeBtn.addEventListener('click', async () => {
+        const code = verificationCodeInput.value;
+        if (!code) {
+            setFeedback(codeFeedback, 'Please enter the verification code.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/verify-code', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `code=${encodeURIComponent(code)}`
+            });
+            if (!response.ok) throw new Error('Server error');
+            const data = await response.json();
+
+            if (data.valid) {
+                clearInterval(timer);
+                setFeedback(codeFeedback, 'Email verification successful.', 'success');
+                isEmailVerified = true;
+
+                // 인증 성공 시 관련 필드 비활성화
+                [emailInput, checkEmailBtn, sendCodeBtn, verificationCodeInput, verifyCodeBtn].forEach(el => el.disabled = true);
+                resendCodeBtn.classList.add('hidden');
+                timerDisplay.style.display = 'none';
+
+                userInfoSection.classList.remove('hidden'); // 다음 단계 표시
+            } else {
+                setFeedback(codeFeedback, 'Incorrect code. Please try again.', 'error');
+                isEmailVerified = false;
+            }
+        } catch (error) {
+            setFeedback(codeFeedback, 'An error occurred during verification.', 'error');
+            isEmailVerified = false;
+        }
+        updateSignupButtonState();
+    });
+
+    // 4. 비밀번호 일치 확인 (자체 로직)
+    function validatePassword() {
+        if (passwordInput.value && passwordCheckInput.value) {
+            if (passwordInput.value === passwordCheckInput.value) {
+                setFeedback(passwordFeedback, 'Passwords match.', 'success');
+                isPasswordValid = true;
+            } else {
+                setFeedback(passwordFeedback, 'Passwords do not match.', 'error');
+                isPasswordValid = false;
+            }
+        } else {
+            setFeedback(passwordFeedback, '', 'success');
+            isPasswordValid = false;
+        }
+        updateSignupButtonState();
+    }
+
+    passwordInput.addEventListener('input', validatePassword);
+    passwordCheckInput.addEventListener('input', validatePassword);
+
+    // 5. 닉네임 중복 확인 (서버 API 호출)
+    checkNicknameBtn.addEventListener('click', async () => {
+        const nickname = nicknameInput.value;
+        if (!nickname) {
+            setFeedback(nicknameFeedback, 'Please enter a nickname.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+            if (!response.ok) throw new Error('Server error');
+            const data = await response.json();
+
+            if (data.available) {
+                setFeedback(nicknameFeedback, 'This nickname is available.', 'success');
+                isNicknameValid = true;
+            } else {
+                setFeedback(nicknameFeedback, 'This nickname is already in use.', 'error');
+                isNicknameValid = false;
+            }
+        } catch (error) {
+            setFeedback(nicknameFeedback, 'An error occurred. Please try again.', 'error');
+            isNicknameValid = false;
+        }
+        updateSignupButtonState();
+    });
+
+    // 6. 최종 폼 전송
+    signupForm.addEventListener('submit', (e) => {
+        if (!isEmailValid || !isEmailVerified || !isPasswordValid || !isNicknameValid) {
+            e.preventDefault(); // 폼 전송을 막음
+            alert('Please complete all steps correctly.');
+        }
+        // 모든 단계가 정상이면 폼은 action="/signup"으로 정상적으로 제출됨
+    });
+</script>
+
+</body>
+</html>

@@ -50,8 +50,9 @@ public class UserInfoController {
     public String signup(@RequestParam String email,
                          @RequestParam String password,
                          @RequestParam String nickname) {
-        userInfoService.signUp(email, password, nickname);
         log.debug("사용자 정보{}, {}, {}", email, password, nickname);
+        userInfoService.signUp(email, password, nickname);
+
         // 회원가입 성공 후 로그인 페이지로 이동시킵니다.
         return "redirect:/login";
     }

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>PostHere - 회원가입</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/signup.css}">
+</head>
+<body>
+
+<div class="signup-container">
+    <div class="header">
+        <h1 class="logo">PostHere</h1>
+        <p class="subtitle">Create an account</p>
+        <p class="description">Please fill in the fields below to sign up</p>
+    </div>
+
+    <form action="/signup" id="signupForm" method="POST">
+        <div class="form-section" id="emailSection">
+            <label for="email">E-mail</label>
+            <div class="input-group">
+                <input autocomplete="email" class="form-input" id="email" name="email" placeholder="example@email.com"
+                       required type="email">
+                <button class="btn" id="checkEmailBtn" type="button">Check availability</button>
+            </div>
+            <p class="feedback-message" id="emailFeedback"></p>
+            <button class="btn btn-full-width" disabled id="sendCodeBtn" style="margin-top: 16px;" type="button">Send
+                Verification Code
+            </button>
+        </div>
+
+        <div class="form-section hidden" id="verificationSection">
+            <label for="verificationCode">Verification code</label>
+            <div class="input-group">
+                <div class="relative-wrapper">
+                    <input class="form-input" id="verificationCode" placeholder="Enter your code" required type="text">
+                    <span id="timer"></span>
+                </div>
+                <button class="btn" id="verifyCodeBtn" type="button">Verify</button>
+            </div>
+            <p class="feedback-message" id="codeFeedback"></p>
+            <button class="btn btn-full-width hidden" id="resendCodeBtn" style="margin-top: 16px;" type="button">Resend
+                verification code
+            </button>
+        </div>
+
+        <div class="form-section hidden" id="userInfoSection">
+            <div style="margin-bottom: 16px;">
+                <label for="password">Password</label>
+                <input autocomplete="new-password" class="form-input" id="password" name="password" required
+                       type="password">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label for="passwordCheck">Password Check</label>
+                <input autocomplete="new-password" class="form-input" id="passwordCheck" required type="password">
+                <p class="feedback-message" id="passwordFeedback"></p>
+            </div>
+            <div>
+                <label for="nickname">Nickname</label>
+                <div class="input-group">
+                    <input class="form-input" id="nickname" name="nickname" placeholder="Enter your nickname" required
+                           type="text">
+                    <button class="btn" id="checkNicknameBtn" type="button">Check</button>
+                </div>
+                <p class="feedback-message" id="nicknameFeedback"></p>
+            </div>
+        </div>
+
+        <div style="margin-top: 24px;">
+            <button class="btn btn-full-width" disabled id="signupBtn" type="submit">Sign Up</button>
+        </div>
+    </form>
+</div>
+
+<script src="/js/signup.js"></script>
+
+</body>
+</html>

@@ -3,6 +3,7 @@ package io.github.nokasegu.post_here.userInfo.service;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 //import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +14,7 @@ public class UserInfoService {
 
     private final UserInfoRepository userInfoRepository;
 
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 회원가입 로직
@@ -36,7 +38,7 @@ public class UserInfoService {
 
         UserInfoEntity user = UserInfoEntity.builder()
                 .email(email)
-                .loginPw(password) // 암호화된 비밀번호를 저장해야 합니다.
+                .loginPw(passwordEncoder.encode(password)) // 암호화된 비밀번호를 저장해야 합니다.
                 .nickname(nickname)
                 .build();
 

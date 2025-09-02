@@ -8,6 +8,7 @@
     <!-- ✅ CSRF가 없을 때도 파싱 에러 나지 않도록 null-safe -->
     <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
     <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
+    <link rel="manifest" th:href="@{/manifest.json}">
     <style>
         :root {
             --border: #e5e7eb;

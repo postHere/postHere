@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>forum-write</title>
+    <script defer src="/forumJs/forum-write.js"></script>
+</head>
+<body>
+<form id="forum-form" style="display: contents;">
+    <input id="writerId" name="writerId" type="hidden">
+    <input id="location" name="location" type="hidden" value="서울특별시 강남구 테헤란로">
+    <input id="spotifyTrackId" name="spotifyTrackId" type="hidden">
+
+    <input accept="image/*" id="images" multiple name="images" style="display: none;" type="file">
+
+    <header class="header">
+        <h1>Writing</h1>
+        <button id="submit-btn" type="submit">공유</button>
+    </header>
+
+    <main class="writing-area">
+        <label for="content">
+            <textarea id="content" name="content" placeholder="무슨 일이 있었나요?"></textarea>
+        </label>
+    </main>
+
+    <div id="image-preview-container"></div>
+
+    <footer class="toolbar">
+        <button id="add-image-btn" type="button">🖼️</button>
+        <button id="add-music-btn" type="button">🎵</button>
+    </footer>
+</form>
+</body>
+</html>

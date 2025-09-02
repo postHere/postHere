@@ -20,7 +20,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     public CustomUserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         log.info("로그인 시도");
+        log.info("username : " + username);
         UserInfoEntity userInfo = userInfoRepository.findByLoginId(username);
+        log.info("username : " + userInfo);
+
         if (userInfo == null) {
             throw new EntityNotFoundException("USER NOT FOUND");
         }

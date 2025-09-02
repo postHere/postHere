@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Friends</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+    <!-- ✅ CSRF가 없을 때도 파싱 에러 나지 않도록 null-safe -->
+    <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
+    <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
+    <style>
+        :root {
+            --border: #e5e7eb;
+            --muted: #6b7280;
+            --bg: #fff;
+            --hover: #f9fafb;
+            --active: #111827;
+            --tab: #f3f4f6;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 20px;
+            color: #111827;
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 28px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin: 14px 0;
+        }
+
+        .tab {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--tab);
+            cursor: pointer;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .tab.active {
+            background: #111827;
+            color: #fff;
+            border-color: #111827;
+        }
+
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .row:hover {
+            background: var(--hover);
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #f2f2f2;
+            flex: 0 0 44px;
+            cursor: pointer;
+        }
+
+        .meta {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .name {
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        .icon-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 10px;
+        }
+
+        .icon-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .icon {
+            width: 22px;
+            height: 22px;
+            display: block;
+        }
+
+        .pager {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            align-items: center;
+        }
+
+        .pager button {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .pager button:disabled {
+            opacity: .5;
+            cursor: default;
+        }
+
+        .empty {
+            padding: 24px;
+            text-align: center;
+            color: #6b7280;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+        }
+
+        .searchbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .searchbar input {
+            flex: 1;
+            height: 36px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .searchbar button {
+            height: 36px;
+            padding: 0 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<h1>Friends</h1>
+
+<!-- 탭 -->
+<div class="tabs">
+    <button class="tab active" data-tab="followers">Follower</button>
+    <button class="tab" data-tab="followings">Following</button>
+    <button class="tab" data-tab="search">Search</button>
+</div>
+
+<!-- Followers -->
+<section class="panel active" id="panel-followers">
+    <div aria-live="polite" class="list" id="list-followers"></div>
+    <div class="pager">
+        <button id="prev-followers">이전</button>
+        <span id="page-followers"></span>
+        <button id="next-followers">다음</button>
+    </div>
+</section>
+
+<!-- Followings -->
+<section class="panel" id="panel-followings">
+    <div aria-live="polite" class="list" id="list-followings"></div>
+    <div class="pager">
+        <button id="prev-followings">이전</button>
+        <span id="page-followings"></span>
+        <button id="next-followings">다음</button>
+    </div>
+</section>
+
+<!-- Search (서버 API 기반) -->
+<section class="panel" id="panel-search">
+    <div class="searchbar">
+        <input id="searchInput" placeholder="닉네임으로 검색" type="text"/>
+        <button id="searchBtn">검색</button>
+    </div>
+    <div aria-live="polite" class="list" id="list-search"></div>
+    <div class="pager">
+        <button id="prev-search">이전</button>
+        <span id="page-search"></span>
+        <button id="next-search">다음</button>
+    </div>
+</section>
+
+<script>
+    // ===== (옵션) 로그인 없이 테스트하려면 내 PK를 적어 X-USER-ID로 보냄 =====
+    const DEV_USER_ID = null; // 예: 1
+
+    // ===== 공통 DOM =====
+    const tabs = document.querySelectorAll('.tab');
+    const panels = {
+        followers: document.getElementById('panel-followers'),
+        followings: document.getElementById('panel-followings'),
+        search: document.getElementById('panel-search')
+    };
+    const listFollowers = document.getElementById('list-followers');
+    const listFollowings = document.getElementById('list-followings');
+    const listSearch = document.getElementById('list-search');
+    const pageFollowersEl = document.getElementById('page-followers');
+    const pageFollowingsEl = document.getElementById('page-followings');
+    const pageSearchEl = document.getElementById('page-search');
+
+    document.getElementById('prev-followers').addEventListener('click', () => {
+        if (state.page.followers > 0) {
+            state.page.followers--;
+            loadFollowers();
+        }
+    });
+    document.getElementById('next-followers').addEventListener('click', () => {
+        state.page.followers++;
+        loadFollowers();
+    });
+    document.getElementById('prev-followings').addEventListener('click', () => {
+        if (state.page.followings > 0) {
+            state.page.followings--;
+            loadFollowings();
+        }
+    });
+    document.getElementById('next-followings').addEventListener('click', () => {
+        state.page.followings++;
+        loadFollowings();
+    });
+    document.getElementById('prev-search').addEventListener('click', () => {
+        if (state.page.search > 0) {
+            state.page.search--;
+            loadSearch();
+        }
+    });
+    document.getElementById('next-search').addEventListener('click', () => {
+        state.page.search++;
+        loadSearch();
+    });
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        state.page.search = 0;
+        loadSearch();
+    });
+
+    // ===== 상태 =====
+    let state = {
+        active: 'followers',
+        page: {followers: 0, followings: 0, search: 0},
+        followingSet: new Set()
+    };
+
+    // ===== 아이콘 =====
+    const personAddSvg = `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M19 8v6M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>`;
+    const personRemoveSvg = `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>`;
+
+    // ===== 헬퍼 =====
+    function authHeaders(base = {}) {
+        const headers = {...base};
+        if (DEV_USER_ID != null) headers['X-USER-ID'] = String(DEV_USER_ID);
+
+        // ✅ CSRF가 있으면 자동으로 붙여줌(없으면 무시)
+        const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+        const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+        if (token) headers[headerName] = token;
+        return headers;
+    }
+
+    function applyPager(el, d, type) {
+        el.textContent = `페이지 ${d.number + 1} / ${d.totalPages} (총 ${d.totalElements}명)`;
+        document.getElementById(`prev-${type}`).disabled = d.first;
+        document.getElementById(`next-${type}`).disabled = d.last;
+    }
+
+    async function fetchStatus(ids) {
+        if (!ids || !ids.length) return {};
+        const res = await fetch('/api/friends/status', {
+            method: 'POST',
+            headers: authHeaders({'Content-Type': 'application/json', 'Accept': 'application/json'}),
+            body: JSON.stringify({ids})
+        });
+        if (!res.ok) return {};
+        const data = await res.json();
+        return data?.status || {};
+    }
+
+    // 한 줄 렌더 (mode: 'followers' | 'followings' | 'search')
+    function rowEl(user, mode, statusMap) {
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        const img = document.createElement('img');
+        img.className = 'avatar';
+        img.src = user.profilePhotoUrl || `https://picsum.photos/seed/${user.id}/100/100`;
+        img.alt = '';
+        img.onclick = () => {
+            window.location.href = `/profile/${user.id}`
+        };
+        img.onerror = () => img.style.visibility = 'hidden';
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = user.nickname || '(이름없음)';
+        meta.appendChild(name);
+
+        const spacer = document.createElement('div');
+        spacer.className = 'spacer';
+        let btn = null;
+
+        if (mode === 'followers' || mode === 'search') {
+            const already = statusMap ? !!statusMap[user.id] : state.followingSet.has(user.id);
+            if (!already) {
+                btn = document.createElement('button');
+                btn.className = 'icon-btn';
+                btn.title = '친구 추가';
+                btn.innerHTML = personAddSvg;
+                btn.addEventListener('click', () => {
+                    // TODO: follow API 연결
+                    btn.remove();
+                    state.followingSet.add(user.id);
+                });
+            }
+        } else if (mode === 'followings') {
+            btn = document.createElement('button');
+            btn.className = 'icon-btn';
+            btn.title = '친구 삭제';
+            btn.innerHTML = personRemoveSvg;
+            btn.addEventListener('click', () => {
+                // TODO: unfollow API 연결
+                btn.remove();
+                state.followingSet.delete(user.id);
+            });
+        }
+
+        row.appendChild(img);
+        row.appendChild(meta);
+        row.appendChild(spacer);
+        if (btn) row.appendChild(btn);
+        return row;
+    }
+
+    function renderList(container, pageData, mode, statusMap) {
+        const d = pageData;
+        if (!d || !d.content || d.content.length === 0) {
+            container.innerHTML = '<div class="empty">결과가 없습니다.</div>';
+            return;
+        }
+        container.innerHTML = '';
+        for (const u of d.content) container.appendChild(rowEl(u, mode, statusMap));
+    }
+
+    // ===== 탭 로더 =====
+    async function loadFollowers() {
+        listFollowers.innerHTML = '<div class="empty">로딩 중...</div>';
+        const res = await fetch(`/api/friends/followers?page=${state.page.followers}&size=20`,
+            {headers: authHeaders({'Accept': 'application/json'})});
+        if (!res.ok) return listFollowers.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
+        const d = await res.json();
+        const ids = (d.content || []).map(u => u.id);
+        const status = await fetchStatus(ids);
+        renderList(listFollowers, d, 'followers', status);
+        applyPager(pageFollowersEl, d, 'followers');
+    }
+
+    async function loadFollowings() {
+        listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
+        const res = await fetch(`/api/friends/followings?page=${state.page.followings}&size=20`,
+            {headers: authHeaders({'Accept': 'application/json'})});
+        if (!res.ok) return listFollowings.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
+        const d = await res.json();
+        if (state.page.followings === 0) state.followingSet = new Set((d.content || []).map(u => u.id));
+        renderList(listFollowings, d, 'followings');
+        applyPager(pageFollowingsEl, d, 'followings');
+    }
+
+    // ✅ 서버 검색 API 사용 (/api/friends/search)
+    async function loadSearch() {
+        const q = (document.getElementById('searchInput').value || '').trim();
+        const page = state.page.search, size = 20;
+
+        if (!q) {
+            listSearch.innerHTML = '<div class="empty">닉네임을 입력해주세요.</div>';
+            pageSearchEl.textContent = '';
+            document.getElementById('prev-search').disabled = true;
+            document.getElementById('next-search').disabled = true;
+            return;
+        }
+
+        listSearch.innerHTML = '<div class="empty">검색 중...</div>';
+        const url = `/api/friends/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`;
+        const res = await fetch(url, {headers: authHeaders({'Accept': 'application/json'})});
+        if (!res.ok) {
+            listSearch.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
+            return;
+        }
+        const d = await res.json();
+        const ids = (d.content || []).map(u => u.id);
+        const status = await fetchStatus(ids);
+
+        renderList(listSearch, d, 'search', status);
+        applyPager(pageSearchEl, d, 'search');
+    }
+
+    // 탭 전환
+    tabs.forEach(t => t.addEventListener('click', () => {
+        const tab = t.dataset.tab;
+        if (state.active === tab) return;
+        state.active = tab;
+        tabs.forEach(x => x.classList.toggle('active', x.dataset.tab === tab));
+        Object.entries(panels).forEach(([k, el]) => el.classList.toggle('active', k === tab));
+        if (tab === 'followers') loadFollowers();
+        else if (tab === 'followings') loadFollowings();
+        else loadSearch();
+    }));
+
+    // 초기 로딩: followers & followings 병렬 호출
+    (async function init() {
+        listFollowers.innerHTML = listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
+        const [fRes, gRes] = await Promise.all([
+            fetch('/api/friends/followers?page=0&size=20', {headers: authHeaders({'Accept': 'application/json'})}),
+            fetch('/api/friends/followings?page=0&size=20', {headers: authHeaders({'Accept': 'application/json'})})
+        ]);
+        if (!fRes.ok || !gRes.ok) {
+            const msg = `초기 로딩 실패: followers=${fRes.status}, followings=${gRes.status}`;
+            listFollowers.innerHTML = listFollowings.innerHTML = `<div class="empty" style="color:#dc2626;">${msg}</div>`;
+            return;
+        }
+        const [followers, followings] = await Promise.all([fRes.json(), gRes.json()]);
+        state.followingSet = new Set((followings.content || []).map(u => u.id));
+
+        const ids = (followers.content || []).map(u => u.id);
+        const status = await fetchStatus(ids);
+
+        renderList(listFollowers, followers, 'followers', status);
+        applyPager(pageFollowersEl, followers, 'followers');
+
+        renderList(listFollowings, followings, 'followings');
+        applyPager(pageFollowingsEl, followings, 'followings');
+    })();
+</script>
+</body>
+</html>

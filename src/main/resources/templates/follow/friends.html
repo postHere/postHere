@@ -187,6 +187,18 @@
             background: #fff;
             cursor: pointer;
         }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
     </style>
 </head>
 <body>
@@ -218,7 +230,8 @@
 
 <section class="panel" id="panel-search">
     <div class="searchbar">
-        <input id="searchInput" placeholder="닉네임으로 검색" type="text"/>
+        <label class="sr-only" for="searchInput">닉네임으로 검색</label>
+        <input aria-label="닉네임으로 검색" id="searchInput" placeholder="닉네임으로 검색" type="text"/>
         <button id="searchBtn">검색</button>
     </div>
     <div aria-live="polite" class="list" id="list-search"></div>
@@ -230,7 +243,7 @@
 </section>
 
 <script>
-    const DEV_USER_ID = null; // 필요 시 숫자 (X-USER-ID 헤더)
+    // DOM
     const tabs = document.querySelectorAll('.tab');
     const panels = {
         followers: document.getElementById('panel-followers'),
@@ -279,12 +292,14 @@
         loadSearch();
     });
 
+    // 상태
     let state = {
         active: 'followers',
         page: {followers: 0, followings: 0, search: 0},
         followingSet: new Set()
     };
 
+    // 아이콘(SVG path는 아이콘 벡터 경로임; URL/401과 무관)
     const personAddSvg = `
     <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
@@ -298,9 +313,10 @@
       <path d="M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
     </svg>`;
 
+    // 헬퍼
     function authHeaders(base = {}) {
         const headers = {...base};
-        if (DEV_USER_ID != null) headers['X-USER-ID'] = String(DEV_USER_ID);
+        // 서비스 환경: 커스텀 사용자 헤더 사용하지 않음
         const token = document.querySelector('meta[name="_csrf"]')?.content || '';
         const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
         if (token) headers[headerName] = token;
@@ -328,11 +344,7 @@
     async function apiFollow(userId) {
         const res = await fetch('/friend/addfollowing', {
             method: 'POST',
-            headers: authHeaders({
-                'Content': 'application/json',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }),
+            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
             body: JSON.stringify({userId})
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -383,7 +395,7 @@
                 btn.addEventListener('click', async () => {
                     try {
                         await apiFollow(user.id);
-                        btn.remove(); // 규칙: 이 화면에서는 버튼 사라짐
+                        btn.remove();                 // 이 화면 규칙: 버튼 제거
                         state.followingSet.add(user.id);
                     } catch (e) {
                         alert('팔로우 실패: ' + (e.message || ''));
@@ -398,7 +410,7 @@
             btn.addEventListener('click', async () => {
                 try {
                     await apiUnfollow(user.id);
-                    row.remove(); // 규칙: 이 화면에서는 행 제거
+                    row.remove();                   // 이 화면 규칙: 행 제거
                     state.followingSet.delete(user.id);
                 } catch (e) {
                     alert('언팔로우 실패: ' + (e.message || ''));

@@ -125,6 +125,5 @@ public class FriendApiController {
         }
         followingService.unfollow(me, body.getUserId()); // idempotent
         return new FollowActionResponseDto(body.getUserId(), false);
-
     }
 }

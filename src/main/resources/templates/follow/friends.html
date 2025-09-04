@@ -229,11 +229,12 @@
 </section>
 
 <section class="panel" id="panel-search">
-    <div class="searchbar">
+    <!-- ✅ Enter로 검색되도록 form 래핑 -->
+    <form class="searchbar" id="searchForm">
         <label class="sr-only" for="searchInput">닉네임으로 검색</label>
-        <input aria-label="닉네임으로 검색" id="searchInput" placeholder="닉네임으로 검색" type="text"/>
-        <button id="searchBtn">검색</button>
-    </div>
+        <input aria-label="닉네임으로 검색" autocomplete="off" id="searchInput" placeholder="닉네임으로 검색" type="text"/>
+        <button id="searchBtn" type="submit">검색</button>
+    </form>
     <div aria-live="polite" class="list" id="list-search"></div>
     <div class="pager">
         <button id="prev-search">이전</button>
@@ -242,7 +243,7 @@
     </div>
 </section>
 
-<!-- 외부 JS 연결 -->
+<!-- 캐시 무효화 -->
 <script defer th:src="@{/js/friends.js(v=${#dates.createNow().time})}"></script>
 </body>
 </html>

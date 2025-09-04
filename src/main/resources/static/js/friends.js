@@ -12,6 +12,25 @@ const pageFollowersEl = document.getElementById('page-followers');
 const pageFollowingsEl = document.getElementById('page-followings');
 const pageSearchEl = document.getElementById('page-search');
 
+// ✅ Enter 검색(Form submit) + IME 조합 안전 처리
+const searchForm = document.getElementById('searchForm');
+const searchInput = document.getElementById('searchInput');
+let isComposing = false;
+searchInput.addEventListener('compositionstart', () => {
+    isComposing = true;
+});
+searchInput.addEventListener('compositionend', () => {
+    isComposing = false;
+});
+
+searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (isComposing) return;
+    state.page.search = 0;
+    loadSearch();
+});
+
+// 페이지네이션
 document.getElementById('prev-followers').addEventListener('click', () => {
     if (state.page.followers > 0) {
         state.page.followers--;
@@ -42,10 +61,6 @@ document.getElementById('next-search').addEventListener('click', () => {
     state.page.search++;
     loadSearch();
 });
-document.getElementById('searchBtn').addEventListener('click', () => {
-    state.page.search = 0;
-    loadSearch();
-});
 
 // 상태
 let state = {
@@ -54,7 +69,7 @@ let state = {
     followingSet: new Set()
 };
 
-// 아이콘(SVG path는 아이콘 벡터 경로임; URL/401과 무관)
+// 아이콘
 const personAddSvg = `
 <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
@@ -71,7 +86,6 @@ const personRemoveSvg = `
 // 헬퍼
 function authHeaders(base = {}) {
     const headers = {...base};
-    // 서비스 환경: 커스텀 사용자 헤더 사용하지 않음
     const token = document.querySelector('meta[name="_csrf"]')?.content || '';
     const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
     if (token) headers[headerName] = token;
@@ -150,7 +164,7 @@ function rowEl(user, mode, statusMap) {
             btn.addEventListener('click', async () => {
                 try {
                     await apiFollow(user.id);
-                    btn.remove(); // 이 화면 규칙: 버튼 제거
+                    btn.remove();
                     state.followingSet.add(user.id);
                 } catch (e) {
                     alert('팔로우 실패: ' + (e.message || ''));
@@ -165,7 +179,7 @@ function rowEl(user, mode, statusMap) {
         btn.addEventListener('click', async () => {
             try {
                 await apiUnfollow(user.id);
-                row.remove(); // 이 화면 규칙: 행 제거
+                row.remove();
                 state.followingSet.delete(user.id);
             } catch (e) {
                 alert('언팔로우 실패: ' + (e.message || ''));
@@ -216,7 +230,7 @@ async function loadFollowings() {
 }
 
 async function loadSearch() {
-    const q = (document.getElementById('searchInput').value || '').trim();
+    const q = (searchInput.value || '').trim();
     const page = state.page.search, size = 20;
 
     if (!q) {
@@ -241,6 +255,7 @@ async function loadSearch() {
     applyPager(pageSearchEl, d, 'search');
 }
 
+// 탭 전환
 tabs.forEach(t =>
     t.addEventListener('click', () => {
         const tab = t.dataset.tab;
@@ -277,3 +292,4 @@ tabs.forEach(t =>
     renderList(listFollowings, followings, 'followings');
     applyPager(pageFollowingsEl, followings, 'followings');
 })();
+

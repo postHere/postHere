@@ -46,4 +46,8 @@ public class ForumController {
                 .build();
     }
 
+    @GetMapping("/")
+    public String forumMain() {
+        return "forum/main";
+    }
 }

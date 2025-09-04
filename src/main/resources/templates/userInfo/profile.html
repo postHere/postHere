@@ -54,6 +54,7 @@
     </div>
 </div>
 <script>
+    // 병합 양식 상 붙여놓은 js, 나중에 지울 예정
     function authHeaders(base = {}) {
         const headers = {...base};
         const token = document.querySelector('meta[name="_csrf"]')?.content || '';

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -43,6 +44,23 @@ public class S3UploaderService {
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(multipartFile.getBytes()));
 
         return "https://" + bucket + ".s3.amazonaws.com/" + fileName;
+    }
+
+    /**
+     * ✅ [추가] S3 버킷에서 파일을 삭제하는 메소드
+     *
+     * @param fileUrl 삭제할 파일의 전체 URL
+     */
+    public void delete(String fileUrl) {
+        // URL에서 파일 키(파일 경로와 이름)를 추출
+        String key = fileUrl.substring(fileUrl.indexOf(".com/") + 5);
+
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        s3Client.deleteObject(deleteObjectRequest);
     }
 
     // 기본 이미지 URL을 반환하는 메서드를 추가합니다.

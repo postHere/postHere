@@ -278,6 +278,8 @@ async function loadSearch() {
 }
 
 // 탭 전환
+
+
 tabs.forEach(t =>
     t.addEventListener('click', () => {
         const tab = t.dataset.tab;
@@ -285,9 +287,17 @@ tabs.forEach(t =>
         state.active = tab;
         tabs.forEach(x => x.classList.toggle('active', x.dataset.tab === tab));
         Object.entries(panels).forEach(([k, el]) => el.classList.toggle('active', k === tab));
-        if (tab === 'followers') loadFollowers();
-        else if (tab === 'followings') loadFollowings();
-        else loadSearch();
+
+        if (tab === 'followers') {
+            loadFollowers();
+        } else if (tab === 'followings') {
+            loadFollowings();
+        } else {
+            // Search 탭 전환 시 포커스
+            searchInput.focus();
+            // 기존 검색어로 즉시 갱신(선택 사항)
+            loadSearch();
+        }
     })
 );
 

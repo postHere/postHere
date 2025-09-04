@@ -1,16 +1,22 @@
 package io.github.nokasegu.post_here.userInfo.controller;
 
+import io.github.nokasegu.post_here.userInfo.dto.UserInfoDto;
 import io.github.nokasegu.post_here.userInfo.service.EmailService;
 import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
@@ -149,19 +155,39 @@ public class UserInfoController {
         return Collections.singletonMap("valid", isValid);
     }
 
-    /*
-     * 프로필 창으로 이동
-     */
     @GetMapping("/profile")
-    public String profilePage() {
+    public String profilePage(Principal principal, Model model) {
+        if (principal == null) {
+            // 로그인되지 않은 사용자는 로그인 페이지로 리디렉션
+            return "redirect:/login";
+        }
+
+        String userEmail = principal.getName();
+        UserInfoDto userProfile = userInfoService.getUserProfile(userEmail);
+
+        model.addAttribute("user", userProfile);
         return "userInfo/profile";
     }
 
-    /*
-    프로필 이미지 수정 기능
+    /**
+     * [수정] 프로필 이미지를 업데이트하는 API
+     *
+     * @param principal 현재 로그인된 사용자 정보를 담고 있는 객체
+     * @param imageFile 사용자가 업로드한 이미지 파일
+     * @return 성공 시 새로운 이미지 URL을 담은 응답
+     * @throws IOException 파일 처리 중 예외 발생 가능
      */
-    @PostMapping("/profile")
-    public String postProfilePage() {
-        return "userInfo/profile";
+    @PostMapping("/api/profile/image")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> updateProfileImage(Principal principal, @RequestParam("profileImage") MultipartFile imageFile) throws IOException {
+        if (principal == null) {
+            // 인증되지 않은 사용자의 요청은 거부
+            return ResponseEntity.status(401).build(); // 401 Unauthorized
+        }
+
+        String userEmail = principal.getName();
+        String newImageUrl = userInfoService.updateProfileImage(userEmail, imageFile);
+
+        return ResponseEntity.ok(Collections.singletonMap("imageUrl", newImageUrl));
     }
 }

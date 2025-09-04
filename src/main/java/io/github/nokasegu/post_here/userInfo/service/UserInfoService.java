@@ -98,17 +98,24 @@ public class UserInfoService {
      */
     @Transactional
     public String updateProfileImage(String email, MultipartFile imageFile) throws IOException {
-        // ID 대신 이메일로 사용자 정보 조회
         UserInfoEntity user = userInfoRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
 
-        // S3에 이미지 업로드
-        String imageUrl = s3UploaderService.upload(imageFile, "profile-images");
+        // 기존 프로필 사진 URL 가져오기
+        String oldImageUrl = user.getProfilePhotoUrl();
 
-        // 사용자 정보에 새로운 이미지 URL 업데이트
-        user.setProfilePhotoUrl(imageUrl);
+        // S3에 새 이미지 업로드
+        String newImageUrl = s3UploaderService.upload(imageFile, "profile-images");
 
-        return imageUrl;
+        // 데이터베이스에 새 URL 저장
+        user.setProfilePhotoUrl(newImageUrl);
+
+        // 기존 이미지가 있고, 기본 이미지가 아닐 경우 S3에서 삭제
+        if (oldImageUrl != null && !oldImageUrl.equals(s3UploaderService.getDefaultProfileImage())) {
+            s3UploaderService.delete(oldImageUrl);
+        }
+
+        return newImageUrl;
     }
 
 }

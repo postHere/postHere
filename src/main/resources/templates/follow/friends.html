@@ -243,7 +243,6 @@
 </section>
 
 <!-- 외부 JS 연결 -->
-<!-- Thymeleaf 캐시무효 버전 -->
-<script defer th:src="@{/js/friends.js(v=${T(java.lang.System).currentTimeMillis()})}"></script>
+<script defer th:src="@{/js/friends.js(v=${#dates.createNow().time})}"></script>
 </body>
 </html>

@@ -12,7 +12,7 @@ const pageFollowersEl = document.getElementById('page-followers');
 const pageFollowingsEl = document.getElementById('page-followings');
 const pageSearchEl = document.getElementById('page-search');
 
-// ✅ Enter 검색(Form submit) + IME 조합 안전 처리
+// Enter 검색(Form submit) + IME 안전
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('searchInput');
 let isComposing = false;
@@ -22,7 +22,6 @@ searchInput.addEventListener('compositionstart', () => {
 searchInput.addEventListener('compositionend', () => {
     isComposing = false;
 });
-
 searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
     if (isComposing) return;
@@ -130,17 +129,32 @@ async function apiUnfollow(userId) {
     return res.json();
 }
 
+/**
+ * ✅ 유저 행 전체 클릭 → 프로필 이동
+ *  - .row에 tabindex="0" + keydown(Enter/Space) 지원
+ *  - 팔로우/언팔 버튼 클릭은 event.stopPropagation()으로 전파 차단
+ */
 function rowEl(user, mode, statusMap) {
     const row = document.createElement('div');
     row.className = 'row';
+    row.setAttribute('tabindex', '0');
+
+    function goProfile() {
+        window.location.href = `/profile/${user.id}`;
+    }
+
+    row.addEventListener('click', goProfile);
+    row.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            goProfile();
+        }
+    });
 
     const img = document.createElement('img');
     img.className = 'avatar';
     img.src = user.profilePhotoUrl || `https://picsum.photos/seed/${user.id}/100/100`;
     img.alt = '';
-    img.onclick = () => {
-        window.location.href = `/profile/${user.id}`;
-    };
     img.onerror = () => (img.style.visibility = 'hidden');
 
     const meta = document.createElement('div');
@@ -154,33 +168,41 @@ function rowEl(user, mode, statusMap) {
     spacer.className = 'spacer';
     let btn = null;
 
+    // 버튼 maker (전파 차단 포함)
+    const makeBtn = (title, svg, onClick) => {
+        const b = document.createElement('button');
+        b.className = 'icon-btn';
+        b.title = title;
+        b.innerHTML = svg;
+        b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onClick();
+        });
+        b.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+        });
+        return b;
+    };
+
     if (mode === 'followers' || mode === 'search') {
         const already = statusMap ? !!statusMap[user.id] : state.followingSet.has(user.id);
         if (!already) {
-            btn = document.createElement('button');
-            btn.className = 'icon-btn';
-            btn.title = '친구 추가';
-            btn.innerHTML = personAddSvg;
-            btn.addEventListener('click', async () => {
+            btn = makeBtn('친구 추가', personAddSvg, async () => {
                 try {
                     await apiFollow(user.id);
-                    btn.remove();
                     state.followingSet.add(user.id);
+                    row.remove();
                 } catch (e) {
                     alert('팔로우 실패: ' + (e.message || ''));
                 }
             });
         }
     } else if (mode === 'followings') {
-        btn = document.createElement('button');
-        btn.className = 'icon-btn';
-        btn.title = '친구 삭제';
-        btn.innerHTML = personRemoveSvg;
-        btn.addEventListener('click', async () => {
+        btn = makeBtn('친구 삭제', personRemoveSvg, async () => {
             try {
                 await apiUnfollow(user.id);
-                row.remove();
                 state.followingSet.delete(user.id);
+                row.remove();
             } catch (e) {
                 alert('언팔로우 실패: ' + (e.message || ''));
             }

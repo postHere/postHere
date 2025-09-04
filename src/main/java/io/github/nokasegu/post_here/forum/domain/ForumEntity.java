@@ -11,6 +11,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Entity
@@ -33,8 +35,9 @@ public class ForumEntity {
     private UserInfoEntity writer;
 
 
-    @Column(name = "location")
-    private String location;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location", nullable = false)
+    private ForumAreaEntity location;
 
 
     @Column(name = "contents_text", columnDefinition = "text")
@@ -51,4 +54,14 @@ public class ForumEntity {
     @LastModifiedDate              // 수정 시 자동 갱신
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    // ForumImageEntity와 1:N 관계 설정
+    @OneToMany(mappedBy = "forum", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ForumImageEntity> images = new ArrayList<>();
+
+    // 편의 메서드: 이미지 추가
+    public void addImage(ForumImageEntity image) {
+        images.add(image);
+        image.setForum(this); // ForumImageEntity에 ForumEntity를 설정 (양방향 관계)
+    }
 }

@@ -8,6 +8,7 @@
 
     <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
     <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
+    <meta content="" name="profileUserId" th:content="${profileUserId}"/>
 
     <style>
         body {
@@ -64,7 +65,8 @@
 <h1>Profile</h1>
 <div class="card">
     <div class="row">
-        <img alt="" class="avatar" id="avatar"/>
+        <img alt="" class="avatar" id="avatar"
+             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="/>
         <div>
             <div class="name" id="nickname">User</div>
             <div class="muted" id="userId"></div>
@@ -75,18 +77,16 @@
 </div>
 
 <script>
-    const DEV_USER_ID = null;
-
     function authHeaders(base = {}) {
         const headers = {...base};
-        if (DEV_USER_ID != null) headers['X-USER-ID'] = String(DEV_USER_ID);
         const token = document.querySelector('meta[name="_csrf"]')?.content || '';
         const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
         if (token) headers[headerName] = token;
         return headers;
     }
 
-    const targetId = location.pathname.split('/').pop();
+    const serverUserId = document.querySelector('meta[name="profileUserId"]')?.content;
+    const targetId = serverUserId || location.pathname.split('/').pop();
     const btn = document.getElementById('followBtn');
 
     async function getUserBrief(id) {

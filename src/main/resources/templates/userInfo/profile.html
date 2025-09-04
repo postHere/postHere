@@ -1,17 +1,166 @@
+<!--팔로우/언팔로우 기능 구현 확인 위해서 약식 템플릿 만들었음(정민) 추후 만들어지면 거기에 기능 적용하겠음다-->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <meta charset="UTF-8"/>
+    <title>Profile</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+    <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
+    <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
+    <meta content="" name="profileUserId" th:content="${profileUserId}"/>
+
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 24px;
+            color: #111827;
+        }
+
+        .card {
+            max-width: 520px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #f3f4f6;
+        }
+
+        .name {
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>프로필 페이지</h1>
-
-    <form>
+<h1>Profile</h1>
+<div class="card">
+    <div class="row">
+        <img alt="" class="avatar" id="avatar"
+             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="/>
         <div>
-
+            <div class="name" id="nickname">User</div>
+            <div class="muted" id="userId"></div>
         </div>
-    </form>
+        <div class="spacer"></div>
+        <button id="followBtn">로딩중...</button>
+    </div>
+</div>
+
+<script>
+    function authHeaders(base = {}) {
+        const headers = {...base};
+        const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+        const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+        if (token) headers[headerName] = token;
+        return headers;
+    }
+
+    const serverUserId = document.querySelector('meta[name="profileUserId"]')?.content;
+    const targetId = serverUserId || location.pathname.split('/').pop();
+    const btn = document.getElementById('followBtn');
+
+    async function getUserBrief(id) {
+        const res = await fetch(`/profile/info/${id}`, {headers: authHeaders({'Accept': 'application/json'})});
+        if (!res.ok) throw new Error('유저 정보 불러오기 실패');
+        return res.json();
+    }
+
+    async function getStatus(id) {
+        const res = await fetch('/friend/status', {
+            method: 'POST',
+            headers: authHeaders({'Content-Type': 'application/json', 'Accept': 'application/json'}),
+            body: JSON.stringify({ids: [Number(id)]})
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return !!(data?.status?.[id]);
+    }
+
+    async function apiFollow(id) {
+        const res = await fetch('/friend/addfollowing', {
+            method: 'POST',
+            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
+            body: JSON.stringify({userId: Number(id)})
+        });
+        if (!res.ok) throw new Error('팔로우 실패 (HTTP ' + res.status + ')');
+        return res.json();
+    }
+
+    async function apiUnfollow(id) {
+        const res = await fetch('/friend/unfollowing', {
+            method: 'DELETE',
+            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
+            body: JSON.stringify({userId: Number(id)})
+        });
+        if (!res.ok) throw new Error('언팔로우 실패 (HTTP ' + res.status + ')');
+        return res.json();
+    }
+
+    function renderButton(following) {
+        btn.textContent = following ? '삭제' : '친구 추가';
+        btn.onclick = async () => {
+            try {
+                if (following) {
+                    await apiUnfollow(targetId);
+                    following = false;
+                } else {
+                    await apiFollow(targetId);
+                    following = true;
+                }
+                renderButton(following);
+            } catch (e) {
+                alert(e.message || '요청 실패');
+            }
+        };
+    }
+
+    (async function init() {
+        try {
+            const brief = await getUserBrief(targetId);
+            document.getElementById('nickname').textContent = brief.nickname || `(No name)`;
+            document.getElementById('userId').textContent = `#${brief.id}`;
+            const avatar = document.getElementById('avatar');
+            avatar.src = brief.profilePhotoUrl || `https://picsum.photos/seed/${brief.id}/160/160`;
+            avatar.onerror = () => avatar.style.visibility = 'hidden';
+
+            const following = await getStatus(targetId);
+            renderButton(following);
+        } catch (e) {
+            btn.textContent = '오류';
+            btn.disabled = true;
+            alert(e.message || '초기 로딩 실패');
+        }
+    })();
+</script>
 </body>
 </html>

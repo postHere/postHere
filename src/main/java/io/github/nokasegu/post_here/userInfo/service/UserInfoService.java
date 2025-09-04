@@ -1,11 +1,16 @@
 package io.github.nokasegu.post_here.userInfo.service;
 
+import io.github.nokasegu.post_here.common.util.S3UploaderService;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
+import io.github.nokasegu.post_here.userInfo.dto.UserInfoDto;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 //import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
@@ -15,6 +20,8 @@ public class UserInfoService {
     private final UserInfoRepository userInfoRepository;
 
     private final PasswordEncoder passwordEncoder;
+
+    private final S3UploaderService s3UploaderService;
 
     /**
      * 회원가입 로직
@@ -68,5 +75,40 @@ public class UserInfoService {
         return userInfoRepository.findByNickname(nickname).isEmpty();
     }
 
+    /**
+     * [추가] 이메일로 사용자 프로필 정보를 조회하여 DTO로 반환합니다.
+     *
+     * @param email Principal.getName()으로 얻은 현재 로그인된 사용자의 이메일
+     * @return 사용자 프로필 정보를 담은 DTO
+     */
+    @Transactional(readOnly = true)
+    public UserInfoDto getUserProfile(String email) {
+        UserInfoEntity user = userInfoRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        return new UserInfoDto(user);
+    }
+
+    /**
+     * [수정] 프로필 이미지를 업데이트하는 서비스 로직
+     *
+     * @param email     Principal.getName()으로 얻은 현재 로그인된 사용자의 이메일
+     * @param imageFile 새로 업로드된 이미지 파일
+     * @return S3에 업로드된 새로운 이미지의 URL
+     * @throws IOException 파일 처리 중 예외 발생 가능
+     */
+    @Transactional
+    public String updateProfileImage(String email, MultipartFile imageFile) throws IOException {
+        // ID 대신 이메일로 사용자 정보 조회
+        UserInfoEntity user = userInfoRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+        // S3에 이미지 업로드
+        String imageUrl = s3UploaderService.upload(imageFile, "profile-images");
+
+        // 사용자 정보에 새로운 이미지 URL 업데이트
+        user.setProfilePhotoUrl(imageUrl);
+
+        return imageUrl;
+    }
 
 }

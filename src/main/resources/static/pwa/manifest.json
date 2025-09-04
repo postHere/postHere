@@ -1,0 +1,20 @@
+{
+  "name": "postHere",
+  "short_name": "postHere",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://posthere-s3.s3.ap-northeast-2.amazonaws.com/icon/tmp192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://posthere-s3.s3.ap-northeast-2.amazonaws.com/icon/tmp512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

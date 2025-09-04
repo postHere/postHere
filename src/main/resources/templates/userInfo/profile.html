@@ -1,18 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link rel="manifest" th:href="@{/pwa/manifest.json}">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Profile</title>
+    <!-- Font Awesome 아이콘 CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/profile.css}">
 </head>
 <body>
-<h1>프로필 페이지</h1>
 
-<form>
-    <div>
+<div class="profile-card">
+    <div class="profile-content">
 
+        <!-- 프로필 사진 섹션 -->
+        <div class="profile-image-wrapper" id="profileImageContainer">
+            <img alt="Profile image" id="profileImage" src="https://placehold.co/112x112/E2E8F0/4A5568?text=User">
+            <div class="image-overlay">
+                <i class="fas fa-camera icon"></i>
+            </div>
+        </div>
+        <input accept="image/*" id="profileImageInput" name="profileImage" type="file">
+
+        <!-- 사용자 정보 -->
+        <div class="user-info">
+            <h2 class="nickname" id="nickname">Watermelon</h2>
+            <p class="email" id="email">user@example.com</p>
+        </div>
+
+        <div class="user-stats">
+            <div>
+                <p class="stat-value">6</p>
+                <p class="stat-label">Follower</p>
+            </div>
+            <div>
+                <p class="stat-value">2</p>
+                <p class="stat-label">Following</p>
+            </div>
+        </div>
+
+        <!-- 자기소개 -->
+        <p class="bio">
+            Yoshihiro Togashi created not just an adventure, but a profound exploration of humanity.
+        </p>
+
+        <!-- 저장 버튼 (이미지 변경 시 나타남) -->
+        <button class="btn-save" id="saveButton">
+            Save Changes
+        </button>
+
+        <!-- 상태 메시지 영역 -->
+        <p class="status-message" id="statusMessage"></p>
     </div>
-</form>
+</div>
+<script>
+    // 병합 양식 상 붙여놓은 js, 나중에 지울 예정
+    function authHeaders(base = {}) {
+        const headers = {...base};
+        const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+        const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+        if (token) headers[headerName] = token;
+        return headers;
+    }
+
+    const serverUserId = document.querySelector('meta[name="profileUserId"]')?.content;
+    const targetId = serverUserId || location.pathname.split('/').pop();
+    const btn = document.getElementById('followBtn');
+
+    async function getUserBrief(id) {
+        const res = await fetch(`/profile/info/${id}`, {headers: authHeaders({'Accept': 'application/json'})});
+        if (!res.ok) throw new Error('유저 정보 불러오기 실패');
+        return res.json();
+    }
+
+    async function getStatus(id) {
+        const res = await fetch('/friend/status', {
+            method: 'POST',
+            headers: authHeaders({'Content-Type': 'application/json', 'Accept': 'application/json'}),
+            body: JSON.stringify({ids: [Number(id)]})
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return !!(data?.status?.[id]);
+    }
+
+    async function apiFollow(id) {
+        const res = await fetch('/friend/addfollowing', {
+            method: 'POST',
+            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
+            body: JSON.stringify({userId: Number(id)})
+        });
+        if (!res.ok) throw new Error('팔로우 실패 (HTTP ' + res.status + ')');
+        return res.json();
+    }
+
+    async function apiUnfollow(id) {
+        const res = await fetch('/friend/unfollowing', {
+            method: 'DELETE',
+            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
+            body: JSON.stringify({userId: Number(id)})
+        });
+        if (!res.ok) throw new Error('언팔로우 실패 (HTTP ' + res.status + ')');
+        return res.json();
+    }
+
+    function renderButton(following) {
+        btn.textContent = following ? '삭제' : '친구 추가';
+        btn.onclick = async () => {
+            try {
+                if (following) {
+                    await apiUnfollow(targetId);
+                    following = false;
+                } else {
+                    await apiFollow(targetId);
+                    following = true;
+                }
+                renderButton(following);
+            } catch (e) {
+                alert(e.message || '요청 실패');
+            }
+        };
+    }
+
+    (async function init() {
+        try {
+            const brief = await getUserBrief(targetId);
+            document.getElementById('nickname').textContent = brief.nickname || `(No name)`;
+            document.getElementById('userId').textContent = `#${brief.id}`;
+            const avatar = document.getElementById('avatar');
+            avatar.src = brief.profilePhotoUrl || `https://picsum.photos/seed/${brief.id}/160/160`;
+            avatar.onerror = () => avatar.style.visibility = 'hidden';
+
+            const following = await getStatus(targetId);
+            renderButton(following);
+        } catch (e) {
+            btn.textContent = '오류';
+            btn.disabled = true;
+            alert(e.message || '초기 로딩 실패');
+        }
+    })();
+</script>
+<script src="/js/profile.js"></script>
 </body>
 </html>
+

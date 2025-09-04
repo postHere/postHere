@@ -18,7 +18,7 @@ public class ForumCreateRequestDto {
 
     private String content;
 
-    private String location;
+    private Long location;
 
     private List<MultipartFile> images;
 

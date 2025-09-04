@@ -35,8 +35,9 @@ public class ForumEntity {
     private UserInfoEntity writer;
 
 
-    @Column(name = "location")
-    private String location;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location", nullable = false)
+    private ForumAreaEntity location;
 
 
     @Column(name = "contents_text", columnDefinition = "text")

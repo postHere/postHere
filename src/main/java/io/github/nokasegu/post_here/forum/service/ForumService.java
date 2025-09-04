@@ -1,14 +1,17 @@
 package io.github.nokasegu.post_here.forum.service;
 
 import io.github.nokasegu.post_here.common.util.S3UploaderService;
+import io.github.nokasegu.post_here.forum.domain.ForumAreaEntity;
 import io.github.nokasegu.post_here.forum.domain.ForumEntity;
 import io.github.nokasegu.post_here.forum.domain.ForumImageEntity;
 import io.github.nokasegu.post_here.forum.dto.ForumCreateRequestDto;
 import io.github.nokasegu.post_here.forum.dto.ForumCreateResponseDto;
+import io.github.nokasegu.post_here.forum.repository.ForumAreaRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumImageRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ public class ForumService {
     private final ForumImageRepository forumImageRepository;
     private final UserInfoRepository userInfoRepository;
     private final S3UploaderService s3UploaderService;
+    private final ForumAreaRepository forumAreaRepository;
 
     @Transactional
     public ForumCreateResponseDto createForum(ForumCreateRequestDto requestDto) throws IOException {
@@ -34,10 +38,13 @@ public class ForumService {
         UserInfoEntity writer = userInfoRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다."));
 
+        ForumAreaEntity area = forumAreaRepository.findById(requestDto.getLocation())
+                .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역입니다"));
+
         // 2. 텍스트, 위치, 음악 정보 등을 담은 ForumEntity를 생성하고 저장합니다.
         ForumEntity forum = ForumEntity.builder()
                 .writer(writer)
-                .location(requestDto.getLocation())
+                .location(area)
                 .contentsText(requestDto.getContent())
                 .musicApiUrl(requestDto.getSpotifyTrackId())
                 .build();

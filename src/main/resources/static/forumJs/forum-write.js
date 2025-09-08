@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // '음악 추가(🎵)' 버튼 클릭 시 동작 (지금은 알림창만 띄웁니다)
     document.getElementById('add-music-btn').addEventListener('click', () => {
-        // TODO: 음악 검색 모달을 띄우는 기능 구현 필요
         const trackId = prompt("연결할 Spotify 트랙 ID를 입력하세요:", "4uPiFjZpAfggB4aW2v2p4M");
         if (trackId) {
             document.getElementById('spotifyTrackId').value = trackId;
@@ -23,21 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 파일 input의 내용이 변경(파일이 선택)되면, 이미지 미리보기를 생성합니다.
     imageInput.addEventListener('change', () => {
-        // 기존 미리보기 삭제
         imagePreviewContainer.innerHTML = '';
-
         const files = imageInput.files;
         if (files.length > 0) {
-            // 여러 파일을 순회하며 미리보기 이미지 생성
             Array.from(files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.classList.add('img-preview'); // 여기서 클래스를 추가
+                    img.classList.add('img-preview');
                     imagePreviewContainer.appendChild(img);
                 };
-                reader.readAsDataURL(file); // 파일을 읽어 데이터 URL로 변환
+                reader.readAsDataURL(file);
             });
         }
     });
@@ -46,32 +42,64 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // 폼 데이터를 담는 FormData 객체
-        const formData = new FormData(form);
-
         // '공유' 버튼 비활성화 (중복 제출 방지)
         submitButton.disabled = true;
         submitButton.textContent = '업로드 중...';
 
+        let imageUrls = [];
         try {
-            // fetch API로 서버에 데이터 전송
-            // 이 요청은 브라우저가 로그인 세션 쿠키를 자동으로 포함합니다.
-            const response = await fetch('/forum', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const result = await response.json();
-            console.log(result);
-
-            if (response.ok && result.status === '000') {
-                alert(result.message);
-                window.location.href = '/';
-            } else {
-                alert('작성 실패: ' + (result.message || '서버 오류'));
+            const imageFiles = imageInput.files;
+            if (imageFiles.length > 0) {
+                const formData = new FormData();
+                for (let i = 0; i < imageFiles.length; i++) {
+                    formData.append("images", imageFiles[i]);
+                }
+                const imageUploadResponse = await fetch("/images/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+                if (!imageUploadResponse.ok) {
+                    throw new Error("이미지 업로드에 실패했습니다.");
+                }
+                const imageData = await imageUploadResponse.json();
+                imageUrls = imageData.data;
             }
         } catch (error) {
-            console.error('폼 제출 중 오류 발생:', error);
+            console.error('이미지 업로드 오류:', error);
+            alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+            submitButton.disabled = false;
+            submitButton.textContent = '공유';
+            return;
+        }
+
+        // 2단계: 이미지 URL을 포함한 게시글 데이터를 JSON으로 서버에 보냅니다.
+        const createForumData = {
+            writerId: document.getElementById("writerId").value,
+            content: document.getElementById("content").value,
+            location: document.getElementById("location").value,
+            imageUrls: imageUrls,
+            spotifyTrackId: document.getElementById("spotifyTrackId").value,
+            userEmail: "test@gmail.com",
+        };
+
+        try {
+            const forumCreateResponse = await fetch("/forum", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json", // Content-Type을 application/json으로 명시
+                },
+                body: JSON.stringify(createForumData), // JSON.stringify로 데이터를 변환
+            });
+
+            if (!forumCreateResponse.ok) {
+                throw new Error("게시글 생성에 실패했습니다.");
+            }
+
+            const forumData = await forumCreateResponse.json();
+            alert("게시글이 성공적으로 작성되었습니다!");
+            window.location.href = '/';
+        } catch (error) {
+            console.error('게시글 생성 오류:', error);
             alert('오류가 발생했습니다. 다시 시도해주세요.');
         } finally {
             submitButton.disabled = false;

@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,7 +19,7 @@ public class ForumCreateRequestDto {
 
     private Long location;
 
-    private List<MultipartFile> images;
+    private List<String> imageUrls;
 
     private String spotifyTrackId;
 

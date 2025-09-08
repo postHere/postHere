@@ -6,11 +6,10 @@ import io.github.nokasegu.post_here.forum.dto.ForumCreateRequestDto;
 import io.github.nokasegu.post_here.forum.dto.ForumCreateResponseDto;
 import io.github.nokasegu.post_here.forum.service.ForumService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
@@ -28,12 +27,11 @@ public class ForumController {
     }
 
     @ResponseBody
-    @PostMapping(value = "/forum", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/forum")
     public WrapperDTO<ForumCreateResponseDto> createForum(
-            @ModelAttribute ForumCreateRequestDto requestDto,
-            Principal principal) throws IOException { // Principal 객체를 파라미터로 받습니다.
+            @RequestBody ForumCreateRequestDto requestDto, // Changed from @ModelAttribute
+            Principal principal) throws IOException {
 
-        // Principal 객체에서 이메일을 가져와 DTO에 설정합니다.
         String userEmail = principal.getName();
         requestDto.setUserEmail(userEmail);
 

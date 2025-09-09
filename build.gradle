@@ -42,6 +42,10 @@ dependencies {
     implementation 'org.hibernate:hibernate-spatial:6.6.1.Final'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.1'
+    // following push 알림 생성위해서 하기 3줄 추가했습니다 - 0908 정민
+    implementation 'nl.martijndwars:web-push:5.1.1'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'com.google.code.gson:gson:2.11.0'
 }
 
 tasks.named('test') {

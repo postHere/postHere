@@ -1,4 +1,4 @@
-// src/main/resources/static/forumJs/forum-area-search.js
+// src/main/resources/static/js/forum-area-search.js
 $(document).ready(function () {
     const searchInput = $('#location-search');
     const resultsList = $('#search-results');

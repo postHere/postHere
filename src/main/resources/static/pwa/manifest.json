@@ -1,7 +1,7 @@
 {
   "name": "postHere",
   "short_name": "postHere",
-  "start_url": "/",
+  "start_url": "/forumMain",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#000000",

@@ -36,3 +36,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Capacitor Native (내부 빌드 결과물만 제외)
+android/
+node_modules/

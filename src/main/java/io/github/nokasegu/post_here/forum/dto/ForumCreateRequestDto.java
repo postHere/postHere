@@ -1,7 +1,10 @@
 package io.github.nokasegu.post_here.forum.dto;
 
-import lombok.*;
-import org.springframework.web.multipart.MultipartFile;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -18,7 +21,7 @@ public class ForumCreateRequestDto {
 
     private Long location;
 
-    private List<MultipartFile> images;
+    private List<String> imageUrls;
 
     private String spotifyTrackId;
 

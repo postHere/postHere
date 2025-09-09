@@ -29,11 +29,11 @@ function tryLogin(event) {
         data: loginData,
         datatype: "json"
     })
-        .done(function (response) {
-            window.location.href = "/";
+        .done(function (data, textStatus, jqXHR) {
+            const redirectUrl = jqXHR.getResponseHeader('Location');
+            window.location.href = window.location.origin + redirectUrl;
         })
         .fail(function (xhr, status, error) {
-
             const message = xhr.responseJSON.message;
             $('#login-error').text(message);
         });

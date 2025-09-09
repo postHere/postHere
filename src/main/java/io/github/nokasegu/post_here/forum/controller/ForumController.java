@@ -45,6 +45,11 @@ public class ForumController {
     }
 
     @GetMapping("/")
+    public String baseRequest() {
+        return "redirect:/forumMain";
+    }
+
+    @GetMapping("/forumMain")
     public String forumMain() {
         return "forum/main";
     }

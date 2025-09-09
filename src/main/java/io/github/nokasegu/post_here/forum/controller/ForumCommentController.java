@@ -6,23 +6,21 @@ import io.github.nokasegu.post_here.forum.service.ForumCommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
+@RequestMapping("api/forum/{forumId}/comments")
 public class ForumCommentController {
 
     private final ForumCommentService forumCommentService;
 
     /**
      * 특정 포럼 게시글의 댓글 목록을 조회하는 API
+     * GET /forum/{forumId}/comments
      */
     @GetMapping
     public ResponseEntity<List<ForumCommentResponseDto>> getCommentsByForumId(@PathVariable Long forumId) {
@@ -32,6 +30,7 @@ public class ForumCommentController {
 
     /**
      * 포럼 게시글에 댓글을 작성하는 API
+     * POST /forum/{forumId}/comments
      */
     @PostMapping
     public ResponseEntity<ForumCommentResponseDto> createComment(

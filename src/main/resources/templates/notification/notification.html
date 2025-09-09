@@ -1,0 +1,130 @@
+<!--템플릿: 알림센터 페이지-->
+
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:attr="content=${_csrf?.token}">
+    <meta name="_csrf_header" th:attr="content=${_csrf?.headerName}">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>Notification</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 16px;
+            color: #111827;
+        }
+
+        .list {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden
+        }
+
+        .item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 12px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer
+        }
+
+        .item:last-child {
+            border-bottom: none
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #eee
+        }
+
+        .meta {
+            flex: 1;
+            min-width: 0
+        }
+
+        .row1 {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .nick {
+            font-weight: 700
+        }
+
+        .ago {
+            color: #6b7280;
+            font-size: 12px
+        }
+
+        .text {
+            color: #374151;
+            font-size: 14px;
+            margin-top: 2px
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-top: 16px
+        }
+
+        .item.read .dot {
+            visibility: hidden
+        }
+
+        .pager {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px
+        }
+
+        .pager button {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fff;
+            padding: 6px 10px;
+            cursor: pointer
+        }
+
+        #nav-bell {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            font-size: 22px
+        }
+
+        #nav-bell .badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-left: 4px;
+            vertical-align: top
+        }
+    </style>
+    <link rel="manifest" th:href="@{/pwa/manifest.json}">
+</head>
+<body>
+<h2>Notification</h2>
+<div aria-live="polite" class="list" id="list"></div>
+<div class="pager">
+    <button id="prev">이전</button>
+    <span id="page"></span>
+    <button id="next">다음</button>
+</div>
+
+<div id="nav-bell">🔔<span class="badge" id="bell-dot" style="display:none"></span></div>
+
+<script src="/js/notification.js"></script>
+</body>
+</html>

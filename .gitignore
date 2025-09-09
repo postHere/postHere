@@ -42,4 +42,3 @@ android/build/
 android/app/build/
 android/capacitor-cordova-android-plugins/build/
 ios/build/
-node_modules/

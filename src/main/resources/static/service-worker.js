@@ -1,6 +1,7 @@
 const CACHE_NAME = 'postHere-v1';
 const FILES_TO_CACHE = [
     '/',
+    '/forumMain',
     '/css/main.css',
     '/js/main.js'
 ];

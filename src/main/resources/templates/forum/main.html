@@ -2,12 +2,196 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Main</title>
+    <title>Forum Main</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script defer src="/js/main.js"></script>
     <link href="/pwa/manifest.json" rel="manifest">
 </head>
 <body>
-<footer>
+<div class="main-container">
+
+    <div class="forum-container">
+        <!-- 더미 게시글 1 -->
+        <div class="post-card" data-post-id="1">
+            <div class="post-author">
+                <img alt="Podong Podong" src="https://placehold.co/40x40/E2E8F0/4A5568?text=P">
+                <div class="post-author-info">
+                    <div class="name">Podong Podong</div>
+                    <div class="time">3 min ago</div>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>Post description goes here. It can be a question, a thought, or anything!</p>
+                <img alt="Tulips" class="post-image"
+                     src="https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?q=80&w=2070">
+            </div>
+            <div class="post-actions">
+                <div>Likes...</div>
+                <a class="comment-trigger no-comments" href="#">댓글쓰기</a>
+            </div>
+            <div class="comment-section">
+                <ul class="comment-list"></ul>
+                <form class="comment-form">
+                    <input class="comment-input" placeholder="댓글을 입력하세요..." required type="text">
+                    <button class="comment-submit" type="submit">게시</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 더미 게시글 2 -->
+        <div class="post-card" data-post-id="2">
+            <div class="post-author">
+                <img alt="Daniel" src="https://placehold.co/40x40/333/fff?text=D">
+                <div class="post-author-info">
+                    <div class="name">Daniel</div>
+                    <div class="time">2 hrs ago</div>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>Body text for a post. Since it's a social app, sometimes it's a hot take, and sometimes it's a
+                    question.</p>
+            </div>
+            <div class="post-actions">
+                <div>Likes...</div>
+                <a class="comment-trigger no-comments" href="#">댓글쓰기</a>
+            </div>
+            <div class="comment-section">
+                <ul class="comment-list"></ul>
+                <form class="comment-form">
+                    <input class="comment-input" placeholder="댓글을 입력하세요..." required type="text">
+                    <button class="comment-submit" type="submit">게시</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="post-list-container"></div>
+
     <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
-</footer>
+
+</div>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const forumContainer = document.querySelector('.forum-container');
+
+        // 댓글 아이콘/텍스트 클릭 이벤트 (이벤트 위임)
+        forumContainer.addEventListener('click', async (e) => {
+            if (!e.target.classList.contains('comment-trigger')) return;
+            e.preventDefault();
+
+            const postCard = e.target.closest('.post-card');
+            const postId = postCard.dataset.postId;
+            const commentSection = postCard.querySelector('.comment-section');
+            const commentList = postCard.querySelector('.comment-list');
+
+            // 댓글 섹션 토글
+            const isHidden = commentSection.style.display === 'none';
+            commentSection.style.display = isHidden ? 'block' : 'none';
+
+            // 처음 열 때만 댓글 로드
+            if (isHidden && !commentList.hasChildNodes()) {
+                await loadComments(postId, postCard);
+            }
+        });
+
+        // 댓글 폼 제출 이벤트 (이벤트 위임)
+        forumContainer.addEventListener('submit', async (e) => {
+            if (!e.target.classList.contains('comment-form')) return;
+            e.preventDefault();
+
+            const form = e.target;
+            const postCard = form.closest('.post-card');
+            const postId = postCard.dataset.postId;
+            const input = form.querySelector('.comment-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            const submitButton = form.querySelector('.comment-submit');
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch(`/api/forum/${postId}/comments`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({content})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const newComment = await response.json();
+                addCommentToDOM(newComment, postCard);
+                input.value = '';
+                updateCommentCount(postCard);
+
+            } catch (error) {
+                console.error('Failed to post comment:', error);
+                alert('댓글 작성에 실패했습니다.');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        // 댓글 불러오기 함수
+        async function loadComments(postId, postCard) {
+            try {
+                const response = await fetch(`/api/forum/${postId}/comments`);
+                if (!response.ok) throw new Error('Failed to load comments');
+
+                const comments = await response.json();
+                const commentList = postCard.querySelector('.comment-list');
+                commentList.innerHTML = ''; // 기존 내용 초기화
+                comments.forEach(comment => addCommentToDOM(comment, postCard, false));
+                updateCommentCount(postCard);
+
+            } catch (error) {
+                console.error('Error loading comments:', error);
+            }
+        }
+
+        // DOM에 댓글 추가 함수
+        function addCommentToDOM(comment, postCard, prepend = true) {
+            const commentList = postCard.querySelector('.comment-list');
+            const item = document.createElement('li');
+            item.className = 'comment-item';
+            item.innerHTML = `
+                <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}">
+                <div class="comment-bubble">
+                    <div class="author">${comment.authorNickname}</div>
+                    <div class="content">${escapeHTML(comment.content)}</div>
+                </div>
+            `;
+            if (prepend) {
+                commentList.prepend(item);
+            } else {
+                commentList.appendChild(item);
+            }
+        }
+
+        // 댓글 카운트 업데이트 함수
+        function updateCommentCount(postCard) {
+            const commentList = postCard.querySelector('.comment-list');
+            const count = commentList.children.length;
+            const trigger = postCard.querySelector('.comment-trigger');
+
+            if (count === 0) {
+                trigger.textContent = '댓글쓰기';
+                trigger.classList.add('no-comments');
+            } else {
+                trigger.textContent = `${count} comment${count > 1 ? 's' : ''}`;
+                trigger.classList.remove('no-comments');
+            }
+        }
+
+        // HTML 태그 이스케이프 함수 (XSS 방지)
+        function escapeHTML(str) {
+            const p = document.createElement('p');
+            p.textContent = str;
+            return p.innerHTML;
+        }
+    });
+</script>
 </html>

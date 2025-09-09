@@ -9,14 +9,46 @@
 <div class="main-nav-bar" th:fragment="mainNavFragment">
     <nav>
         <footer class="footer-nav">
+            <!-- 기존 아이콘 그대로 유지 -->
             <a href="/">🏠</a>
             <a href="/messages">✉️</a>
             <a href="/forum">📝</a>
-            <a href="/notifications">🔔</a>
+
+            <!-- 🔔 종 아이콘에 빨간 점 추가 (링크 경로는 /notification) -->
+            <a href="/notification" id="nav-bell-link" style="text-decoration:none">
+                🔔
+                <span id="nav-bell-dot"
+                      style="display:none;width:8px;height:8px;background:#ef4444;border-radius:50%;
+                     display:inline-block;vertical-align:top;margin-left:2px"></span>
+            </a>
+
             <a href="/profile">👤</a>
         </footer>
     </nav>
+
+    <!-- 기존 main-nav.js 그대로 로드 (여기에 authHeaders 등 유틸 있음) -->
     <script src="/js/main-nav.js"></script>
+
+    <!-- 진입 시 미읽음 개수 반영: >0 이면 빨간 점 표시 -->
+    <script>
+        (async function () {
+            try {
+                const res = await fetch('/notification/unread-count', {
+                    method: 'POST',
+                    // main-nav.js에 있는 authHeaders 사용(있으면 CSRF, 없으면 그냥 통과)
+                    headers: (typeof authHeaders === 'function')
+                        ? authHeaders({Accept: 'application/json'})
+                        : {Accept: 'application/json'}
+                });
+                if (!res.ok) return;
+                const n = await res.json(); // 서버가 숫자(long)로 응답
+                const dot = document.getElementById('nav-bell-dot');
+                if (dot) dot.style.display = (n > 0) ? 'inline-block' : 'none';
+            } catch (e) {
+                // 네트워크 실패 시 조용히 패스
+            }
+        })();
+    </script>
 </div>
 </body>
 </html>

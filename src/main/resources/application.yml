@@ -35,3 +35,9 @@ logging:
     org.hibernate.type.descriptor.sql: TRACE
   file:
     path: /var/log/postHere-log
+
+---
+
+spring:
+  config:
+    import: "optional:classpath:application-secret.yml"

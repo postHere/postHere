@@ -12,17 +12,15 @@ public class WebPushProperties {
     private String publicKey;
     private String privateKey;
 
-    // ✅ @ConfigurationProperties는 setter 필요
-    public void setSubject(String subject) {
-        this.subject = subject;
+    public void setSubject(String v) {
+        this.subject = v;
     }
 
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
+    public void setPublicKey(String v) {
+        this.publicKey = v;
     }
 
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
+    public void setPrivateKey(String v) {
+        this.privateKey = v;
     }
 }
-

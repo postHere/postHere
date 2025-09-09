@@ -2,14 +2,13 @@ package io.github.nokasegu.post_here.forum.service;
 
 import io.github.nokasegu.post_here.forum.domain.ForumAreaEntity;
 import io.github.nokasegu.post_here.forum.domain.ForumEntity;
-import io.github.nokasegu.post_here.forum.dto.ForumCreateRequestDto;
-import io.github.nokasegu.post_here.forum.dto.ForumCreateResponseDto;
-import io.github.nokasegu.post_here.forum.dto.ForumPostListResponseDto;
+import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.repository.ForumAreaRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,18 +26,24 @@ public class ForumService {
     private final ForumAreaRepository forumAreaRepository;
     private final ForumImageService forumImageService;
 
+    /**
+     * 포럼 게시글을 생성하고 저장
+     *
+     * @param requestDto 게시글 생성 요청 DTO
+     * @return 생성된 게시글의 ID가 담긴 응답 DTO
+     */
     @Transactional
     public ForumCreateResponseDto createForum(ForumCreateRequestDto requestDto) throws IOException {
 
-        // 1. 서비스 내부에서 DTO에 담긴 이메일로 유저를 조회합니다.
-        String userEmail = requestDto.getUserEmail();
-        UserInfoEntity writer = userInfoRepository.findByEmail(userEmail)
+        // DTO에서 사용자 이메일을 가져와 유저를 조회
+        UserInfoEntity writer = userInfoRepository.findByEmail(requestDto.getUserEmail())
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다."));
 
+        // DTO의 지역 ID로 ForumAreaEntity를 조회
         ForumAreaEntity area = forumAreaRepository.findById(requestDto.getLocation())
                 .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역입니다"));
 
-        // 2. 텍스트, 위치, 음악 정보 등을 담은 ForumEntity를 생성하고 저장합니다.
+        // ForumEntity를 생성하고, 조회된 Entity를 location 필드에 연결
         ForumEntity forum = ForumEntity.builder()
                 .writer(writer)
                 .location(area)
@@ -47,12 +52,56 @@ public class ForumService {
                 .build();
         ForumEntity savedForum = forumRepository.save(forum);
 
-        // 3. 이미지 저장 로직을 ForumImageService에 위임합니다.
+        // 이미지 저장 로직을 ForumImageService에 위임
         forumImageService.saveImages(savedForum, requestDto.getImageUrls());
 
-        // 4. 컨트롤러에 전달할 응답 DTO를 생성하여 반환합니다.
+        // 컨트롤러에 전달할 응답 DTO를 생성하여 반환
         return new ForumCreateResponseDto(savedForum.getId());
     }
+
+    /**
+     * 사용자가 선택한 지역을 세션에 저장하고, 해당 지역의 ID를 반환하는 메서드
+     *
+     * @param requestDto 클라이언트로부터 받은 지역 정보 DTO
+     * @param session    현재 HTTP 세션
+     * @return 세션에 저장된 지역의 PK (ID)
+     */
+    public Long setForumArea(ForumAreaRequestDto requestDto, HttpSession session) {
+        String newLocationAddress = requestDto.getLocation();
+
+        ForumAreaEntity area = forumAreaRepository.findByAddress(newLocationAddress)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역 정보입니다."));
+
+        // 세션에 지역 주소(address)를 저장
+        session.setAttribute("selectedForumAreaAddress", area.getAddress());
+
+        // 지역의 PK를 반환하여 컨트롤러가 리다이렉트 URL을 구성
+        return area.getId();
+    }
+
+    /**
+     * 주소 문자열을 사용하여 지역의 PK (ID)를 조회합니다.
+     *
+     * @param address 조회할 지역의 주소 문자열
+     * @return 해당 지역의 PK (ID)
+     */
+    public Long getAreaKeyByAddress(String address) {
+        ForumAreaEntity area = forumAreaRepository.findByAddress(address)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역 정보입니다."));
+        return area.getId();
+    }
+
+    /**
+     * 모든 포럼 지역 목록을 조회합니다.
+     *
+     * @return 모든 지역 정보 DTO 리스트
+     */
+    public List<ForumAreaResponseDto> getAllAreas() {
+        return forumAreaRepository.findAll().stream()
+                .map(ForumAreaResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
 
     /**
      * 지정된 지역에 해당하는 포럼 게시물 목록을 조회합니다.

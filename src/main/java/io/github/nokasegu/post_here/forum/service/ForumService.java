@@ -4,6 +4,7 @@ import io.github.nokasegu.post_here.forum.domain.ForumAreaEntity;
 import io.github.nokasegu.post_here.forum.domain.ForumEntity;
 import io.github.nokasegu.post_here.forum.dto.ForumCreateRequestDto;
 import io.github.nokasegu.post_here.forum.dto.ForumCreateResponseDto;
+import io.github.nokasegu.post_here.forum.dto.ForumPostListResponseDto;
 import io.github.nokasegu.post_here.forum.repository.ForumAreaRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,5 +52,33 @@ public class ForumService {
 
         // 4. 컨트롤러에 전달할 응답 DTO를 생성하여 반환합니다.
         return new ForumCreateResponseDto(savedForum.getId());
+    }
+
+    /**
+     * 지정된 지역에 해당하는 포럼 게시물 목록을 조회합니다.
+     *
+     * @param locationKey 지역 주소 또는 ID (String 형태)
+     * @return 해당 지역의 포럼 게시물 목록 DTO 리스트
+     */
+    public List<ForumPostListResponseDto> getForumPostsByLocation(String locationKey) {
+        ForumAreaEntity area;
+
+        try {
+            // key가 Long 타입인지 확인하여 ID로 지역을 조회합니다.
+            Long locationId = Long.parseLong(locationKey);
+            area = forumAreaRepository.findById(locationId)
+                    .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역 ID입니다."));
+        } catch (NumberFormatException e) {
+            // 숫자가 아니면 key를 주소로 간주하고 지역을 조회합니다.
+            area = forumAreaRepository.findByAddress(locationKey)
+                    .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역 주소입니다."));
+        }
+
+        List<ForumEntity> forumEntities = forumRepository.findByLocation(area);
+
+        // Entity를 DTO로 변환하여 반환합니다.
+        return forumEntities.stream()
+                .map(ForumPostListResponseDto::new)
+                .collect(Collectors.toList());
     }
 }

@@ -2,12 +2,25 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Main</title>
+    <title>Forum Main</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script defer src="/js/main.js"></script>
     <link href="/pwa/manifest.json" rel="manifest">
 </head>
 <body>
-<footer>
+<div class="main-container">
+    <header class="header">
+        <div class="logo">PostHere</div>
+        <div class="location-area" id="location-display">
+            <span>Samsung-dong</span>
+        </div>
+        <div class="action-icons">...</div>
+    </header>
+
+    <div id="post-list-container">
+    </div>
+
     <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
-</footer>
+</div>
 </body>
 </html>

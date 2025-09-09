@@ -1,6 +1,7 @@
 package io.github.nokasegu.post_here.common.config;
 
 import io.github.nokasegu.post_here.common.security.CustomAuthenticationFailureHandler;
+import io.github.nokasegu.post_here.common.security.CustomAuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +28,7 @@ public class SecurityConfig {
     };
 
     private final CustomAuthenticationFailureHandler failureHandler;
+    private final CustomAuthenticationSuccessHandler successHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,7 +44,7 @@ public class SecurityConfig {
                         .usernameParameter("id")
                         .passwordParameter("password")
                         .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/", true)
+                        .successHandler(successHandler)
                         .failureHandler(failureHandler)
                         .permitAll()
                 );

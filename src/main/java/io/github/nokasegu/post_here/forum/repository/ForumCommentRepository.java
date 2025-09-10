@@ -17,4 +17,7 @@ public interface ForumCommentRepository extends JpaRepository<ForumCommentEntity
      */
     public List<ForumCommentEntity> findAllByForumIdOrderByCreatedAtAsc(Long forumId);
 
+    // 특정 게시글의 댓글 총 개수를 조회하는 메서드 추가
+    int countByForumId(Long forumId);
+
 }

@@ -4,6 +4,7 @@ import io.github.nokasegu.post_here.forum.domain.ForumAreaEntity;
 import io.github.nokasegu.post_here.forum.domain.ForumEntity;
 import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.repository.ForumAreaRepository;
+import io.github.nokasegu.post_here.forum.repository.ForumCommentRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,7 @@ public class ForumService {
     private final UserInfoRepository userInfoRepository;
     private final ForumAreaRepository forumAreaRepository;
     private final ForumImageService forumImageService;
+    private final ForumCommentRepository forumCommentRepository;
 
     /**
      * 포럼 게시글을 생성하고 저장
@@ -49,6 +52,7 @@ public class ForumService {
                 .location(area)
                 .contentsText(requestDto.getContent())
                 .musicApiUrl(requestDto.getSpotifyTrackId())
+                .createdAt(LocalDateTime.now())
                 .build();
         ForumEntity savedForum = forumRepository.save(forum);
 
@@ -102,9 +106,9 @@ public class ForumService {
                 .collect(Collectors.toList());
     }
 
-
     /**
      * 지정된 지역에 해당하는 포럼 게시물 목록을 조회합니다.
+     * 댓글 정보를 포함합니다.
      *
      * @param locationKey 지역 주소 또는 ID (String 형태)
      * @return 해당 지역의 포럼 게시물 목록 DTO 리스트
@@ -113,21 +117,26 @@ public class ForumService {
         ForumAreaEntity area;
 
         try {
-            // key가 Long 타입인지 확인하여 ID로 지역을 조회합니다.
             Long locationId = Long.parseLong(locationKey);
             area = forumAreaRepository.findById(locationId)
                     .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역 ID입니다."));
         } catch (NumberFormatException e) {
-            // 숫자가 아니면 key를 주소로 간주하고 지역을 조회합니다.
             area = forumAreaRepository.findByAddress(locationKey)
                     .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역 주소입니다."));
         }
 
         List<ForumEntity> forumEntities = forumRepository.findByLocation(area);
 
-        // Entity를 DTO로 변환하여 반환합니다.
+        // Entity를 DTO로 변환하면서 댓글 정보를 추가합니다.
         return forumEntities.stream()
-                .map(ForumPostListResponseDto::new)
+                .map(forumEntity -> {
+                    int totalComments = forumCommentRepository.countByForumId(forumEntity.getId());
+                    return new ForumPostListResponseDto(
+                            forumEntity,
+                            totalComments,
+                            forumEntity.getCreatedAt()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 }

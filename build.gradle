@@ -45,6 +45,9 @@ dependencies {
     // following push 알림 생성위해서 하기 3줄 추가했습니다 - 0908 정민
     implementation 'nl.martijndwars:web-push:5.1.1'
     implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    // ← PKIX 유틸 포함. 0910 푸시알림 테스트 시 막혀서 추가함
+    // bcprov만으로도 돌아가긴 하지만, 키 처리 과정에서 bcpkix가 있으면 더 안전함
     implementation 'com.google.code.gson:gson:2.11.0'
 }
 

@@ -25,6 +25,14 @@ import java.util.*;
  *   2) WebPushService를 통해 대상 사용자 브라우저로 푸시 전송
  * - @Transactional 로직 안에서 이루어지므로, DB 쓰기와 알림 발사 트리거까지 하나의 도메인 흐름으로 묶여 있습니다.
  */
+
+/**
+ * [Flow (A) → (B) 브리지 요약]
+ * - (A) FriendApiController.addFollowing(...) → FollowingService.follow(me, target)
+ * - follow(...)는 중복 검사 → INSERT → NotificationService.createFollowAndPush(...) 호출로 (B) 알림 생성/푸시를 트리거
+ * - 트랜잭션 고려: INSERT 성공 이후 알림 트리거가 진행되므로, 커밋 타이밍/에러 로그 전략을 서비스 정책에 맞게 선택
+ * - 멱등성·무결성: existsBy* 선검사 + (follower_id, followed_id) 유니크 제약을 권장(경합 시 예외를 멱등 처리로 흡수)
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -40,6 +48,8 @@ public class FollowingService {
     // (추가 설명) NotificationService는 createFollowAndPush(FollowingEntity) 메서드를 제공하며,
     //  - 내부에서 Notification 엔티티를 INSERT
     //  - WebPushService.sendToUser(...)를 호출해 브라우저 구독 대상에게 실제 푸시를 발사합니다.
+
+    // [Flow (A)] 팔로우 도메인 행위의 진입점(멱등). 생성 시 (B) 알림 트리거로 연결.
 
     /**
      * 팔로우 (idempotent)

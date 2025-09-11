@@ -15,6 +15,7 @@ import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserInfoService {
 
     private final UserInfoRepository userInfoRepository;
@@ -30,7 +31,6 @@ public class UserInfoService {
      * @param password 사용자 비밀번호
      * @param nickname 사용자 닉네임
      */
-    @Transactional
     public void signUp(String email, String password, String nickname) {
         // 이메일과 닉네임 중복 여부를 다시 한번 확인하는 것이 안전합니다.
         if (!isEmailAvailable(email)) {
@@ -58,8 +58,6 @@ public class UserInfoService {
      * @param email 확인할 이메일
      * @return 중복이면 false, 미중복이면 true
      */
-
-    @Transactional(readOnly = true)
     public boolean isEmailAvailable(String email) {
         return userInfoRepository.findByEmail(email).isEmpty();
     }
@@ -70,7 +68,6 @@ public class UserInfoService {
      * @param nickname 확인할 닉네임
      * @return 중복이면 false, 미중복이면 true
      */
-    @Transactional(readOnly = true)
     public boolean isNicknameAvailable(String nickname) {
         return userInfoRepository.findByNickname(nickname).isEmpty();
     }
@@ -81,10 +78,21 @@ public class UserInfoService {
      * @param email Principal.getName()으로 얻은 현재 로그인된 사용자의 이메일
      * @return 사용자 프로필 정보를 담은 DTO
      */
-    @Transactional(readOnly = true)
-    public UserInfoDto getUserProfile(String email) {
+    public UserInfoDto getUserProfileByEmail(String email) {
         UserInfoEntity user = userInfoRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        return new UserInfoDto(user);
+    }
+
+    /**
+     * PK로 사용자 조회하는 메소드
+     *
+     * @param userId
+     * @return 사용자 프로필 정보를 담은 DTO
+     */
+    public UserInfoDto getUserProfileById(Long userId) {
+        UserInfoEntity user = userInfoRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id : " + userId));
         return new UserInfoDto(user);
     }
 
@@ -96,7 +104,6 @@ public class UserInfoService {
      * @return S3에 업로드된 새로운 이미지의 URL
      * @throws IOException 파일 처리 중 예외 발생 가능
      */
-    @Transactional
     public String updateProfileImage(String email, MultipartFile imageFile) throws IOException {
         UserInfoEntity user = userInfoRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
@@ -117,5 +124,6 @@ public class UserInfoService {
 
         return newImageUrl;
     }
+
 
 }

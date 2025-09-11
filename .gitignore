@@ -38,5 +38,8 @@ out/
 .vscode/
 
 # Capacitor Native (내부 빌드 결과물만 제외)
-android/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+ios/build/
 node_modules/

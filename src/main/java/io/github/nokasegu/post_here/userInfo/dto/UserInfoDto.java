@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserInfoDto {
 
+    private Long userId;
     private String nickname;
     private String email;
     private String profilePhotoUrl;
@@ -19,6 +20,7 @@ public class UserInfoDto {
      * @param user UserInfoEntity 객체
      */
     public UserInfoDto(UserInfoEntity user) {
+        this.userId = user.getId();
         this.nickname = user.getNickname();
         this.email = user.getEmail();
         this.profilePhotoUrl = user.getProfilePhotoUrl() != null

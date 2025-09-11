@@ -52,6 +52,15 @@ public class NotificationService {
     private final WebPushService webPushService;                 // Web Push 전송(브라우저 구독 대상)
 
     /**
+     * [Flow (B) 시퀀스 요약]
+     * - 트리거: FollowingService.follow(...) 성공 → createFollowAndPush(...) 호출
+     * - 1) Notification(FOLLOW) INSERT
+     * - 2) service-worker와 합의된 payload 구성(JSON)
+     * - 3) WebPushService.sendToUser(...)로 대상 유저의 모든 구독 endpoint에 푸시 전송
+     * - 주의: 푸시 실패는 저장을 롤백하지 않음(로그로 확인)
+     */
+
+    /**
      * 팔로우 이벤트 알림 생성 + WebPush 전송
      * <p>
      * 생성 규칙
@@ -97,6 +106,11 @@ public class NotificationService {
     }
 
     /**
+     * /notification/list 응답 조합
+     * - items: 페이지 리스트(알림 카드)
+     * - unreadCount: 미읽음 개수(종 아이콘 배지/점 갱신에 사용)
+     */
+    /**
      * 알림 목록 조회(+ 미읽음 카운트 함께 반환)
      * <p>
      * 파라미터
@@ -120,6 +134,11 @@ public class NotificationService {
     }
 
     /**
+     * /notification/read (멱등)
+     * - 클라이언트가 방금 본 알림 ID들을 넘기면 읽음으로 마킹
+     * - 반환값: 남은 미읽음 개수(배지/점 갱신)
+     */
+    /**
      * 지정한 알림 ID 집합을 읽음 처리 (idempotent)
      * <p>
      * 동작
@@ -136,6 +155,10 @@ public class NotificationService {
     }
 
     /**
+     * 전체 읽음 처리 훅
+     * - 페이지/설정에서 "모두 읽음" 액션 시 사용 가능
+     */
+    /**
      * 해당 유저의 모든 알림을 읽음 처리
      * <p>
      * 동작
@@ -149,6 +172,10 @@ public class NotificationService {
         return notificationRepository.countByTargetUserAndCheckStatusIsFalse(target);
     }
 
+    /**
+     * /notification/unread-count
+     * - 하단 네비 종 아이콘 빨간점 표시/해제에 활용
+     */
     /**
      * 미읽음 카운트 조회
      * <p>

@@ -7,12 +7,11 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -155,19 +154,34 @@ public class UserInfoController {
         return Collections.singletonMap("valid", isValid);
     }
 
+    /**
+     * 내 프로필 접근
+     *
+     * @param @AuthenticationPrincipal UserDetails
+     * @param model
+     * @return profile HTML
+     */
     @GetMapping("/profile")
-    public String profilePage(Principal principal, Model model) {
-        if (principal == null) {
-            // 로그인되지 않은 사용자는 로그인 페이지로 리디렉션
-            return "redirect:/login";
-        }
+    public String profilePage(@AuthenticationPrincipal UserDetails user, Model model) {
 
-        String userEmail = principal.getName();
+        String userEmail = user.getUsername();
         UserInfoDto userProfile = userInfoService.getUserProfile(userEmail);
 
         model.addAttribute("user", userProfile);
         return "userInfo/profile";
     }
+
+    /**
+     * 다른 사람의 프로필에 접근할 때 필요한 API
+     * 미완임 프로필 기능 완성 후 마저 완성 정민이 누나가 만들 예정
+     */
+    @GetMapping("/profile/{userId}")
+    public String profile(@PathVariable Long userId, Model model) {
+        model.addAttribute("profileUserId", userId);
+        // 프로필 페이지가 아직 없는데 팔로우/언팔로우 기능 구현되나 보려고 만들었슴(정민)
+        return "userInfo/profile";
+    }
+
 
     /**
      * [수정] 프로필 이미지를 업데이트하는 API

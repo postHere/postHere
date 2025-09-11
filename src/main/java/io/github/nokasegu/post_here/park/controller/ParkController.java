@@ -7,54 +7,54 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 @Controller
+@RequestMapping("/profile/park")
 @RequiredArgsConstructor
 public class ParkController {
 
     private final ParkService parkService;
 
     /**
-     * Park 정보 조회 API
-     *
-     * @param ownerId 조회할 Park의 소유자 ID
+     * Park 정보 조회 (GET /profile/park/{profile_id})
      */
-    @GetMapping("/api/park/{ownerId}")
-    public ResponseEntity<ParkResponseDto> getPark(@PathVariable Long ownerId) {
-        ParkResponseDto responseDto = parkService.getPark(ownerId);
+    @GetMapping("/{profile_id}")
+    public ResponseEntity<ParkResponseDto> getPark(@PathVariable("profile_id") Long profileId) {
+        ParkResponseDto responseDto = parkService.getPark(profileId);
         return ResponseEntity.ok(responseDto);
     }
 
     /**
-     * Park 이미지 수정 API
-     *
-     * @param ownerId     수정할 Park의 소유자 ID
-     * @param imageFile   새로 등록할 이미지 파일
-     * @param userDetails 현재 로그인한 유저의 정보 (Principal 객체)
+     * Park 작성 (POST /profile/park/{profile_id})
      */
-    @PostMapping("/api/park/{ownerId}") // 리소스의 부분 수정이지만, 이미지 파일 처리를 위해 POST 또는 PUT 사용
+    @PostMapping("/{profile_id}")
     public ResponseEntity<String> updatePark(
-            @PathVariable Long ownerId,
+            @PathVariable("profile_id") Long profileId,
             @RequestParam("image") MultipartFile imageFile,
-            @AuthenticationPrincipal CustomUserDetails userDetails // Spring Security의 Principal 객체로 현재 유저 정보 가져오기
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) throws IOException {
-
-        // @AuthenticationPrincipal을 통해 로그인한 사용자의 ID를 가져옵니다.
         Long currentUserId = userDetails.getUserInfo().getId();
-
-        String newImageUrl = parkService.updatePark(ownerId,
-                currentUserId,
-                imageFile);
-
+        String newImageUrl = parkService.updatePark(profileId, currentUserId, imageFile);
         return ResponseEntity.ok(newImageUrl);
     }
+
+    /**
+     * Park 초기화 (기존의 삭제 기능) (DELETE /profile/park/{profile_id})
+     */
+    @DeleteMapping("/{profile_id}")
+    public ResponseEntity<Void> resetPark(
+            @PathVariable("profile_id") Long profileId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long currentUserId = userDetails.getUserInfo().getId();
+        parkService.resetPark(profileId, currentUserId);
+        return ResponseEntity.noContent().build();
+    }
+
 
     // 테스트용 페이지 맵핑 .. 지워도 됨
     @GetMapping("/test-page")

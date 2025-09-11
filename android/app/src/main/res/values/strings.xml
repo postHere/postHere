@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">post-here</string>
+    <string name="title_activity_main">post-here</string>
+    <string name="package_name">com.nokasegu.post_here</string>
+    <string name="custom_url_scheme">com.nokasegu.post_here</string>
+</resources>

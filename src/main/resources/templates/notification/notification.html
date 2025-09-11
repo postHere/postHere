@@ -4,10 +4,24 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
+    <!-- CSRF 메타: notification.js에서 /notification/* POST 호출 시 헤더로 첨부 -->
     <meta name="_csrf" th:attr="content=${_csrf?.token}">
     <meta name="_csrf_header" th:attr="content=${_csrf?.headerName}">
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>Notification</title>
+
+    <!--
+      역할(정확한 명칭)
+      - 본 템플릿은 알림센터 UI의 컨테이너이며, 실제 데이터 로딩/읽음/뱃지 갱신은 /js/notification.js가 담당
+        · 알림 목록 로딩:        POST /notification/list
+        · 선택 알림 읽음 처리:   POST /notification/read (멱등)
+        · 미읽음 카운트 갱신:    POST /notification/unread-count (배지/빨간점)
+        · 알림 행 클릭 이동:     GET  /profile/:userId
+      - 서비스워커와의 연계(클릭 라우팅)
+        · service-worker.js의 'notificationclick'에서 postMessage({type:'NAVIGATE', url})를 보내면
+          페이지 측에서 라우팅을 수행(알림 클릭 → 본 페이지로 진입하는 시나리오 포함)
+    -->
+
     <style>
         body {
             font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -112,19 +126,28 @@
             vertical-align: top
         }
     </style>
+
+    <!-- PWA: 앱 메타(아이콘/이름 등). SW 등록은 main-nav.js에서 수행 -->
     <link rel="manifest" th:href="@{/pwa/manifest.json}">
 </head>
 <body>
+<!-- 페이지 타이틀(정적) -->
 <h2>Notification</h2>
+
+<!-- 알림 목록 컨테이너: notification.js가 innerHTML로 카드 목록 렌더링 -->
 <div aria-live="polite" class="list" id="list"></div>
+
+<!-- 페이지 이동(이전/다음): notification.js가 상태(page/last) 갱신 -->
 <div class="pager">
     <button id="prev">이전</button>
     <span id="page"></span>
     <button id="next">다음</button>
 </div>
 
+<!-- 하단 종 아이콘 + 빨간점: /notification/unread-count 결과로 on/off -->
 <div id="nav-bell">🔔<span class="badge" id="bell-dot" style="display:none"></span></div>
 
+<!-- 페이지 스크립트: 목록 로딩/읽음 처리/뱃지 갱신 수행 -->
 <script src="/js/notification.js"></script>
 </body>
 </html>

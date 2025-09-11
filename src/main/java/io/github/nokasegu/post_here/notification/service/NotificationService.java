@@ -52,8 +52,8 @@ public class NotificationService {
     private final WebPushService webPushService;                 // Web Push 전송(브라우저 구독 대상)
 
     /**
-     * [Flow (B) 시퀀스 요약]
-     * - 트리거: FollowingService.follow(...) 성공 → createFollowAndPush(...) 호출
+     * [팔로우 알림 생성 및 Web Push 전송 시퀀스]
+     * - 트리거: FollowingService.follow(...) 성공 시 호출됨
      * - 1) Notification(FOLLOW) INSERT
      * - 2) service-worker와 합의된 payload 구성(JSON)
      * - 3) WebPushService.sendToUser(...)로 대상 유저의 모든 구독 endpoint에 푸시 전송

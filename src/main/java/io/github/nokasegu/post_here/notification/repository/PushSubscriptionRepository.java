@@ -1,3 +1,4 @@
+// src/main/java/io/github/nokasegu/post_here/notification/repository/PushSubscriptionRepository.java
 package io.github.nokasegu.post_here.notification.repository;
 
 import io.github.nokasegu.post_here.notification.domain.PushSubscriptionEntity;
@@ -6,6 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+
+/**
+ * [도메인 저장소 개요]
+ * - Web Push 구독 정보를 영속 계층에서 관리하는 JPA Repository.
+ * - WebPushService.sendToUser(...)가 사용자별 구독 목록을 조회하는 주요 진입점.
+ */
 
 /**
  * [알림 생성 + 푸시 발사 사용 지점]

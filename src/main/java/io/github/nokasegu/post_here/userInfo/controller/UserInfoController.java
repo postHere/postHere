@@ -165,7 +165,7 @@ public class UserInfoController {
     public String profilePage(@AuthenticationPrincipal UserDetails user, Model model) {
 
         String userEmail = user.getUsername();
-        UserInfoDto userProfile = userInfoService.getUserProfile(userEmail);
+        UserInfoDto userProfile = userInfoService.getUserProfileByEmail(userEmail);
 
         model.addAttribute("user", userProfile);
         return "userInfo/profile";

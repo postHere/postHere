@@ -76,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const createForumData = {
             writerId: document.getElementById("writerId").value,
             content: document.getElementById("content").value,
-            location: document.getElementById("location").value,
+            // location 값을 localStorage에서 가져와 설정
+            location: localStorage.getItem('currentAreaKey'),
             imageUrls: imageUrls,
             spotifyTrackId: document.getElementById("spotifyTrackId").value,
             userEmail: "test@gmail.com",

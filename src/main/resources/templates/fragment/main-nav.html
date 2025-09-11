@@ -9,14 +9,49 @@
 <div class="main-nav-bar" th:fragment="mainNavFragment">
     <nav>
         <footer class="footer-nav">
+            <!-- 기존 아이콘 그대로 유지 -->
             <a href="/">🏠</a>
             <a href="/messages">✉️</a>
             <a href="/forum">📝</a>
-            <a href="/notifications">🔔</a>
+
+            <!-- 🔔 종 아이콘에 빨간 점 추가 (링크 경로는 /notification) -->
+            <!-- [역할] 네비게이션의 알림 상태 표시. 서버의 /notification/unread-count 결과에 따라 표시/숨김 -->
+            <a href="/notification" id="nav-bell-link" style="text-decoration:none">
+                🔔
+                <span id="nav-bell-dot"
+                      style="display:none;width:8px;height:8px;background:#ef4444;border-radius:50%;
+                             vertical-align:top;margin-left:2px"></span>
+            </a>
+
             <a href="/profile">👤</a>
         </footer>
     </nav>
+
+    <!-- 기존 main-nav.js 그대로 로드 (여기에 authHeaders 등 유틸 있음)
+         - main-nav.js: SW 등록, VAPID 공개키 로드, 권한/구독 처리, SW→Page 'NAVIGATE' 메시지 수신 라우팅 -->
     <script src="/js/main-nav.js"></script>
+
+    <!-- 진입 시 미읽음 개수 반영: >0 이면 빨간 점 표시
+         - 이후 주기 폴링(15s)은 /js/notification.js에서만 수행(중복 폴링 방지) -->
+    <script>
+        (async function () {
+            try {
+                const res = await fetch('/notification/unread-count', {
+                    method: 'POST',
+                    // main-nav.js의 authHeaders가 있으면 CSRF 자동 첨부, 없으면 무시
+                    headers: (typeof authHeaders === 'function')
+                        ? authHeaders({Accept: 'application/json'})
+                        : {Accept: 'application/json'}
+                });
+                if (!res.ok) return;
+                const n = await res.json(); // 서버가 숫자(long)로 응답
+                const dot = document.getElementById('nav-bell-dot');
+                if (dot) dot.style.display = (n > 0) ? 'inline-block' : 'none';
+            } catch (e) {
+                // 네트워크 실패 시 조용히 패스(네비 사용성 유지)
+            }
+        })();
+    </script>
 </div>
 </body>
 </html>

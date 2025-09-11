@@ -19,6 +19,22 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * [Flow (B) 연결 지점]
+ * - FollowingService.follow(...) 성공
+ * → NotificationService.createFollowAndPush(...)
+ * → WebPushService.sendToUser(...) 에서 실제 Web Push 전송
+ * <p>
+ * [전제/의존]
+ * - CryptoProviderConfig 등에서 애플리케이션 기동 시 BouncyCastle 등록 필요
+ * - build.gradle: web-push(java), bcprov, bcpkix, gson 의존성 포함
+ * - application-secret.yml: webpush.subject / webpush.publicKey / webpush.privateKey
+ * <p>
+ * [SW 연계]
+ * - service-worker.js 'push' 핸들러가 수신 가능한 JSON 스키마를 준수해야 함
+ * (예: { type, notificationId, actor{nickname,profilePhotoUrl}, text })
+ */
+
+/**
  * WebPushService
  * <p>
  * - 외부 라이브러리 nl.martijndwars.webpush.PushService 를 감싸는 어댑터 서비스

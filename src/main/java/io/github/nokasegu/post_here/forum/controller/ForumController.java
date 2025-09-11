@@ -2,10 +2,12 @@ package io.github.nokasegu.post_here.forum.controller;
 
 import io.github.nokasegu.post_here.common.dto.WrapperDTO;
 import io.github.nokasegu.post_here.common.exception.Code;
+import io.github.nokasegu.post_here.common.security.CustomUserDetails;
 import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.service.ForumService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -41,9 +43,11 @@ public class ForumController {
             @RequestBody ForumCreateRequestDto requestDto,
             Principal principal) throws IOException {
 
+        // 인증된 사용자의 이메일을 컨트롤러에서 직접 가져와 DTO에 설정
         String userEmail = principal.getName();
         requestDto.setUserEmail(userEmail);
 
+        // DTO를 서비스로 전달
         ForumCreateResponseDto responseData = forumService.createForum(requestDto);
 
         return WrapperDTO.<ForumCreateResponseDto>builder()
@@ -58,13 +62,13 @@ public class ForumController {
     @GetMapping("/forum/area/{key}")
     public WrapperDTO<List<ForumPostListResponseDto>> getForumPostsByLocation(
             @PathVariable("key") String locationKey,
-            HttpSession session) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        // 세션에 저장된 지역 정보가 있다면 우선적으로 사용합니다.
-        String selectedArea = (String) session.getAttribute("selectedForumAreaAddress");
-        String finalLocation = selectedArea != null ? selectedArea : locationKey;
+        // UserDetails의 userId를 직접 가져옴
+        Long currentUserId = userDetails != null ? userDetails.getUserInfo().getId() : null;
 
-        List<ForumPostListResponseDto> forumPosts = forumService.getForumPostsByLocation(finalLocation);
+        // 서비스 메서드에 currentUserId를 명시적으로 전달합니다.
+        List<ForumPostListResponseDto> forumPosts = forumService.getForumPostsByLocation(locationKey, currentUserId);
 
         return WrapperDTO.<List<ForumPostListResponseDto>>builder()
                 .status(Code.OK.getCode())
@@ -117,6 +121,4 @@ public class ForumController {
                 .data(areaKey)
                 .build();
     }
-
-
 }

@@ -5,6 +5,7 @@ import io.github.nokasegu.post_here.forum.domain.ForumEntity;
 import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.repository.ForumAreaRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumCommentRepository;
+import io.github.nokasegu.post_here.forum.repository.ForumLikeRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
@@ -29,6 +30,8 @@ public class ForumService {
     private final ForumAreaRepository forumAreaRepository;
     private final ForumImageService forumImageService;
     private final ForumCommentRepository forumCommentRepository;
+    private final ForumLikeService forumLikeService;
+    private final ForumLikeRepository forumLikeRepository;
 
     /**
      * 포럼 게시글을 생성하고 저장
@@ -108,14 +111,17 @@ public class ForumService {
 
     /**
      * 지정된 지역에 해당하는 포럼 게시물 목록을 조회합니다.
-     * 댓글 정보를 포함합니다.
+     * 댓글 및 좋아요 정보를 포함합니다.
      *
      * @param locationKey 지역 주소 또는 ID (String 형태)
      * @return 해당 지역의 포럼 게시물 목록 DTO 리스트
      */
-    public List<ForumPostListResponseDto> getForumPostsByLocation(String locationKey) {
-        ForumAreaEntity area;
+    public List<ForumPostListResponseDto> getForumPostsByLocation(String locationKey, Long currentUserId) {
 
+        // final 변수에 currentUserId 값을 담아 고정
+        final Long finalCurrentUserId = currentUserId;
+
+        ForumAreaEntity area;
         try {
             Long locationId = Long.parseLong(locationKey);
             area = forumAreaRepository.findById(locationId)
@@ -131,10 +137,27 @@ public class ForumService {
         return forumEntities.stream()
                 .map(forumEntity -> {
                     int totalComments = forumCommentRepository.countByForumId(forumEntity.getId());
+                    LocalDateTime createdAt = forumEntity.getCreatedAt();
+
+                    int totalLikes = forumLikeRepository.countByForumId(forumEntity.getId());
+                    boolean isLiked = false; // 기본값
+                    List<String> recentLikerPhotos = forumLikeRepository.findTop3ByForumIdOrderByCreatedAtDesc(forumEntity.getId())
+                            .stream()
+                            .map(like -> like.getLiker().getProfilePhotoUrl())
+                            .collect(Collectors.toList());
+
+                    // 현재 사용자가 로그인한 상태일 경우에만 좋아요 여부를 확인
+                    if (finalCurrentUserId != null) {
+                        isLiked = forumLikeRepository.findByForumIdAndLikerId(forumEntity.getId(), finalCurrentUserId).isPresent();
+                    }
+
                     return new ForumPostListResponseDto(
                             forumEntity,
                             totalComments,
-                            forumEntity.getCreatedAt()
+                            createdAt,
+                            totalLikes,
+                            isLiked,
+                            recentLikerPhotos
                     );
                 })
                 .collect(Collectors.toList());

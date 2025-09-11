@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -28,21 +27,6 @@ public class ForumController {
 
     @GetMapping("/forumMain")
     public String forumPage(Model model) {
-        // TODO: 실제로는 ForumService를 통해 DB에서 게시글 목록을 조회해야 합니다.
-        // 지금은 UI를 보여주기 위한 더미 데이터를 생성합니다.
-        List<ForumCreateRequestDto> posts = new ArrayList<>();
-        posts.add(ForumCreateRequestDto.builder()
-                .writerId(1L)
-                .content("Post description goes here. It can be a question, a thought, or anything!")
-                .location(10L)
-                .build());
-        posts.add(ForumCreateRequestDto.builder()
-                .writerId(53L)
-                .content("아무말")
-                .location(8L)
-                .build());
-
-        model.addAttribute("posts", posts);
         return "forum/main";
     }
 
@@ -54,7 +38,7 @@ public class ForumController {
     @ResponseBody
     @PostMapping(value = "/forum")
     public WrapperDTO<ForumCreateResponseDto> createForum(
-            @RequestBody ForumCreateRequestDto requestDto, // Changed from @ModelAttribute
+            @RequestBody ForumCreateRequestDto requestDto,
             Principal principal) throws IOException {
 
         String userEmail = principal.getName();

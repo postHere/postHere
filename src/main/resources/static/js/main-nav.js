@@ -1,3 +1,23 @@
+/**
+ * main-nav.js
+ *
+ * 역할(정확한 명칭)
+ * - Service Worker 등록 및 SW → 페이지 'NAVIGATE' 메시지 처리(알림 클릭 라우팅)
+ * - VAPID 공개키(/push/vapid-public-key) 로드, 최초 사용자 제스처 시 권한 요청, Push 구독 생성
+ * - 구독 정보 서버 저장(/push/subscribe, body: subscription.toJSON())
+ *
+ * 시퀀스(정확한 명칭)
+ * 1) window.load → service-worker.js 등록
+ * 2) /push/vapid-public-key 호출로 VAPID 공개키 로드
+ * 3) (첫 사용자 클릭 시) Notification 권한 요청 → PushManager.subscribe() → /push/subscribe 저장
+ * 4) SW 'notificationclick' → postMessage({type:'NAVIGATE', url}) 수신 → 실제 라우팅 수행
+ *
+ * 보안/운영 메모
+ * - HTTPS 필수(로컬 localhost 예외), CSRF 메타태그 있으면 헤더 자동 첨부(authHeaders)
+ * - 구독 저장은 서버에서 upsert(중복 허용) 형태 권장
+ * - 메시지 수신 시 잘못된/외부 URL 방지(새 URL을 origin 기준으로 정규화)
+ */
+
 // === /static/js/main-nav.js ===
 // 기존 "load 시 service-worker.js 등록" 흐름을 유지하면서,
 // 공개키 fetch → (첫 사용자 클릭 시) 권한요청 → 구독 생성 → 서버 저장을 추가했습니다.

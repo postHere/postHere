@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 위치 주변 Fin'd 찾기</title>
+    <link rel="stylesheet" th:href="@{/css/find-on-map.css}">
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="marker-modal" class="modal-overlay">
+        <div class="modal-content">
+            <img id="modal-profile-image" src="" alt="Profile">
+            <span id="modal-nickname"></span>
+            <button id="modal-find-button">Fin'd로 이동</button>
+            <button id="modal-close-button">&times;</button>
+        </div>
+    </div>
+
+<!--    <script src="./find-on-map.js"></script>-->
+    <script th:src="@{/js/find-on-map-standalone.js}"></script>
+    <script th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&callback=initMap&libraries=&v=weekly'}" async></script>
+</body>
+</html>

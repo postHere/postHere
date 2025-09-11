@@ -3,15 +3,6 @@
 $(document).ready(function () {
     let finalAreaKey = null;
 
-    // 상단바 위치 정보 표시
-    const locationTextElement = $('#current-location-text');
-    const storedLocationAddress = localStorage.getItem('selectedForumAreaAddress');
-    if (storedLocationAddress) {
-        locationTextElement.text(storedLocationAddress);
-    } else {
-        locationTextElement.text('위치 설정 중...');
-    }
-
     // 쿼리 파라미터에서 key 추출
     const urlParams = new URLSearchParams(window.location.search);
     const areaKeyFromUrl = urlParams.get('areaKey');
@@ -19,9 +10,6 @@ $(document).ready(function () {
     if (areaKeyFromUrl) {
         console.log('URL 파라미터에서 key 발견:', areaKeyFromUrl);
         finalAreaKey = areaKeyFromUrl;
-        if (localStorage.getItem('currentAreaKey') !== areaKeyFromUrl) {
-            localStorage.setItem('currentAreaKey', areaKeyFromUrl);
-        }
     } else {
         // 쿼리 파라미터가 없으면 localStorage 값 참조
         const areaKeyFromStorage = localStorage.getItem('currentAreaKey');
@@ -31,12 +19,18 @@ $(document).ready(function () {
         }
     }
 
-    // finalAreaKey를 사용해 바로 게시물을 로드
+    const locationTextElement = $('#current-location-text');
+
     if (finalAreaKey) {
+        // 상단바 위치 정보 표시
+        // 주소지가 출력되야 해서 위치 전송 기능 개발되면 그에 맞게 변경되야 함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        locationTextElement.text(finalAreaKey);
+
+        // finalAreaKey를 사용해 바로 게시물을 로드
         loadPosts(finalAreaKey);
     } else {
-        console.log("게시물을 불러올 지역 정보가 없습니다. 기본 지역을 설정하세요.");
-        // TODO: 기본 지역 설정 로직 추가
+        console.log("게시물을 불러올 지역 정보가 없습니다.");
+        locationTextElement.text("지역 설정 중..");
     }
 
     // 포스트 컨테이너에 이벤트 위임 방식으로 댓글 관련 이벤트 바인딩

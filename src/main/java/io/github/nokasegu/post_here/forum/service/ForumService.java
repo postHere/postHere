@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ForumService {
 
     private final ForumRepository forumRepository;
@@ -35,7 +36,6 @@ public class ForumService {
      * @param requestDto 게시글 생성 요청 DTO
      * @return 생성된 게시글의 ID가 담긴 응답 DTO
      */
-    @Transactional
     public ForumCreateResponseDto createForum(ForumCreateRequestDto requestDto) throws IOException {
 
         // DTO에서 사용자 이메일을 가져와 유저를 조회

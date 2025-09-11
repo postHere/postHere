@@ -83,6 +83,38 @@ $(document).ready(function () {
             submitButton.prop('disabled', false);
         }
     });
+
+    // 좋아요 버튼 클릭 이벤트 리스너
+    $('#post-list-container').on('click', '.like-button', async function () {
+        const likeButton = $(this);
+        const forumId = likeButton.data('forum-id');
+
+        try {
+            const response = await fetch(`/forum/like/${forumId}`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/login';
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.status === '000') {
+                updateLikeStatus(likeButton, result.data);
+            } else {
+                console.error('좋아요 토글 실패:', result.message);
+                alert('좋아요 기능에 문제가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('네트워크 또는 기타 오류:', error);
+            alert('좋아요 요청 중 오류가 발생했습니다.');
+        }
+    });
 });
 
 // key를 이용해 게시물을 불러오는 함수
@@ -128,8 +160,16 @@ function createPostHtml(post) {
     //시간 표시 로직
     const timeAgoText = calculateTimeAgo(post.createdAt);
 
+    // 좋아요 상태에 따라 하트 아이콘을 결정
+    const likeIcon = post.isLiked ? '❤️' : '♡';
+
+    // 최근 좋아요 누른 사람들의 프로필 사진 HTML 생성
+    const recentLikerPhotosHtml = (post.recentLikerPhotos && post.recentLikerPhotos.length > 0) ?
+        post.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('')
+        : '';
+
     return `
-        <div class="post-card" data-post-id="${post.id}">
+       <div class="post-card" data-post-id="${post.id}">
             <div class="post-author">
                 <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
                 <div class="post-author-info">
@@ -143,8 +183,15 @@ function createPostHtml(post) {
             </div>
             <div class="post-actions">
                 <div>
+                    <span class="like-button" data-forum-id="${post.id}">
+                        <span class="like-icon">${likeIcon}</span>
+                        <span class="like-count">${post.totalLikes}</span> likes
+                    </span>
                     <a class="comment-trigger" href="#">💬 <span class="comment-count">${post.totalComments}</span> comments</a>
                 </div>
+            </div>
+            <div class="liker-photos">
+                ${recentLikerPhotosHtml}
             </div>
             <div class="comment-section" style="display:none;">
                 <ul class="comment-list"></ul>
@@ -155,6 +202,27 @@ function createPostHtml(post) {
             </div>
         </div>
     `;
+}
+
+// 좋아요 상태 업데이트 함수
+function updateLikeStatus(likeButton, data) {
+    const likeIcon = likeButton.find('.like-icon');
+    const likeCount = likeButton.find('.like-count');
+    const postCard = likeButton.closest('.post-card');
+    const likerPhotosContainer = postCard.find('.liker-photos');
+
+    // 하트 아이콘 변경
+    likeIcon.text(data.isLiked ? '❤️' : '♡');
+
+    // 좋아요 개수 변경
+    likeCount.text(data.totalLikes);
+
+    // 최근 좋아요 누른 사람들의 프로필 사진 업데이트
+    likerPhotosContainer.empty();
+    if (data.recentLikerPhotos && data.recentLikerPhotos.length > 0) {
+        const photosHtml = data.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('');
+        likerPhotosContainer.html(photosHtml);
+    }
 }
 
 // 댓글 불러오기 함수

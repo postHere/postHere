@@ -1,49 +1,67 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.4.8'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'                                    // Java 애플리케이션 빌드
+    id 'org.springframework.boot' version '3.4.8' // Spring Boot 플러그인(실행가능 JAR, 부트 작업)
+    id 'io.spring.dependency-management' version '1.1.7' // BOM 기반 의존성 버전 정합성 보장
 }
 
 group = 'io.github.nokasegu'
 version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
+description = 'Demo project for Spring Boot'     // 모듈 설명(메타 정보)
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(17) // JDK 17 고정(빌드/실행 환경 일관성)
     }
 }
 
 configurations {
     compileOnly {
-        extendsFrom annotationProcessor
+        extendsFrom annotationProcessor // Lombok 등 애노테이션 프로세서 의존성 범위 확장
     }
 }
 
 repositories {
-    mavenCentral()
+    mavenCentral() // 표준 메이븐 중앙 저장소
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    // === Spring Boot Starters ===
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'     // JPA + Hibernate
+    implementation 'org.springframework.boot:spring-boot-starter-security'     // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'    // 서버사이드 템플릿
+    implementation 'org.springframework.boot:spring-boot-starter-web'          // MVC/REST
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'     // 타임리프 + 시큐리티 통합
+
+    // === Lombok / Devtools ===
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // === Database Drivers ===
+    runtimeOnly 'com.mysql:mysql-connector-j'     // MySQL JDBC 드라이버(런타임 필요)
+    testImplementation "com.h2database:h2"        // 테스트용 인메모리 DB
+
+    // === Test ===
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation "com.h2database:h2"
-    implementation 'org.locationtech.jts:jts-core:1.19.0'
-    implementation 'org.hibernate:hibernate-spatial:6.6.1.Final'
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.1'
+
+    // === Geo/Spatial ===
+    implementation 'org.locationtech.jts:jts-core:1.19.0'   // JTS 기하 라이브러리
+    implementation 'org.hibernate:hibernate-spatial:6.6.1.Final' // Hibernate Spatial 확장
+
+    // === Mail / AWS S3 ===
+    implementation 'org.springframework.boot:spring-boot-starter-mail'           // SMTP 메일 송신
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.1'         // AWS S3 연동
+
+    // === Web Push (VAPID) / Crypto / JSON ===
+    implementation 'nl.martijndwars:web-push:5.1.1'                    // Web Push(JAVA) — VAPID 서명/전송
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'            // BouncyCastle(기본 프로바이더)
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'            // PKIX 유틸(키/인증서 처리)
+    // bcprov만으로도 돌아가긴 하지만, 키 처리 과정에서 bcpkix가 있으면 더 안전함
+    implementation 'com.google.code.gson:gson:2.11.0'                  // JSON 직렬화(푸시 payload 등)
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform() // JUnit 5 플랫폼 사용
 }

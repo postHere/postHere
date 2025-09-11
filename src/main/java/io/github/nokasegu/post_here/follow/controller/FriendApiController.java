@@ -16,6 +16,17 @@ import java.security.Principal;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/friend")
+/**
+ * [Flow (A) 트리거: 팔로우]
+ * - addFollowing(...) 엔드포인트가 로그인 사용자(me)와 대상(userId)를 받아
+ *   FollowingService.follow(me, userId)를 호출한다.
+ * - Service 계층은 중복 팔로우 여부 검사 후 INSERT를 수행하고,
+ *   이어서 NotificationService.createFollowAndPush(...)로 알림 생성/푸시를 위임한다.
+ *
+ * 역할 경계
+ * - Controller: 요청 파라미터/인증(Principal) 수집 및 Service 호출
+ * - Service: 비즈니스 로직(검증·INSERT·알림 트리거)
+ */
 public class FriendApiController {
 
     private final FollowingService followingService;
@@ -95,6 +106,10 @@ public class FriendApiController {
                 .map(UserBriefResponseDto::convertToDto);
     }
 
+    // [Flow (A)] 팔로우 요청 진입점
+    // - (me, userId) 수신 → FollowingService.follow(me, userId) 호출
+    // - 이후 Service에서 중복 검사/INSERT → NotificationService.createFollowAndPush(...) 트리거
+
     /**
      * 친구 추가(팔로우) — JSON body만 허용(쿼리스트링 금지)
      */
@@ -110,6 +125,9 @@ public class FriendApiController {
         followingService.follow(me, body.getUserId()); // idempotent
         return new FollowActionResponseDto(body.getUserId(), true);
     }
+
+    // [Flow (A)] 언팔로우 요청 진입점
+    // - (me, userId) 수신 → FollowingService.unfollow(me, userId) 호출 (멱등)
 
     /**
      * 친구 삭제(언팔로우) — JSON body만 허용(쿼리스트링 금지)

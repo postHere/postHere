@@ -20,6 +20,25 @@
  * - 보안/안정성: push payload 파싱 try/catch, 데이터 검증, 실패 핸들링
  */
 
+/**
+ * [알림 클릭 → 앱 포커스 + 특정 URL로 이동]
+ * - 이 SW의 'notificationclick'에서:
+ *   1) 이미 열린 창이 있으면 focus()
+ *   2) 해당 창으로 postMessage({ type: 'NAVIGATE', url }) 전송
+ *   3) 열린 창이 없으면 clients.openWindow(url)
+ * - 페이지 측(main-nav.js)은 위 메시지를 수신해 실제 라우팅을 수행한다.
+ *
+ * [알림센터(웹 UI) 미읽음 처리 개요]
+ * - /notification 페이지 진입 시:
+ *   1) /notification/list 로 목록 로딩
+ *   2) 방금 본 ID들을 /notification/read 로 즉시 읽음 처리
+ *   3) 하단 네비 종 아이콘의 빨간점은 /notification/unread-count 로 갱신
+ *
+ * 주: 이 파일은 SW 측 동작만 담당하며, 실제 리스트 로딩/읽음 처리/뱃지 갱신은
+ *     페이지 JS(notification.js)가 수행한다.
+ */
+
+
 const CACHE_NAME = 'postHere-v2';
 const FILES_TO_CACHE = ['/', '/css/main.css', '/js/main.js'];
 
@@ -69,6 +88,9 @@ self.addEventListener('push', (event) => {
 });
 
 // 클릭 → 앱 포커스 + 라우팅
+// [알림 클릭 시 이동 처리 요약]
+// - 여기서 postMessage({ type: 'NAVIGATE', url })를 창으로 보냄
+// - 페이지(main-nav.js)는 'NAVIGATE' 메시지를 받아 라우팅(SPA/router 또는 location.*)을 수행
 self.addEventListener('notificationclick', (event) => {
     // 알림 클릭 시:
     // 1) 알림 닫기

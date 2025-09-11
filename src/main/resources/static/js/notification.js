@@ -1,3 +1,18 @@
+/**
+ * [알림센터 동작 시퀀스]
+ * 1) 페이지 진입 시 /notification/list 호출로 알림 목록 로딩
+ * 2) 방금 본 알림 ID들을 /notification/read 로 즉시 읽음 처리 (멱등성 고려)
+ *    - 예: URL 쿼리 'focus' 또는 직전 클릭 알림 ID를 우선 포함
+ *    - 실패해도 UI는 계속 표시하되, 재시도/토스트 안내 고려
+ * 3) 하단 네비 종 아이콘 빨간점은 /notification/unread-count 재호출로 갱신
+ *
+ * 구현 팁:
+ * - 읽음 처리 API는 멱등(idempotent)하도록 서버/클라이언트 설계
+ * - 목록 로딩 ↔ 읽음 처리의 레이스컨디션은 후속 unread-count로 최종 동기화
+ * - 가시성 변화(visibilitychange) 시 과도한 재호출 방지
+ */
+
+
 (function () {
     const listEl = document.getElementById('list');
     const pageEl = document.getElementById('page');
@@ -66,10 +81,11 @@
 
         // 이번 진입에서 처음 확인한 알림 읽음 처리
         items.filter(x => !x.read).forEach(x => idsToRead.push(x.id));
+        // render() 내부 : 방금 본 미읽음 읽음 처리
         markRead(idsToRead);
     }
 
-    // ✅ 행 전체 클릭 → 프로필 이동
+    // 행 전체 클릭 → 프로필 이동
     listEl.addEventListener('click', (e) => {
         const row = e.target.closest('.item');
         if (!row) return;
@@ -79,6 +95,7 @@
 
     async function load() {
         listEl.innerHTML = '<div class="item"><div class="meta"><div class="text">로딩 중...</div></div></div>';
+        // 목록 로딩
         const res = await fetch('/notification/list', {
             method: 'POST',
             headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
@@ -98,6 +115,7 @@
             id: x.id, type: x.type, actor: x.actor,
             text: x.text, createdAt: x.createdAt, read: x.read || x.isRead
         }));
+        // 렌더 → 내부에서 미읽음 ID 수집
         render(items, data.unreadCount);
     }
 
@@ -115,5 +133,7 @@
     });
 
     load();
+    // 별도 주기 싱크
+    // 뱃지 갱신 (주기적)
     setInterval(unreadCountSync, 15000);
 })();

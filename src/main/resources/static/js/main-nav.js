@@ -2,6 +2,19 @@
 // 기존 "load 시 service-worker.js 등록" 흐름을 유지하면서,
 // 공개키 fetch → (첫 사용자 클릭 시) 권한요청 → 구독 생성 → 서버 저장을 추가했습니다.
 
+/**
+ * [SW → Page 'NAVIGATE' 메시지 처리 책임]
+ * - SW(notificationclick)가 보낸 postMessage({ type: 'NAVIGATE', url })를 수신해
+ *   실제 화면 전환을 수행한다.
+ * - 라우팅 방식 선택:
+ *   A) SPA 라우터: router.push(url) 또는 history.pushState 후 렌더
+ *   B) 단순 이동: location.assign(url) (새로고침 발생)
+ * - 안정성:
+ *   - 잘못된 url/null 방어
+ *   - 필요 시 event.origin 검증
+ */
+
+
 // CSRF 헬퍼(스프링 보안 사용 시 메타태그가 있으면 자동 첨부; 없으면 무시)
 function authHeaders(base = {}) {
     const headers = {...base};
@@ -83,6 +96,15 @@ async function ensurePushSubscriptionWithGesture(vapidPublicKey) {
     await saveSubscription(sub);
 
     // SW → 페이지 네비 메시지(푸시 클릭 시 이동)
+    // [SW 메시지 수신부]
+    // navigator.serviceWorker.addEventListener('message', (e) => {
+    //   const { type, url } = e.data || {};
+    //   if (type === 'NAVIGATE' && url) {
+    //     // SPA 라우팅 예: router.push(url) 또는 history.pushState(...)
+    //     // 단순 이동 예: location.assign(url)
+    //   }
+    // });
+
     navigator.serviceWorker.addEventListener('message', (e) => {
         if (e.data?.type === 'NAVIGATE') {
             const url = new URL(e.data.url, location.origin).toString();

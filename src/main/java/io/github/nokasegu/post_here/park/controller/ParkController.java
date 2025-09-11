@@ -56,6 +56,7 @@ public class ParkController {
         return ResponseEntity.ok(newImageUrl);
     }
 
+    // 테스트용 페이지 맵핑 .. 지워도 됨
     @GetMapping("/test-page")
     public String parkTestPage() {
         // resources/templates/userInfo/park-test.html 을 가리킵니다.

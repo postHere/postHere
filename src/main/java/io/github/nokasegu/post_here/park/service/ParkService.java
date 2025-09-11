@@ -62,7 +62,7 @@ public class ParkService {
         UserInfoEntity owner = userInfoRepository.findById(ownerId)
                 .orElseThrow(() -> new EntityNotFoundException("Park 소유자 정보를 찾을 수 없습니다. ID: " + ownerId));
 
-        // 권한 확인: 요청 사용자가 Park 소유자를 팔로우하고 있는지 확인합니다.
+        // 권한 확인: 요청 사용자가 Park 소유자를 팔로우하고 있는지 확인합니다.(실제 기능 구현 시 활성화 필요)
 //        boolean isFollowing = followingRepository.existsByFollowerAndFollowed(currentUser, owner);
 //        if (!isFollowing) {
 //            throw new AccessDeniedException("Park를 수정할 권한이 없습니다. 팔로우가 필요합니다.");

@@ -24,10 +24,18 @@ public class ForumPostListResponseDto {
 
     private LocalDateTime createdAt;
 
+    // 좋아요 관련 필드
+    private int totalLikes;
+    private boolean isLiked;
+    private List<String> recentLikerPhotos;
+
     public ForumPostListResponseDto(
             ForumEntity forumEntity,
             int totalComments,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            int totalLikes,
+            boolean isLiked,
+            List<String> recentLikerPhotos
     ) {
         this.id = forumEntity.getId();
         // ForumAreaEntity 객체에서 address 필드를 가져와 String으로 설정
@@ -41,5 +49,8 @@ public class ForumPostListResponseDto {
         this.writerProfilePhotoUrl = forumEntity.getWriter().getProfilePhotoUrl();
         this.totalComments = totalComments;
         this.createdAt = forumEntity.getCreatedAt();
+        this.totalLikes = totalLikes;
+        this.isLiked = isLiked;
+        this.recentLikerPhotos = recentLikerPhotos;
     }
 }

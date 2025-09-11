@@ -5,6 +5,7 @@ import io.github.nokasegu.post_here.forum.domain.ForumImageEntity;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,8 +19,16 @@ public class ForumPostListResponseDto {
     private String writerNickname;
     private List<String> imageUrls;
     private String musicApiUrl;
+    private String writerProfilePhotoUrl;
+    private int totalComments;
 
-    public ForumPostListResponseDto(ForumEntity forumEntity) {
+    private LocalDateTime createdAt;
+
+    public ForumPostListResponseDto(
+            ForumEntity forumEntity,
+            int totalComments,
+            LocalDateTime createdAt
+    ) {
         this.id = forumEntity.getId();
         // ForumAreaEntity 객체에서 address 필드를 가져와 String으로 설정
         this.location = forumEntity.getLocation().getAddress();
@@ -29,5 +38,8 @@ public class ForumPostListResponseDto {
                 .map(ForumImageEntity::getImgUrl)
                 .collect(Collectors.toList());
         this.musicApiUrl = forumEntity.getMusicApiUrl();
+        this.writerProfilePhotoUrl = forumEntity.getWriter().getProfilePhotoUrl();
+        this.totalComments = totalComments;
+        this.createdAt = forumEntity.getCreatedAt();
     }
 }

@@ -12,6 +12,12 @@
  * - 가시성 변화(visibilitychange) 시 과도한 재호출 방지
  */
 
+/* 역할(정확한 명칭)
+ * - 알림 목록 로딩:        POST /notification/list
+ * - 선택 알림 읽음 처리:   POST /notification/read (멱등)
+ * - 미읽음 카운트 갱신:    POST /notification/unread-count (배지/빨간점)
+ * - 알림 행 클릭 시 이동:  GET  /profile/:userId
+ */
 
 (function () {
     const listEl = document.getElementById('list');
@@ -36,6 +42,7 @@
         return (diff <= 0) ? '0d' : `${diff}d`;
     }
 
+    // 미읽음 카운트 갱신(정확한 명칭: POST /notification/unread-count) → 배지/빨간점 on/off
     async function unreadCountSync() {
         const res = await fetch('/notification/unread-count', {
             method: 'POST', headers: authHeaders({'Accept': 'application/json'})
@@ -45,6 +52,7 @@
         bellDot.style.display = count > 0 ? 'inline-block' : 'none';
     }
 
+    // 선택 알림 읽음 처리(정확한 명칭: POST /notification/read) — 멱등
     async function markRead(ids) {
         if (!ids.length) return;
         const res = await fetch('/notification/read', {
@@ -58,6 +66,7 @@
         }
     }
 
+    // 목록 렌더링(+ 방금 본 ID 수집 → markRead 호출)
     function render(items, unreadCount) {
         bellDot.style.display = unreadCount > 0 ? 'inline-block' : 'none';
         if (!items.length) {
@@ -85,7 +94,7 @@
         markRead(idsToRead);
     }
 
-    // 행 전체 클릭 → 프로필 이동
+    // 행 전체 클릭 → 프로필 이동(정확한 명칭: GET /profile/:userId)
     listEl.addEventListener('click', (e) => {
         const row = e.target.closest('.item');
         if (!row) return;
@@ -93,6 +102,7 @@
         if (actorId) location.href = `/profile/${actorId}`;
     });
 
+    // 알림 목록 로딩 + 페이지 상태 업데이트(정확한 명칭: POST /notification/list)
     async function load() {
         listEl.innerHTML = '<div class="item"><div class="meta"><div class="text">로딩 중...</div></div></div>';
         // 목록 로딩
@@ -134,6 +144,6 @@
 
     load();
     // 별도 주기 싱크
-    // 뱃지 갱신 (주기적)
+    // 뱃지 갱신 (정확한 명칭: POST /notification/unread-count, 주기적)
     setInterval(unreadCountSync, 15000);
 })();

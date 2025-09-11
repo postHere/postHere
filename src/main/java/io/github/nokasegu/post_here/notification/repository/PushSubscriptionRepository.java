@@ -8,6 +8,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * [알림 생성 + 푸시 발사 사용 지점]
+ * - WebPushService.sendToUser(...)에서 대상 유저의 구독 목록을 조회할 때 사용합니다.
+ * - findAllByUser(...) 결과를 순회하며 각 endpoint로 푸시를 전송하는 구조입니다.
+ */
+
+/**
  * PushSubscriptionRepository
  * <p>
  * - 웹 푸시 알림(Web Push API)에서 사용자의 구독 정보를 DB에 저장/조회하기 위한 Repository

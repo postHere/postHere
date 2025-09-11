@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
- * [Flow (B) 연결 지점]
+ * [알림 생성 + 푸시 발사 연결 지점]
  * - FollowingService.follow(...) 성공
  * → NotificationService.createFollowAndPush(...)
  * → WebPushService.sendToUser(...) 에서 실제 Web Push 전송

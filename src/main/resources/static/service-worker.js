@@ -40,7 +40,7 @@
 
 
 const CACHE_NAME = 'postHere-v2';
-const FILES_TO_CACHE = ['/', '/css/main.css', '/js/main.js'];
+const FILES_TO_CACHE = ['/css/main.css', '/js/main.js'];
 
 self.addEventListener('install', (event) => {
     // 설치 단계: 앱 구동에 필요한 정적 리소스를 선 캐싱

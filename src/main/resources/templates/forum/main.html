@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <title>Forum Main</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script defer src="/js/main.js"></script>
     <link href="/pwa/manifest.json" rel="manifest">
+    <script defer th:src="@{/js/bundle.js}"></script>
 </head>
-<body>
+<body id="page-main">
 <header class="top-bar">
     <div class="logo">PostHere</div>
     <div class="location-area">

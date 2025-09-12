@@ -1,6 +1,4 @@
-// src/main/resources/static/js/main.js
-
-$(document).ready(function () {
+export function initMain() {
     let finalAreaKey = null;
 
     // 쿼리 파라미터에서 key 추출
@@ -115,60 +113,59 @@ $(document).ready(function () {
             alert('좋아요 요청 중 오류가 발생했습니다.');
         }
     });
-});
 
 // key를 이용해 게시물을 불러오는 함수
-function loadPosts(key) {
-    console.log(`'${key}' 지역의 게시물을 불러옵니다.`);
+    function loadPosts(key) {
+        console.log(`'${key}' 지역의 게시물을 불러옵니다.`);
 
-    $.ajax({
-        url: `/forum/area/${key}`,
-        type: 'GET',
-        dataType: 'json',
-        success: function (result) {
-            if (result.status === '000' && result.data) {
-                const posts = result.data;
-                const container = $('#post-list-container');
-                container.empty();
+        $.ajax({
+            url: `/forum/area/${key}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function (result) {
+                if (result.status === '000' && result.data) {
+                    const posts = result.data;
+                    const container = $('#post-list-container');
+                    container.empty();
 
-                if (posts.length === 0) {
-                    container.html('<p>해당 지역에는 작성된 포럼이 없습니다.</p>');
+                    if (posts.length === 0) {
+                        container.html('<p>해당 지역에는 작성된 포럼이 없습니다.</p>');
+                    } else {
+                        posts.forEach(post => {
+                            const postHtml = createPostHtml(post);
+                            container.append(postHtml);
+                        });
+                    }
                 } else {
-                    posts.forEach(post => {
-                        const postHtml = createPostHtml(post);
-                        container.append(postHtml);
-                    });
+                    console.error('게시물 조회 실패:', result.message);
                 }
-            } else {
-                console.error('게시물 조회 실패:', result.message);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error('네트워크 오류:', textStatus, errorThrown);
             }
-        },
-        error: function (jqXHR, textStatus, errorThrown) {
-            console.error('네트워크 오류:', textStatus, errorThrown);
-        }
-    });
-}
+        });
+    }
 
 // 게시물 HTML 생성 함수
-function createPostHtml(post) {
+    function createPostHtml(post) {
 
-    // 여러 이미지 표시를 위한 HTML 생성
-    const imagesHtml = post.imageUrls && post.imageUrls.length > 0 ?
-        post.imageUrls.map(url => `<img alt="게시물 사진" class="post-image" src="${url}">`).join('')
-        : '';
+        // 여러 이미지 표시를 위한 HTML 생성
+        const imagesHtml = post.imageUrls && post.imageUrls.length > 0 ?
+            post.imageUrls.map(url => `<img alt="게시물 사진" class="post-image" src="${url}">`).join('')
+            : '';
 
-    //시간 표시 로직
-    const timeAgoText = calculateTimeAgo(post.createdAt);
+        //시간 표시 로직
+        const timeAgoText = calculateTimeAgo(post.createdAt);
 
-    // 좋아요 상태에 따라 하트 아이콘을 결정
-    const likeIcon = post.isLiked ? '❤️' : '♡';
+        // 좋아요 상태에 따라 하트 아이콘을 결정
+        const likeIcon = post.isLiked ? '❤️' : '♡';
 
-    // 최근 좋아요 누른 사람들의 프로필 사진 HTML 생성
-    const recentLikerPhotosHtml = (post.recentLikerPhotos && post.recentLikerPhotos.length > 0) ?
-        post.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('')
-        : '';
+        // 최근 좋아요 누른 사람들의 프로필 사진 HTML 생성
+        const recentLikerPhotosHtml = (post.recentLikerPhotos && post.recentLikerPhotos.length > 0) ?
+            post.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('')
+            : '';
 
-    return `
+        return `
        <div class="post-card" data-post-id="${post.id}">
             <div class="post-author">
                 <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
@@ -202,115 +199,116 @@ function createPostHtml(post) {
             </div>
         </div>
     `;
-}
+    }
 
 // 좋아요 상태 업데이트 함수
-function updateLikeStatus(likeButton, data) {
-    const likeIcon = likeButton.find('.like-icon');
-    const likeCount = likeButton.find('.like-count');
-    const postCard = likeButton.closest('.post-card');
-    const likerPhotosContainer = postCard.find('.liker-photos');
+    function updateLikeStatus(likeButton, data) {
+        const likeIcon = likeButton.find('.like-icon');
+        const likeCount = likeButton.find('.like-count');
+        const postCard = likeButton.closest('.post-card');
+        const likerPhotosContainer = postCard.find('.liker-photos');
 
-    // 하트 아이콘 변경
-    likeIcon.text(data.isLiked ? '❤️' : '♡');
+        // 하트 아이콘 변경
+        likeIcon.text(data.isLiked ? '❤️' : '♡');
 
-    // 좋아요 개수 변경
-    likeCount.text(data.totalLikes);
+        // 좋아요 개수 변경
+        likeCount.text(data.totalLikes);
 
-    // 최근 좋아요 누른 사람들의 프로필 사진 업데이트
-    likerPhotosContainer.empty();
-    if (data.recentLikerPhotos && data.recentLikerPhotos.length > 0) {
-        const photosHtml = data.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('');
-        likerPhotosContainer.html(photosHtml);
+        // 최근 좋아요 누른 사람들의 프로필 사진 업데이트
+        likerPhotosContainer.empty();
+        if (data.recentLikerPhotos && data.recentLikerPhotos.length > 0) {
+            const photosHtml = data.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('');
+            likerPhotosContainer.html(photosHtml);
+        }
     }
-}
 
 // 댓글 불러오기 함수
-async function loadComments(postId, postCard) {
-    try {
-        const response = await fetch(`/api/forum/${postId}/comments`);
-        if (!response.ok) throw new Error('Failed to load comments');
+    async function loadComments(postId, postCard) {
+        try {
+            const response = await fetch(`/api/forum/${postId}/comments`);
+            if (!response.ok) throw new Error('Failed to load comments');
 
-        const comments = await response.json();
-        const commentList = postCard.find('.comment-list');
-        commentList.empty(); // 기존 내용 초기화
-        comments.forEach(comment => addCommentToDOM(comment, postCard, false));
-        updateCommentCount(postCard);
-    } catch (error) {
-        console.error('Error loading comments:', error);
+            const comments = await response.json();
+            const commentList = postCard.find('.comment-list');
+            commentList.empty(); // 기존 내용 초기화
+            comments.forEach(comment => addCommentToDOM(comment, postCard, false));
+            updateCommentCount(postCard);
+        } catch (error) {
+            console.error('Error loading comments:', error);
+        }
     }
-}
 
 // DOM에 댓글 추가 함수
-function addCommentToDOM(comment, postCard, prepend = true) {
-    const commentList = postCard.find('.comment-list');
-    const item = $('<li>').addClass('comment-item');
-    item.html(`
+    function addCommentToDOM(comment, postCard, prepend = true) {
+        const commentList = postCard.find('.comment-list');
+        const item = $('<li>').addClass('comment-item');
+        item.html(`
         <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}">
         <div class="comment-bubble">
             <div class="author">${comment.authorNickname}</div>
             <div class="content">${escapeHTML(comment.content)}</div>
         </div>
     `);
-    if (prepend) {
-        commentList.prepend(item);
-    } else {
-        commentList.append(item);
+        if (prepend) {
+            commentList.prepend(item);
+        } else {
+            commentList.append(item);
+        }
     }
-}
 
 // 댓글 카운트 업데이트 함수
-function updateCommentCount(postCard) {
-    const commentList = postCard.find('.comment-list');
-    const count = commentList.children().length;
-    const trigger = postCard.find('.comment-trigger');
-    const commentCountSpan = postCard.find('.comment-count');
+    function updateCommentCount(postCard) {
+        const commentList = postCard.find('.comment-list');
+        const count = commentList.children().length;
+        const trigger = postCard.find('.comment-trigger');
+        const commentCountSpan = postCard.find('.comment-count');
 
-    if (count === 0) {
-        trigger.text('댓글쓰기');
-        trigger.addClass('no-comments');
-    } else {
-        trigger.removeClass('no-comments');
-        commentCountSpan.text(`${count}`);
+        if (count === 0) {
+            trigger.text('댓글쓰기');
+            trigger.addClass('no-comments');
+        } else {
+            trigger.removeClass('no-comments');
+            commentCountSpan.text(`${count}`);
+        }
     }
-}
 
 // HTML 태그 이스케이프 함수 (XSS 방지)
-function escapeHTML(str) {
-    const p = document.createElement('p');
-    p.textContent = str;
-    return p.innerHTML;
-}
+    function escapeHTML(str) {
+        const p = document.createElement('p');
+        p.textContent = str;
+        return p.innerHTML;
+    }
 
 // 시간 변환 유틸리티 함수
-function calculateTimeAgo(dateString) {
-    const now = new Date();
-    const postDate = new Date(dateString);
-    const seconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
+    function calculateTimeAgo(dateString) {
+        const now = new Date();
+        const postDate = new Date(dateString);
+        const seconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
 
-    if (seconds < 0) {
+        if (seconds < 0) {
+            return "방금 전";
+        }
+
+        let interval = seconds / 31536000;
+        if (interval > 1) {
+            return Math.floor(interval) + "년 전";
+        }
+        interval = seconds / 2592000;
+        if (interval > 1) {
+            return Math.floor(interval) + "개월 전";
+        }
+        interval = seconds / 86400;
+        if (interval > 1) {
+            return Math.floor(interval) + "일 전";
+        }
+        interval = seconds / 3600;
+        if (interval > 1) {
+            return Math.floor(interval) + "시간 전";
+        }
+        interval = seconds / 60;
+        if (interval > 1) {
+            return Math.floor(interval) + "분 전";
+        }
         return "방금 전";
     }
-
-    let interval = seconds / 31536000;
-    if (interval > 1) {
-        return Math.floor(interval) + "년 전";
-    }
-    interval = seconds / 2592000;
-    if (interval > 1) {
-        return Math.floor(interval) + "개월 전";
-    }
-    interval = seconds / 86400;
-    if (interval > 1) {
-        return Math.floor(interval) + "일 전";
-    }
-    interval = seconds / 3600;
-    if (interval > 1) {
-        return Math.floor(interval) + "시간 전";
-    }
-    interval = seconds / 60;
-    if (interval > 1) {
-        return Math.floor(interval) + "분 전";
-    }
-    return "방금 전";
 }

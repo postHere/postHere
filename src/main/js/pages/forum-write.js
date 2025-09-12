@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+export function initForumWrite() {
 
     const form = document.getElementById('forum-form');
     const submitButton = document.getElementById('submit-btn');
@@ -107,4 +107,4 @@ document.addEventListener('DOMContentLoaded', () => {
             submitButton.textContent = '공유';
         }
     });
-});
+}

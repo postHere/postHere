@@ -1,9 +1,9 @@
 /**
  * Google Maps API 스크립트가 완전히 로드된 후, HTML의 callback=initMap에 의해 자동으로 호출되는 함수입니다.
  */
-function initMap() {
+export function initFindOnMap() {
     // 1. 지도 초기 설정을 위한 기본 위치 (서울 중심)
-    const defaultPosition = { lat: 37.5665, lng: 126.9780 };
+    const defaultPosition = {lat: 37.5665, lng: 126.9780};
 
     // 2. 지도 객체 생성 (기본 위치로 우선 표시)
     const map = new google.maps.Map(document.getElementById("map"), {
@@ -28,7 +28,7 @@ function initMap() {
     });
 
     // '게시글로 이동' 버튼에 대한 이벤트 리스너를 한 번만 등록합니다.
-    modalFindButton.addEventListener('click', function() {
+    modalFindButton.addEventListener('click', function () {
         const findPk = this.dataset.findPk;
         if (findPk) {
             // console.log(`Requesting /find/${findPk}`);
@@ -48,16 +48,35 @@ function initMap() {
                 };
 
                 map.setCenter(userPosition);
-                new google.maps.Marker({ position: userPosition, map: map, title: "나의 위치", icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#4285F4", fillOpacity: 1, strokeWeight: 2, strokeColor: "white" } });
-                const circleOptions = { strokeColor: "#4285F4", strokeOpacity: 0.8, strokeWeight: 1, fillColor: "#4285F4", map: map, center: userPosition };
-                new google.maps.Circle({ ...circleOptions, radius: 50, fillOpacity: 0.20, clickable: false });
-                new google.maps.Circle({ ...circleOptions, radius: 200, fillOpacity: 0.10, clickable: false });
+                new google.maps.Marker({
+                    position: userPosition,
+                    map: map,
+                    title: "나의 위치",
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: "#4285F4",
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: "white"
+                    }
+                });
+                const circleOptions = {
+                    strokeColor: "#4285F4",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 1,
+                    fillColor: "#4285F4",
+                    map: map,
+                    center: userPosition
+                };
+                new google.maps.Circle({...circleOptions, radius: 50, fillOpacity: 0.20, clickable: false});
+                new google.maps.Circle({...circleOptions, radius: 200, fillOpacity: 0.10, clickable: false});
 
                 // 5. 서버에 위치 정보 보내고 주변 데이터 받기
                 fetch('http://localhost:3000/location', {   // 로컬 환경 테스트 시 요청 주소
-                // fetch('/location', {     // 서버 연결 시 요청 주소
+                    // fetch('/location', {     // 서버 연결 시 요청 주소
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(userPosition),
                 })
                     .then(response => {
@@ -92,10 +111,10 @@ function initMap() {
         // 지역(region)에 따라 다른 이미지 아이콘을 설정합니다.
         switch (location.region) {
             case 1:
-                markerIcon = { url: 'marker_region_1.png', scaledSize: new google.maps.Size(35, 35) };
+                markerIcon = {url: 'marker_region_1.png', scaledSize: new google.maps.Size(35, 35)};
                 break;
             case 2:
-                markerIcon = { url: 'marker_region_2.png', scaledSize: new google.maps.Size(35, 35) };
+                markerIcon = {url: 'marker_region_2.png', scaledSize: new google.maps.Size(35, 35)};
                 break;
             default:
                 markerIcon = null; // 200m 밖 (기본 마커)
@@ -103,7 +122,7 @@ function initMap() {
         }
 
         const marker = new google.maps.Marker({
-            position: { lat: location.lat, lng: location.lng },
+            position: {lat: location.lat, lng: location.lng},
             map: map,
             title: location.nickname,
             icon: markerIcon

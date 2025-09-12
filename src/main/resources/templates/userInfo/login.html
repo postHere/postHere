@@ -5,8 +5,9 @@
     <title>로그인</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link rel="manifest" th:href="@{/pwa/manifest.json}">
+    <script defer th:src="@{/js/bundle.js}"></script>
 </head>
-<body>
+<body id="page-login">
 <h1>로그인</h1>
 
 <form>
@@ -22,5 +23,4 @@
     <button>로그인</button>
 </form>
 </body>
-<script src="/js/login.js"></script>
 </html>

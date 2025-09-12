@@ -1,36 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Park</title>
     <link rel="stylesheet" th:href="@{/css/park-write.css}">
-    <script th:src="@{/js/park-write.js}" defer></script>
+    <script defer th:src="@{/js/bundle.js}"></script>
 </head>
-<body>
-    <h1>Park</h1>
-    <div id="canvas-container">
-        <canvas id="object-canvas"></canvas>
+<body id="page-park-write">
+<h1>Park</h1>
+<div id="canvas-container">
+    <canvas id="object-canvas"></canvas>
+</div>
+<div id="toolbar">
+    <div id="container-color">
+        <div id="red"></div>
+        <div id="green"></div>
+        <div id="blue"></div>
+        <div id="black"></div>
     </div>
-    <div id="toolbar">
-        <div id="container-color">
-            <div id="red"></div>
-            <div id="green"></div>
-            <div id="blue"></div>
-            <div id="black"></div>
-        </div>
-        <div id="container-text">
-            <label for="text-input">Text: </label>
-            <input type="text" name="" id="text-input">
-            <input type="button" value="삽입" id="add-text-btn">
-        </div>
-        <div id="container-font-size">
-            <label for="font-size-slider">글자 크기: </label>
-            <input type="range" name="" id="font-size-slider" value="20" min="8" max="72">
-            <span id="font-size-value">20</span>px
-        </div>
-        <div id="container-save">
-            <button id="save-btn">저장</button>
-        </div>
+    <div id="container-text">
+        <label for="text-input">Text: </label>
+        <input id="text-input" name="" type="text">
+        <input id="add-text-btn" type="button" value="삽입">
     </div>
+    <div id="container-font-size">
+        <label for="font-size-slider">글자 크기: </label>
+        <input id="font-size-slider" max="72" min="8" name="" type="range" value="20">
+        <span id="font-size-value">20</span>px
+    </div>
+    <div id="container-save">
+        <button id="save-btn">저장</button>
+    </div>
+</div>
 </body>
 </html>

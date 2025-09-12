@@ -19,7 +19,7 @@
  * - 알림 행 클릭 시 이동:  GET  /profile/:userId
  */
 
-(function () {
+export function initNotification() {
     const listEl = document.getElementById('list');
     const pageEl = document.getElementById('page');
     const prevBtn = document.getElementById('prev');
@@ -146,4 +146,4 @@
     // 별도 주기 싱크
     // 뱃지 갱신 (정확한 명칭: POST /notification/unread-count, 주기적)
     setInterval(unreadCountSync, 15000);
-})();
+}

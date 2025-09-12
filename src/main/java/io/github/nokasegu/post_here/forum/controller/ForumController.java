@@ -22,8 +22,8 @@ public class ForumController {
 
     private final ForumService forumService;
 
-    @GetMapping("/")
-    public String baseRequest() {
+    @GetMapping("/start")
+    public String start() {
         return "redirect:/forumMain";
     }
 

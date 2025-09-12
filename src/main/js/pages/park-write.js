@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+export function initParkWrite() {
     // 캔버스 설정
     const objectCanvas = document.getElementById("object-canvas");
     const objectCtx = objectCanvas.getContext("2d");
@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const { offsetX, offsetY } = getEventCoordinates(event);
+        const {offsetX, offsetY} = getEventCoordinates(event);
         selectedObject = null;
         lastSelectedTextObject = null;
 
@@ -214,7 +214,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 offsetY: touch.clientY - rect.top,
             };
         }
-        return { offsetX: event.offsetX, offsetY: event.offsetY };
+        return {offsetX: event.offsetX, offsetY: event.offsetY};
     }
 
     function dragOrDraw(event) {
@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const { offsetX, offsetY } = getEventCoordinates(event);
+        const {offsetX, offsetY} = getEventCoordinates(event);
         if (isDraggingObject && selectedObject) {
             selectedObject.translateX = offsetX - dragOffsetX;
             selectedObject.translateY = offsetY - dragOffsetY;
@@ -342,4 +342,4 @@ document.addEventListener("DOMContentLoaded", function () {
     objectCanvas.addEventListener("touchend", stopDragOrDrawing);
 
     initializeCanvases();
-});
+}

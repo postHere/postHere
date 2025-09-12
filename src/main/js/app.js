@@ -33,7 +33,8 @@ import {initFindOnMap} from "./pages/find-on-map";
 // 이 로직은 다른 어떤 코드보다 먼저 실행되는 것이 좋습니다.
 if (window.location.pathname === '/') {
     // 🚨 '/start' 경로는 실제 프로젝트의 시작 페이지 경로(예: '/login')로 반드시 변경하세요.
-    window.location.replace('http://1.235.197.58:8081/start');
+    // window.location.replace('http://1.235.197.58:8081/start');
+    window.location.replace('/start');
 }
 
 // --- 4. 전역 기능 실행 (뒤로 가기 버튼 처리) ---

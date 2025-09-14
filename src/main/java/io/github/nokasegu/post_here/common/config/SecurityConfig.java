@@ -61,6 +61,11 @@ public class SecurityConfig {
                         // ✅ /push/subscribe 는 인증 필요 (사용자 계정과 구독 매핑 목적)
                         .anyRequest().authenticated()
                 );
+        http
+                .rememberMe(rememberMe -> rememberMe
+                        .tokenValiditySeconds(60 * 60 * 24 * 14) // 14일 동안 유효
+                        .alwaysRemember(true) // 항상 Remember-Me 쿠키를 발행 (앱에 적합)
+                );
 
         return http.build();
     }

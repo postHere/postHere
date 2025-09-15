@@ -26,7 +26,7 @@ import {initForumAreaSearch} from './pages/forum-area-search.js';
 import {initParkWrite} from './pages/park-write.js';
 import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
-
+import {initForumEdit} from './pages/forum-edit'
 
 // --- 3. 초기 경로 설정 ---
 // 앱이 처음 로드되었을 때(경로가 '/') 시작 페이지로 이동시킵니다.
@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
         case 'page-notifications':
             initNotification();
+            break;
+        case 'page-forum-edit':
+            initForumEdit();
             break;
         default:
             console.log('이 페이지에 해당하는 초기화 스크립트가 없습니다.');

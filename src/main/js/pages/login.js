@@ -1,5 +1,7 @@
 export function initLogin() {
 
+    const loginError = $('#login-error');
+
     async function checkAutoLogin() {
 
         console.log("자동 로그인 요청");
@@ -25,7 +27,7 @@ export function initLogin() {
 
         console.log("로그인 요청");
         event.preventDefault();
-        $('#login-error').text('');
+        loginError.text('');
 
         const username = $('#id').val();
         const password = $('#password').val();
@@ -33,7 +35,7 @@ export function initLogin() {
         if (!username || !password) {
 
             const message = '아이디와 비밀번호를 모두 입력해주세요';
-            $('#login-error').text(message);
+            loginError.text(message);
             return false;
         }
 
@@ -55,8 +57,9 @@ export function initLogin() {
                     })
             })
             .fail(function (xhr, status, error) {
+                op
                 const message = xhr.responseJSON.message;
-                $('#login-error').text(message);
+                loginError.text(message);
             });
     }
 

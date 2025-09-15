@@ -54,7 +54,73 @@ public class ForumController {
                 .data(responseData)
                 .build();
     }
-    
+
+    /**
+     * 게시글 수정 페이지로 이동
+     *
+     * @param forumId     수정할 게시글 ID
+     * @param userDetails 현재 사용자 정보 (권한 확인용)
+     * @param model       Thymeleaf 모델
+     * @return 수정 페이지 뷰
+     */
+    @GetMapping("/forum/{forumId}/edit")
+    public String editForumPage(
+            @PathVariable("forumId") Long forumId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Model model) {
+
+        // 현재 사용자 ID를 서비스에 전달하여 게시글 정보와 권한을 함께 확인합니다.
+        ForumDetailResponseDto forumDetail = forumService.getForumDetail(forumId, userDetails.getUserInfo().getId());
+
+        // 모델에 게시글 정보를 추가
+        model.addAttribute("forum", forumDetail);
+
+        return "forum/forum-edit";
+    }
+
+
+    /**
+     * 게시글 수정 API
+     *
+     * @param forumId     수정할 게시글 ID
+     * @param requestDto  수정할 데이터와 삭제할 이미지 ID 목록
+     * @param userDetails 현재 사용자 정보
+     * @return 성공 메시지
+     */
+    @ResponseBody
+    @PostMapping("/forum/{forumId}")
+    public WrapperDTO<String> updateForum(
+            @PathVariable("forumId") Long forumId,
+            @RequestBody ForumUpdateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        // 클라이언트에서 보낸 DTO를 서비스로 전달
+        forumService.updateForum(forumId, requestDto, userDetails.getUserInfo().getId());
+        return WrapperDTO.<String>builder()
+                .status(Code.OK.getCode())
+                .message("게시글이 성공적으로 수정되었습니다.")
+                .data("/forumMain")
+                .build();
+    }
+
+    /**
+     * 게시글 삭제 API
+     *
+     * @param forumId     삭제할 게시글 ID
+     * @param userDetails 현재 사용자 정보
+     * @return 성공 메시지
+     */
+    @ResponseBody
+    @DeleteMapping("/forum/{forumId}")
+    public WrapperDTO<String> deleteForum(
+            @PathVariable("forumId") Long forumId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        forumService.deleteForum(forumId, userDetails.getUserInfo().getId());
+        return WrapperDTO.<String>builder()
+                .status(Code.OK.getCode())
+                .message("게시글이 성공적으로 삭제되었습니다.")
+                .build();
+    }
+
     // 포럼 목록 열람 API
     @ResponseBody
     @GetMapping("/forum/area/{key}")

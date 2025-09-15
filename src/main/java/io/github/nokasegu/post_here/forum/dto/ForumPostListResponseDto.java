@@ -21,6 +21,7 @@ public class ForumPostListResponseDto {
     private String musicApiUrl;
     private String writerProfilePhotoUrl;
     private int totalComments;
+    private boolean author;
 
     private LocalDateTime createdAt;
 
@@ -35,7 +36,8 @@ public class ForumPostListResponseDto {
             LocalDateTime createdAt,
             int totalLikes,
             boolean isLiked,
-            List<String> recentLikerPhotos
+            List<String> recentLikerPhotos,
+            boolean author
     ) {
         this.id = forumEntity.getId();
         // ForumAreaEntity 객체에서 address 필드를 가져와 String으로 설정
@@ -52,5 +54,6 @@ public class ForumPostListResponseDto {
         this.totalLikes = totalLikes;
         this.isLiked = isLiked;
         this.recentLikerPhotos = recentLikerPhotos;
+        this.author = author;
     }
 }

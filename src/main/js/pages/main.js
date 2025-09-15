@@ -114,6 +114,53 @@ export function initMain() {
         }
     });
 
+    // 수정/삭제 모달 로직
+    // '...' 버튼 클릭 시 모달창 표시
+    $('#post-list-container').on('click', '.post-options-button', function () {
+        const postId = $(this).data('forum-id');
+        $('#action-modal').data('current-post-id', postId).show();
+    });
+
+    // 수정 버튼 클릭
+    $('#edit-button').on('click', function () {
+        const postId = $('#action-modal').data('current-post-id');
+        window.location.href = `/forum/${postId}/edit`; // 수정 페이지로 이동
+    });
+
+    // 삭제 버튼 클릭
+    $('#delete-button').on('click', function () {
+        $('#action-modal').hide(); // 액션 모달 숨기기
+        $('#confirm-delete-modal').show(); // 삭제 확인 모달 표시
+    });
+
+    // 삭제 확인 모달의 '예' 버튼 클릭
+    $('#confirm-delete-yes').on('click', async function () {
+        const postId = $('#action-modal').data('current-post-id');
+        try {
+            const response = await fetch(`/forum/${postId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('게시글 삭제에 실패했습니다.');
+            }
+
+            alert('게시글이 성공적으로 삭제되었습니다.');
+            // UI 업데이트
+            $(`.post-card[data-post-id="${postId}"]`).remove();
+            $('#confirm-delete-modal').hide();
+
+        } catch (error) {
+            console.error('삭제 오류:', error);
+            alert('삭제 중 오류가 발생했습니다.');
+        }
+    });
+
+    // 모달 닫기 버튼 또는 '아니오' 버튼 클릭
+    $('.modal .close-button, #confirm-delete-no').on('click', function () {
+        $(this).closest('.modal').hide();
+    });
+
 // key를 이용해 게시물을 불러오는 함수
     function loadPosts(key) {
         console.log(`'${key}' 지역의 게시물을 불러옵니다.`);
@@ -165,40 +212,49 @@ export function initMain() {
             post.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('')
             : '';
 
+        //작성자에게만 수정/삭제 버튼을 표시
+        const optionsHtml = post.author ? `
+            <div class="post-options-container">
+                <button class="post-options-button" data-forum-id="${post.id}">...</button>
+            </div>
+        ` : '';
+
         return `
-       <div class="post-card" data-post-id="${post.id}">
-            <div class="post-author">
-                <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
-                <div class="post-author-info">
-                    <div class="name">${post.writerNickname}</div>
-                    <div class="time">${timeAgoText}</div>
+           <div class="post-card" data-post-id="${post.id}">
+                <div class="post-header">
+                    <div class="post-author">
+                        <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
+                        <div class="post-author-info">
+                            <div class="name">${post.writerNickname}</div>
+                            <div class="time">${timeAgoText}</div>
+                        </div>
+                    </div>
+                    ${optionsHtml} </div>
+                <div class="post-content">
+                    <p>${escapeHTML(post.contentsText)}</p>
+                    ${imagesHtml}
+                </div>
+                <div class="post-actions">
+                    <div>
+                        <span class="like-button" data-forum-id="${post.id}">
+                            <span class="like-icon">${likeIcon}</span>
+                            <span class="like-count">${post.totalLikes}</span> likes
+                        </span>
+                        <a class="comment-trigger" href="#">💬 <span class="comment-count">${post.totalComments}</span> comments</a>
+                    </div>
+                </div>
+                <div class="liker-photos">
+                    ${recentLikerPhotosHtml}
+                </div>
+                <div class="comment-section" style="display:none;">
+                    <ul class="comment-list"></ul>
+                    <form class="comment-form">
+                        <input class="comment-input" placeholder="댓글을 입력하세요..." required type="text">
+                        <button class="comment-submit" type="submit">게시</button>
+                    </form>
                 </div>
             </div>
-            <div class="post-content">
-                <p>${escapeHTML(post.contentsText)}</p>
-                ${imagesHtml}
-            </div>
-            <div class="post-actions">
-                <div>
-                    <span class="like-button" data-forum-id="${post.id}">
-                        <span class="like-icon">${likeIcon}</span>
-                        <span class="like-count">${post.totalLikes}</span> likes
-                    </span>
-                    <a class="comment-trigger" href="#">💬 <span class="comment-count">${post.totalComments}</span> comments</a>
-                </div>
-            </div>
-            <div class="liker-photos">
-                ${recentLikerPhotosHtml}
-            </div>
-            <div class="comment-section" style="display:none;">
-                <ul class="comment-list"></ul>
-                <form class="comment-form">
-                    <input class="comment-input" placeholder="댓글을 입력하세요..." required type="text">
-                    <button class="comment-submit" type="submit">게시</button>
-                </form>
-            </div>
-        </div>
-    `;
+        `;
     }
 
 // 좋아요 상태 업데이트 함수

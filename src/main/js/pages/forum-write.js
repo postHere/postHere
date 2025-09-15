@@ -50,6 +50,15 @@ export function initForumWrite() {
             return;
         }
 
+        // 텍스트 유효성 검사 로직
+        const content = document.getElementById("content").value.trim();
+        if (!content) {
+            alert('게시글 내용을 입력해주세요.');
+            submitButton.disabled = false;
+            submitButton.textContent = '공유';
+            return;
+        }
+
         let imageUrls = [];
         try {
             if (selectedImageFiles.length > 0) {

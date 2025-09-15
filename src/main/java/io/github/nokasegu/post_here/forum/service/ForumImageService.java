@@ -10,32 +10,38 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ForumImageService {
 
     private final ForumImageRepository forumImageRepository;
     private final S3UploaderService s3UploaderService;
 
-    // 포럼 게시글에 연결된 이미지 URL 목록을 DB에 저장합니다.
-    @Transactional
-    public void saveImages(ForumEntity forum, List<String> imageUrls) {
-        if (imageUrls != null && !imageUrls.isEmpty()) {
-            for (String imageUrl : imageUrls) {
-                ForumImageEntity forumImage = ForumImageEntity.builder()
-                        .forum(forum)
-                        .imgUrl(imageUrl)
-                        .build();
-                forumImageRepository.save(forumImage);
-            }
-        }
+    /**
+     * 이미지를 S3에 업로드하고 URL을 반환합니다. (DB 저장 없음)
+     *
+     * @param image MultipartFile 객체
+     * @return S3에 업로드된 이미지의 URL
+     * @throws IOException
+     */
+    public String uploadImage(MultipartFile image) throws IOException {
+        return s3UploaderService.upload(image, "forum-images");
     }
 
-    // S3 업로드를 전담하는 메서드를 추가합니다.
-    public String uploadImage(MultipartFile image, String dirName) throws IOException {
-        return s3UploaderService.upload(image, dirName);
+    /**
+     * 이미지 URL을 받아 DB에 저장하고, 포럼 게시글에 연결합니다.
+     *
+     * @param imageUrl DB에 저장할 이미지 URL
+     * @param forum    이미지와 연결할 포럼 엔티티
+     * @return DB에 저장된 ForumImageEntity
+     */
+    public ForumImageEntity saveImage(String imageUrl, ForumEntity forum) {
+        ForumImageEntity forumImage = ForumImageEntity.builder()
+                .imgUrl(imageUrl)
+                .forum(forum) // ★★★ 변경: ForumEntity를 받아 바로 연결합니다. ★★★
+                .build();
+        return forumImageRepository.save(forumImage);
     }
-
 }

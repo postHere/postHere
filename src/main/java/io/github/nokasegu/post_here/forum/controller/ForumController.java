@@ -42,12 +42,10 @@ public class ForumController {
     public WrapperDTO<ForumCreateResponseDto> createForum(
             @RequestBody ForumCreateRequestDto requestDto,
             Principal principal) throws IOException {
-
-        // 인증된 사용자의 이메일을 컨트롤러에서 직접 가져와 DTO에 설정
         String userEmail = principal.getName();
         requestDto.setUserEmail(userEmail);
 
-        // DTO를 서비스로 전달
+        // 이미지 ID 목록을 담은 DTO를 서비스로 전달
         ForumCreateResponseDto responseData = forumService.createForum(requestDto);
 
         return WrapperDTO.<ForumCreateResponseDto>builder()
@@ -56,7 +54,7 @@ public class ForumController {
                 .data(responseData)
                 .build();
     }
-
+    
     // 포럼 목록 열람 API
     @ResponseBody
     @GetMapping("/forum/area/{key}")

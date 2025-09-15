@@ -33,23 +33,15 @@ public class ForumService {
     private final ForumLikeService forumLikeService;
     private final ForumLikeRepository forumLikeRepository;
 
-    /**
-     * 포럼 게시글을 생성하고 저장
-     *
-     * @param requestDto 게시글 생성 요청 DTO
-     * @return 생성된 게시글의 ID가 담긴 응답 DTO
-     */
     public ForumCreateResponseDto createForum(ForumCreateRequestDto requestDto) throws IOException {
 
-        // DTO에서 사용자 이메일을 가져와 유저를 조회
         UserInfoEntity writer = userInfoRepository.findByEmail(requestDto.getUserEmail())
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다."));
 
-        // DTO의 지역 ID로 ForumAreaEntity를 조회
         ForumAreaEntity area = forumAreaRepository.findById(requestDto.getLocation())
-                .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역입니다"));
+                .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역입니다."));
 
-        // ForumEntity를 생성하고, 조회된 Entity를 location 필드에 연결
+        // 1. ForumEntity를 먼저 저장하여 forum_pk를 발급받습니다.
         ForumEntity forum = ForumEntity.builder()
                 .writer(writer)
                 .location(area)
@@ -59,10 +51,13 @@ public class ForumService {
                 .build();
         ForumEntity savedForum = forumRepository.save(forum);
 
-        // 이미지 저장 로직을 ForumImageService에 위임
-        forumImageService.saveImages(savedForum, requestDto.getImageUrls());
+        // 2. ★★★ 변경: 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결합니다. ★★★
+        if (requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty()) {
+            for (String imageUrl : requestDto.getImageUrls()) {
+                forumImageService.saveImage(imageUrl, savedForum);
+            }
+        }
 
-        // 컨트롤러에 전달할 응답 DTO를 생성하여 반환
         return new ForumCreateResponseDto(savedForum.getId());
     }
 

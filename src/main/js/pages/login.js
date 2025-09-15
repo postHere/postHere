@@ -49,8 +49,10 @@ export function initLogin() {
             datatype: "json"
         })
             .done(function (data, textStatus, jqXHR) {
-                const redirectUrl = jqXHR.getResponseHeader('Location');
-                window.location.href = window.location.origin + redirectUrl;
+                fetch('/api/auth/status')
+                    .finally(() => {
+                        window.location.href = jqXHR.getResponseHeader('Location');
+                    })
             })
             .fail(function (xhr, status, error) {
                 const message = xhr.responseJSON.message;

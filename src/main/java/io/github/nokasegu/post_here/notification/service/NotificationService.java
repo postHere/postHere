@@ -3,12 +3,17 @@ package io.github.nokasegu.post_here.notification.service;
 import io.github.nokasegu.post_here.follow.domain.FollowingEntity;
 import io.github.nokasegu.post_here.notification.domain.NotificationCode;
 import io.github.nokasegu.post_here.notification.domain.NotificationEntity;
+import io.github.nokasegu.post_here.notification.dto.NotificationItemResponseDto;
+import io.github.nokasegu.post_here.notification.dto.NotificationListResponseDto;
 import io.github.nokasegu.post_here.notification.repository.NotificationRepository;
+import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -18,7 +23,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository; // 알림 CRUD/배치 읽음처리
     private final UserInfoRepository userInfoRepository;         // 타겟 유저 검증/조회
     private final WebPushService webPushService;                 // Web Push 전송(브라우저 구독 대상)
-    // ✅ [추가] 네이티브(Firebase FCM) 발송자
+    // ✅ 네이티브(Firebase FCM) 발송자
     private final FcmSenderService fcmSenderService;
 
     @Transactional
@@ -43,7 +48,7 @@ public class NotificationService {
 
         webPushService.sendToUser(following.getFollowed(), payload);
 
-        // ✅ [추가] 네이티브(Android)로도 동시 발송
+        // ✅ 네이티브(Android)로도 동시 발송
         fcmSenderService.sendFollow(
                 following.getFollowed(),
                 following.getFollower().getNickname(),
@@ -54,5 +59,39 @@ public class NotificationService {
         return saved;
     }
 
-    // ... (이하 기존 코드 그대로 유지)
+    // ========================
+    // 📌 APIController 매칭 메서드들
+    // ========================
+
+    @Transactional(readOnly = true)
+    public NotificationListResponseDto list(Long targetUserId, int page, int size) {
+        UserInfoEntity target = userInfoRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        List<NotificationEntity> entities = notificationRepository.findListByTarget(target, PageRequest.of(page, size));
+        List<NotificationItemResponseDto> items = entities.stream()
+                .map(NotificationItemResponseDto::from)
+                .toList();
+        return new NotificationListResponseDto(items);
+    }
+
+    @Transactional
+    public long markRead(Long targetUserId, List<Long> ids) {
+        UserInfoEntity target = userInfoRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        return notificationRepository.markRead(target, ids);
+    }
+
+    @Transactional
+    public long markAllRead(Long targetUserId) {
+        UserInfoEntity target = userInfoRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        return notificationRepository.markAllRead(target);
+    }
+
+    @Transactional(readOnly = true)
+    public long unreadCount(Long targetUserId) {
+        UserInfoEntity target = userInfoRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        return notificationRepository.countByTargetUserAndCheckStatusIsFalse(target);
+    }
 }

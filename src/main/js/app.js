@@ -28,7 +28,7 @@ import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
 import {initForumEdit} from './pages/forum-edit';
 // ✅ [PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
-import {initPush} from '../../js/pages/push.js';
+import {initPush} from './pages/push.js';
 
 
 // --- 3. 초기 경로 설정 ---

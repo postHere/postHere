@@ -21,7 +21,7 @@ public class NotificationItemResponseDto {
     private LocalDateTime createdAt;
     private boolean isRead;
 
-    public static NotificationItemResponseDto fromEntity(NotificationEntity e) {
+    public static NotificationItemResponseDto from(NotificationEntity e) {
         return NotificationItemResponseDto.builder()
                 .id(e.getId())
                 .type(e.getNotificationCode())

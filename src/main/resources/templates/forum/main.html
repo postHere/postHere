@@ -3,43 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <title>Forum Main</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Agbalumo&display=swap" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link href="/pwa/manifest.json" rel="manifest">
     <script defer th:src="@{/js/bundle.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body id="page-main">
-<header class="top-bar">
-    <div class="logo">PostHere</div>
-    <div class="location-area">
-        <a href="/forum/area" id="current-location-link">
-            <span class="location-icon">📍</span>
-            <span id="current-location-text">위치 설정 중...</span>
-        </a>
-    </div>
-</header>
-<div class="main-container">
-
-    <div id="post-list-container"></div>
-
-    <div class="modal" id="action-modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <button class="modal-button" id="edit-button">수정</button>
-            <button class="modal-button" id="delete-button">삭제</button>
-        </div>
-    </div>
-
-    <div class="modal" id="confirm-delete-modal" style="display: none;">
-        <div class="modal-content">
-            <p>게시글을 정말 삭제하시겠습니까?</p>
-            <div class="modal-buttons">
-                <button class="modal-button confirm-yes" id="confirm-delete-yes">예</button>
-                <button class="modal-button confirm-no" id="confirm-delete-no">아니오</button>
+<div id="app-container">
+    <header class="top-bar">
+        <div class="top-bar-inner">
+            <div class="logo">PostHere</div>
+            <div class="location-area">
+                <a href="/forum/area" id="current-location-link">
+                    <span class="location-icon">📍</span>
+                    <span id="current-location-text">위치 설정 중...</span>
+                </a>
             </div>
         </div>
-    </div>
+    </header>
+    <div class="main-container">
 
-    <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
+        <div id="post-list-container"></div>
+
+        <div class="modal" id="action-modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <button class="modal-button" id="edit-button">수정</button>
+                <button class="modal-button" id="delete-button">삭제</button>
+            </div>
+        </div>
+
+        <div class="modal" id="confirm-delete-modal" style="display: none;">
+            <div class="modal-content">
+                <p>게시글을 정말 삭제하시겠습니까?</p>
+                <div class="modal-buttons">
+                    <button class="modal-button confirm-yes" id="confirm-delete-yes">예</button>
+                    <button class="modal-button confirm-no" id="confirm-delete-no">아니오</button>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
+    </div>
 </div>
 </body>
 </html>

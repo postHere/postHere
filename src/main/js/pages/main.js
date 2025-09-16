@@ -1,66 +1,43 @@
 export function initMain() {
     let finalAreaKey = null;
-
-    // 쿼리 파라미터에서 key 추출
     const urlParams = new URLSearchParams(window.location.search);
     const areaKeyFromUrl = urlParams.get('areaKey');
 
     if (areaKeyFromUrl) {
-        console.log('URL 파라미터에서 key 발견:', areaKeyFromUrl);
         finalAreaKey = areaKeyFromUrl;
     } else {
-        // 쿼리 파라미터가 없으면 localStorage 값 참조
         const areaKeyFromStorage = localStorage.getItem('currentAreaKey');
         if (areaKeyFromStorage) {
-            console.log('localStorage에서 key 발견:', areaKeyFromStorage);
             finalAreaKey = areaKeyFromStorage;
         }
     }
 
     const locationTextElement = $('#current-location-text');
-
     if (finalAreaKey) {
-        // 상단바 위치 정보 표시
-        // 주소지가 출력되야 해서 위치 전송 기능 개발되면 그에 맞게 변경되야 함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         locationTextElement.text(finalAreaKey);
-
-        // finalAreaKey를 사용해 바로 게시물을 로드
         loadPosts(finalAreaKey);
     } else {
-        console.log("게시물을 불러올 지역 정보가 없습니다.");
         locationTextElement.text("지역 설정 중..");
     }
 
-    // 포스트 컨테이너에 이벤트 위임 방식으로 댓글 관련 이벤트 바인딩
     $('#post-list-container').on('click', '.comment-trigger', async function (e) {
         e.preventDefault();
         const postCard = $(this).closest('.post-card');
-        const postId = postCard.data('post-id');
         const commentSection = postCard.find('.comment-section');
-
-        const isHidden = commentSection.is(':hidden');
         commentSection.toggle(200);
-
-        if (isHidden && postCard.find('.comment-list').is(':empty')) {
-            await loadComments(postId, postCard);
-        }
     });
 
-    // 포스트 컨테이너에 이벤트 위임 방식으로 댓글 '삭제' 이벤트 바인딩
     $('#post-list-container').on('click', '.comment-delete-button', async function () {
         const button = $(this);
         const commentId = button.data('comment-id');
         const postCard = button.closest('.post-card');
         const postId = postCard.data('post-id');
-
         if (confirm("댓글을 삭제하시겠습니까?")) {
             try {
                 const response = await fetch(`/api/forum/${postId}/comments/${commentId}`, {
                     method: 'DELETE'
                 });
-
                 if (response.status === 204) {
-                    // 삭제 성공 시 DOM에서 댓글 아이템 제거
                     button.closest('.comment-item').remove();
                     updateCommentCount(postCard);
                     alert('댓글이 삭제되었습니다.');
@@ -73,7 +50,6 @@ export function initMain() {
                     throw new Error('댓글 삭제에 실패했습니다.');
                 }
             } catch (error) {
-                console.error('삭제 오류:', error);
                 alert('삭제 중 오류가 발생했습니다.');
             }
         }
@@ -87,44 +63,35 @@ export function initMain() {
         const input = form.find('.comment-input');
         const content = input.val().trim();
         if (!content) return;
-
         const submitButton = form.find('.comment-submit');
         submitButton.prop('disabled', true);
-
         try {
             const response = await fetch(`/api/forum/${postId}/comments`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({content})
             });
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             const newComment = await response.json();
             addCommentToDOM(newComment, postCard);
             input.val('');
             updateCommentCount(postCard);
-
         } catch (error) {
-            console.error('Failed to post comment:', error);
             alert('댓글 작성에 실패했습니다.');
         } finally {
             submitButton.prop('disabled', false);
         }
     });
 
-    // 좋아요 버튼 클릭 이벤트 리스너
     $('#post-list-container').on('click', '.like-button', async function () {
         const likeButton = $(this);
         const forumId = likeButton.data('forum-id');
-
         try {
             const response = await fetch(`/forum/like/${forumId}`, {
                 method: 'POST'
             });
-
             if (!response.ok) {
                 if (response.status === 401) {
                     alert('로그인이 필요합니다.');
@@ -132,126 +99,190 @@ export function initMain() {
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             const result = await response.json();
-
             if (result.status === '000') {
                 updateLikeStatus(likeButton, result.data);
             } else {
-                console.error('좋아요 토글 실패:', result.message);
                 alert('좋아요 기능에 문제가 발생했습니다.');
             }
         } catch (error) {
-            console.error('네트워크 또는 기타 오류:', error);
             alert('좋아요 요청 중 오류가 발생했습니다.');
         }
     });
 
-    // 수정/삭제 모달 로직
-    // '...' 버튼 클릭 시 모달창 표시
-    $('#post-list-container').on('click', '.post-options-button', function () {
-        const postId = $(this).data('forum-id');
-        $('#action-modal').data('current-post-id', postId).show();
+    // 변경: 모달창을 '...' 버튼 바로 아래에 생성하는 로직으로 변경
+    $('#post-list-container').on('click', '.post-options-button', function (event) {
+        event.stopPropagation();
+        const button = $(this);
+        const postId = button.data('forum-id');
+        $('.options-modal').remove();
+        const modal = $(`
+            <div class="options-modal">
+                <button class="edit-button">수정</button>
+                <button class="delete-button">삭제</button>
+            </div>
+        `);
+        button.parent().after(modal);
+        setTimeout(() => {
+            $(document).one('click', function (e) {
+                if (!$(e.target).closest('.options-modal, .post-options-button').length) {
+                    modal.remove();
+                }
+            });
+        }, 0);
+        modal.on('click', '.delete-button', function () {
+            modal.remove();
+            $('#confirm-delete-modal').data('current-post-id', postId).show();
+        });
+        modal.on('click', '.edit-button', function () {
+            modal.remove();
+            window.location.href = `/forum/${postId}/edit`;
+        });
     });
 
-    // 수정 버튼 클릭
-    $('#edit-button').on('click', function () {
-        const postId = $('#action-modal').data('current-post-id');
-        window.location.href = `/forum/${postId}/edit`; // 수정 페이지로 이동
-    });
-
-    // 삭제 버튼 클릭
-    $('#delete-button').on('click', function () {
-        $('#action-modal').hide(); // 액션 모달 숨기기
-        $('#confirm-delete-modal').show(); // 삭제 확인 모달 표시
-    });
-
-    // 삭제 확인 모달의 '예' 버튼 클릭
     $('#confirm-delete-yes').on('click', async function () {
-        const postId = $('#action-modal').data('current-post-id');
+        const postId = $('#confirm-delete-modal').data('current-post-id');
         try {
             const response = await fetch(`/forum/${postId}`, {
                 method: 'DELETE'
             });
-
             if (!response.ok) {
                 throw new Error('게시글 삭제에 실패했습니다.');
             }
-
             alert('게시글이 성공적으로 삭제되었습니다.');
-            // UI 업데이트
             $(`.post-card[data-post-id="${postId}"]`).remove();
             $('#confirm-delete-modal').hide();
-
         } catch (error) {
-            console.error('삭제 오류:', error);
             alert('삭제 중 오류가 발생했습니다.');
         }
     });
 
-    // 모달 닫기 버튼 또는 '아니오' 버튼 클릭
     $('.modal .close-button, #confirm-delete-no').on('click', function () {
         $(this).closest('.modal').hide();
     });
 
-// key를 이용해 게시물을 불러오는 함수
-    function loadPosts(key) {
-        console.log(`'${key}' 지역의 게시물을 불러옵니다.`);
+    function createEmptyPostHtml() {
+        const imagePath = '../images/map-icon.png';
+        return `
+            <div class="empty-forum-container">
+                <img src="${imagePath}" alt="Map icon" class="empty-icon">
+                <p class="empty-text">해당 지역에는 작성된 Forum이 없어요.</p>
+                <p class="empty-subtext">다른 이야기를 만나고 싶다면,<br>발걸음을 옮기거나 상단 아이콘을 눌러 함께해요.</p>
+            </div>
+        `;
+    }
 
+    function loadPosts(key) {
         $.ajax({
             url: `/forum/area/${key}`,
             type: 'GET',
             dataType: 'json',
             success: function (result) {
-                if (result.status === '000' && result.data) {
-                    const posts = result.data;
-                    const container = $('#post-list-container');
-                    container.empty();
+                const container = $('#post-list-container');
+                container.empty();
+                if (result.status === '000' && result.data && result.data.length > 0) {
+                    result.data.forEach(post => {
+                        const postHtml = createPostHtml(post);
+                        container.append(postHtml);
+                        const newPostCard = container.find(`.post-card[data-post-id="${post.id}"]`);
+                        initCarousel(newPostCard);
 
-                    if (posts.length === 0) {
-                        container.html('<p>해당 지역에는 작성된 포럼이 없습니다.</p>');
-                    } else {
-                        posts.forEach(post => {
-                            const postHtml = createPostHtml(post);
-                            container.append(postHtml);
-                        });
-                    }
+                        // 게시글 로드 후 댓글도 함께 불러옴
+                        loadComments(post.id, newPostCard);
+                    });
                 } else {
-                    console.error('게시물 조회 실패:', result.message);
+                    container.html(createEmptyPostHtml());
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.error('네트워크 오류:', textStatus, errorThrown);
+            error: function () {
+                container.html(createEmptyPostHtml());
             }
         });
     }
 
-// 게시물 HTML 생성 함수
+    // 댓글 목록을 불러와서 표시하는 함수
+    async function loadComments(postId, postCard) {
+        try {
+            const response = await fetch(`/api/forum/${postId}/comments`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const comments = await response.json();
+            const commentList = postCard.find('.comment-list');
+            commentList.empty(); // 기존 댓글 비우기
+
+            // 댓글 데이터를 순회하며 DOM에 추가
+            if (comments && comments.length > 0) {
+                comments.forEach(comment => addCommentToDOM(comment, postCard));
+            }
+        } catch (error) {
+            console.error('Failed to load comments:', error);
+            alert('댓글을 불러오는 데 실패했습니다.');
+        }
+    }
+
+    function initCarousel(postCard) {
+        const container = postCard.find('.carousel-images-container');
+        const images = postCard.find('.post-image');
+        const prevBtn = postCard.find('.carousel-prev-btn');
+        const nextBtn = postCard.find('.carousel-next-btn');
+        const indicators = postCard.find('.carousel-indicators .indicator');
+        let currentIndex = 0;
+        const totalImages = images.length;
+        if (totalImages <= 1) {
+            prevBtn.hide();
+            nextBtn.hide();
+            indicators.parent().hide();
+            return;
+        }
+
+        function updateCarousel() {
+            const offset = -currentIndex * 100;
+            container.css('transform', `translateX(${offset}%)`);
+            indicators.removeClass('active');
+            $(indicators[currentIndex]).addClass('active');
+        }
+
+        prevBtn.on('click', () => {
+            currentIndex = (currentIndex > 0) ? currentIndex - 1 : totalImages - 1;
+            updateCarousel();
+        });
+        nextBtn.on('click', () => {
+            currentIndex = (currentIndex < totalImages - 1) ? currentIndex + 1 : 0;
+            updateCarousel();
+        });
+        indicators.on('click', function () {
+            currentIndex = $(this).index();
+            updateCarousel();
+        });
+        updateCarousel();
+    }
+
+    // 변경: 하트 아이콘을 유니코드 문자로 직접 사용하도록 수정
     function createPostHtml(post) {
-
-        // 여러 이미지 표시를 위한 HTML 생성
-        const imagesHtml = post.imageUrls && post.imageUrls.length > 0 ?
-            post.imageUrls.map(url => `<img alt="게시물 사진" class="post-image" src="${url}">`).join('')
-            : '';
-
-        //시간 표시 로직
+        const imagesHtml = post.imageUrls && post.imageUrls.length > 0 ? `
+            <div class="post-image-carousel">
+                <div class="carousel-images-container">
+                    ${post.imageUrls.map(url => `<img alt="게시물 사진" class="post-image" src="${url}">`).join('')}
+                </div>
+                <div class="carousel-indicators">
+                    ${post.imageUrls.map((_, index) => `<span class="indicator ${index === 0 ? 'active' : ''}"></span>`).join('')}
+                </div>
+                ${post.imageUrls.length > 1 ? `<button class="carousel-prev-btn">&lt;</button>
+                <button class="carousel-next-btn">&gt;</button>` : ''}
+            </div>
+        ` : '';
         const timeAgoText = calculateTimeAgo(post.createdAt);
-
-        // 좋아요 상태에 따라 하트 아이콘을 결정
-        const likeIcon = post.isLiked ? '❤️' : '♡';
-
-        // 최근 좋아요 누른 사람들의 프로필 사진 HTML 생성
         const recentLikerPhotosHtml = (post.recentLikerPhotos && post.recentLikerPhotos.length > 0) ?
             post.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('')
             : '';
-
-        //작성자에게만 수정/삭제 버튼을 표시
         const optionsHtml = post.author ? `
             <div class="post-options-container">
                 <button class="post-options-button" data-forum-id="${post.id}">...</button>
             </div>
         ` : '';
-
+        const likeButtonClass = post.liked ? 'like-button liked' : 'like-button';
+        const heartIcon = post.liked ? '♥' : '♡'; // 변경: 유니코드 하트 문자 사용
         return `
            <div class="post-card" data-post-id="${post.id}">
                 <div class="post-header">
@@ -262,15 +293,16 @@ export function initMain() {
                             <div class="time">${timeAgoText}</div>
                         </div>
                     </div>
-                    ${optionsHtml} </div>
+                    ${optionsHtml}
+                </div>
                 <div class="post-content">
                     <p>${escapeHTML(post.contentsText)}</p>
                     ${imagesHtml}
                 </div>
                 <div class="post-actions">
                     <div>
-                        <span class="like-button" data-forum-id="${post.id}">
-                            <span class="like-icon">${likeIcon}</span>
+                        <span class="${likeButtonClass}" data-forum-id="${post.id}">
+                            <span class="like-icon">${heartIcon}</span>
                             <span class="like-count">${post.totalLikes}</span> likes
                         </span>
                         <a class="comment-trigger" href="#">💬 <span class="comment-count">${post.totalComments}</span> comments</a>
@@ -290,20 +322,16 @@ export function initMain() {
         `;
     }
 
-// 좋아요 상태 업데이트 함수
+    // 변경: 하트 색상을 유니코드로 변경하도록 수정
     function updateLikeStatus(likeButton, data) {
         const likeIcon = likeButton.find('.like-icon');
         const likeCount = likeButton.find('.like-count');
         const postCard = likeButton.closest('.post-card');
         const likerPhotosContainer = postCard.find('.liker-photos');
 
-        // 하트 아이콘 변경
-        likeIcon.text(data.isLiked ? '❤️' : '♡');
-
-        // 좋아요 개수 변경
+        likeButton.toggleClass('liked', data.liked);
+        likeIcon.text(data.liked ? '♥' : '♡'); // 변경: 하트 문자 업데이트
         likeCount.text(data.totalLikes);
-
-        // 최근 좋아요 누른 사람들의 프로필 사진 업데이트
         likerPhotosContainer.empty();
         if (data.recentLikerPhotos && data.recentLikerPhotos.length > 0) {
             const photosHtml = data.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('');
@@ -311,43 +339,27 @@ export function initMain() {
         }
     }
 
-// 댓글 불러오기 함수
-    async function loadComments(postId, postCard) {
-        try {
-            const response = await fetch(`/api/forum/${postId}/comments`);
-            if (!response.ok) throw new Error('Failed to load comments');
-
-            const comments = await response.json();
-            const commentList = postCard.find('.comment-list');
-            commentList.empty(); // 기존 내용 초기화
-
-            // 각 댓글에 대한 author 정보를 백엔드에서 받아와 addCommentToDOM에 전달
-            comments.forEach(comment => addCommentToDOM(comment, postCard, false, comment.author));
-
-            updateCommentCount(postCard);
-        } catch (error) {
-            console.error('Error loading comments:', error);
-        }
-    }
-
-// DOM에 댓글 추가 함수
-    function addCommentToDOM(comment, postCard, prepend = true, author = false) {
+    function addCommentToDOM(comment, postCard, prepend = true) {
         const commentList = postCard.find('.comment-list');
-        const item = $('<li>').addClass('comment-item');
 
-        // 댓글 작성자만 삭제 버튼 보이게 하기 위한 코드
-        // author는 이전에 loadComments 함수에서 전달받은 값
+        // comment 객체의 'author' 필드를 사용하여 삭제 버튼 표시 여부 결정
         const deleteButtonHtml = comment.author ?
             `<button class="comment-delete-button" data-comment-id="${comment.id}">X</button>` : '';
 
-        item.html(`
-            <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}">
-            <div class="comment-bubble">
-                <div class="author">${comment.authorNickname}</div>
-                <div class="content">${escapeHTML(comment.content)}</div>
+        const itemHtml = `
+            <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}" class="profile-img">
+            <div class="comment-content-wrapper">
+                <div class="comment-main">
+                    <div class="comment-bubble">
+                        <span class="author">${comment.authorNickname}</span>
+                        <span class="content">${escapeHTML(comment.content)}</span>
+                    </div>
+                    ${deleteButtonHtml}
+                </div>
             </div>
-            ${deleteButtonHtml}
-        `);
+        `;
+
+        const item = $('<li>').addClass('comment-item').html(itemHtml);
         if (prepend) {
             commentList.prepend(item);
         } else {
@@ -355,13 +367,11 @@ export function initMain() {
         }
     }
 
-// 댓글 카운트 업데이트 함수
     function updateCommentCount(postCard) {
         const commentList = postCard.find('.comment-list');
         const count = commentList.children().length;
         const trigger = postCard.find('.comment-trigger');
         const commentCountSpan = postCard.find('.comment-count');
-
         if (count === 0) {
             trigger.text('댓글쓰기');
             trigger.addClass('no-comments');
@@ -371,23 +381,19 @@ export function initMain() {
         }
     }
 
-// HTML 태그 이스케이프 함수 (XSS 방지)
     function escapeHTML(str) {
         const p = document.createElement('p');
         p.textContent = str;
         return p.innerHTML;
     }
 
-// 시간 변환 유틸리티 함수
     function calculateTimeAgo(dateString) {
         const now = new Date();
         const postDate = new Date(dateString);
         const seconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
-
         if (seconds < 0) {
             return "방금 전";
         }
-
         let interval = seconds / 31536000;
         if (interval > 1) {
             return Math.floor(interval) + "년 전";

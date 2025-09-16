@@ -6,6 +6,10 @@
     <title>내 위치 주변 Fin'd 찾기</title>
     <link rel="stylesheet" th:href="@{/css/find-on-map.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body id="page-on-map">
 <div id="map"></div>
@@ -22,5 +26,8 @@
 
 <script async
         th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&callback=initMap&libraries=&v=weekly'}"></script>
+
+<div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
+
 </body>
 </html>

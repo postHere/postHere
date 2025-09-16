@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+export function initParkWrite() {
     // 캔버스 설정
     const objectCanvas = document.getElementById("object-canvas");
     const objectCtx = objectCanvas.getContext("2d");
@@ -342,4 +342,4 @@ document.addEventListener("DOMContentLoaded", function () {
     objectCanvas.addEventListener("touchend", stopDragOrDrawing);
 
     initializeCanvases();
-});
+}

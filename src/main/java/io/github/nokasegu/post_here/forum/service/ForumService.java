@@ -30,26 +30,17 @@ public class ForumService {
     private final ForumAreaRepository forumAreaRepository;
     private final ForumImageService forumImageService;
     private final ForumCommentRepository forumCommentRepository;
-    private final ForumLikeService forumLikeService;
     private final ForumLikeRepository forumLikeRepository;
 
-    /**
-     * 포럼 게시글을 생성하고 저장
-     *
-     * @param requestDto 게시글 생성 요청 DTO
-     * @return 생성된 게시글의 ID가 담긴 응답 DTO
-     */
     public ForumCreateResponseDto createForum(ForumCreateRequestDto requestDto) throws IOException {
 
-        // DTO에서 사용자 이메일을 가져와 유저를 조회
         UserInfoEntity writer = userInfoRepository.findByEmail(requestDto.getUserEmail())
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다."));
 
-        // DTO의 지역 ID로 ForumAreaEntity를 조회
         ForumAreaEntity area = forumAreaRepository.findById(requestDto.getLocation())
-                .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역입니다"));
+                .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역입니다."));
 
-        // ForumEntity를 생성하고, 조회된 Entity를 location 필드에 연결
+        // 1. ForumEntity를 먼저 저장하여 forum_pk를 발급받습니다.
         ForumEntity forum = ForumEntity.builder()
                 .writer(writer)
                 .location(area)
@@ -59,11 +50,81 @@ public class ForumService {
                 .build();
         ForumEntity savedForum = forumRepository.save(forum);
 
-        // 이미지 저장 로직을 ForumImageService에 위임
-        forumImageService.saveImages(savedForum, requestDto.getImageUrls());
+        // 2. ★★★ 변경: 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결합니다. ★★★
+        if (requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty()) {
+            for (String imageUrl : requestDto.getImageUrls()) {
+                forumImageService.saveImage(imageUrl, savedForum);
+            }
+        }
 
-        // 컨트롤러에 전달할 응답 DTO를 생성하여 반환
         return new ForumCreateResponseDto(savedForum.getId());
+    }
+
+    /**
+     * 게시글을 수정합니다.
+     *
+     * @param forumId    수정할 게시글 ID
+     * @param requestDto 수정 데이터
+     * @param userId     현재 사용자 ID (권한 확인용)
+     */
+    public void updateForum(Long forumId, ForumUpdateRequestDto requestDto, Long userId) {
+        ForumEntity forum = getForumEntityAndCheckPermission(forumId, userId);
+
+        forum.setContentsText(requestDto.getContent());
+        forum.setMusicApiUrl(requestDto.getMusicApiUrl());
+        forum.setUpdatedAt(LocalDateTime.now());
+
+        // deletedImageIds 목록을 기반으로 삭제 로직을 ForumImageService에 위임
+        if (requestDto.getDeletedImageIds() != null && !requestDto.getDeletedImageIds().isEmpty()) {
+            forumImageService.deleteImagesByIds(requestDto.getDeletedImageIds(), userId);
+        }
+
+        forumRepository.save(forum);
+    }
+
+    /**
+     * 게시글을 삭제합니다.
+     *
+     * @param forumId 삭제할 게시글 ID
+     * @param userId  현재 사용자 ID (권한 확인용)
+     */
+    public void deleteForum(Long forumId, Long userId) {
+        ForumEntity forum = getForumEntityAndCheckPermission(forumId, userId);
+
+        forumImageService.deleteImages(forum);
+
+        forumRepository.delete(forum);
+    }
+
+    /**
+     * 게시글의 상세 정보를 조회하고, 작성자 여부를 확인합니다.
+     * 이 메소드는 게시글 수정 페이지 로딩 시 사용됩니다.
+     *
+     * @param forumId       조회할 게시글 ID
+     * @param currentUserId 현재 사용자 ID
+     * @return 게시글 상세 정보 DTO
+     */
+    public ForumDetailResponseDto getForumDetail(Long forumId, Long currentUserId) {
+        ForumEntity forum = getForumEntityAndCheckPermission(forumId, currentUserId);
+
+        return new ForumDetailResponseDto(forum, true);
+    }
+
+    /**
+     * 주어진 ID로 게시글을 찾고, 현재 사용자가 작성자인지 권한을 확인하는 공통 메서드
+     *
+     * @param forumId 확인할 게시글 ID
+     * @param userId  현재 사용자 ID
+     * @return 권한이 확인된 ForumEntity
+     */
+    private ForumEntity getForumEntityAndCheckPermission(Long forumId, Long userId) {
+        ForumEntity forum = forumRepository.findById(forumId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 게시글입니다."));
+
+        if (!forum.getWriter().getId().equals(userId)) {
+            throw new IllegalArgumentException("해당 게시글에 대한 수정/삭제 권한이 없습니다.");
+        }
+        return forum;
     }
 
     /**
@@ -113,7 +174,8 @@ public class ForumService {
      * 지정된 지역에 해당하는 포럼 게시물 목록을 조회합니다.
      * 댓글 및 좋아요 정보를 포함합니다.
      *
-     * @param locationKey 지역 주소 또는 ID (String 형태)
+     * @param locationKey   지역 주소 또는 ID (String 형태)
+     * @param currentUserId 현재 로그인한 사용자 ID
      * @return 해당 지역의 포럼 게시물 목록 DTO 리스트
      */
     public List<ForumPostListResponseDto> getForumPostsByLocation(String locationKey, Long currentUserId) {
@@ -137,18 +199,22 @@ public class ForumService {
         return forumEntities.stream()
                 .map(forumEntity -> {
                     int totalComments = forumCommentRepository.countByForumId(forumEntity.getId());
+                    int totalLikes = forumLikeRepository.countByForumId(forumEntity.getId());
+
                     LocalDateTime createdAt = forumEntity.getCreatedAt();
 
-                    int totalLikes = forumLikeRepository.countByForumId(forumEntity.getId());
                     boolean isLiked = false; // 기본값
                     List<String> recentLikerPhotos = forumLikeRepository.findTop3ByForumIdOrderByCreatedAtDesc(forumEntity.getId())
                             .stream()
                             .map(like -> like.getLiker().getProfilePhotoUrl())
                             .collect(Collectors.toList());
 
+                    boolean isAuthor = false;
+
                     // 현재 사용자가 로그인한 상태일 경우에만 좋아요 여부를 확인
                     if (finalCurrentUserId != null) {
                         isLiked = forumLikeRepository.findByForumIdAndLikerId(forumEntity.getId(), finalCurrentUserId).isPresent();
+                        isAuthor = forumEntity.getWriter().getId().equals(finalCurrentUserId);
                     }
 
                     return new ForumPostListResponseDto(
@@ -157,7 +223,8 @@ public class ForumService {
                             createdAt,
                             totalLikes,
                             isLiked,
-                            recentLikerPhotos
+                            recentLikerPhotos,
+                            isAuthor
                     );
                 })
                 .collect(Collectors.toList());

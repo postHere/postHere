@@ -23,12 +23,12 @@ public class ForumImageController {
 
     @ResponseBody
     @PostMapping(value = "/images/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public WrapperDTO<List<String>> uploadImages(@RequestPart("images") List<MultipartFile> images) throws IOException {
-
+    public WrapperDTO<List<String>> uploadImages(@RequestPart("images") List<MultipartFile> images) {
         List<String> imageUrls = images.stream()
                 .map(image -> {
                     try {
-                        return forumImageService.uploadImage(image, "forum-images");
+                        // ★★★ 변경: S3에 업로드만 하고 URL을 반환합니다. ★★★
+                        return forumImageService.uploadImage(image);
                     } catch (IOException e) {
                         throw new RuntimeException("이미지 업로드 중 오류가 발생했습니다.", e);
                     }

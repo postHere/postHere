@@ -10,8 +10,9 @@
           rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/signup.css}">
     <link rel="manifest" th:href="@{/pwa/manifest.json}">
+    <script defer th:src="@{/js/bundle.js}"></script>
 </head>
-<body>
+<body id="page-signup">
 
 <div class="signup-container">
     <div class="header">
@@ -76,8 +77,5 @@
         </div>
     </form>
 </div>
-
-<script src="/js/signup.js"></script>
-
 </body>
 </html>

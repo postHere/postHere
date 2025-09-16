@@ -1,5 +1,5 @@
 // src/main/resources/static/js/forum-area-search.js
-$(document).ready(function () {
+export function initForumAreaSearch() {
     const searchInput = $('#location-search');
     const resultsList = $('#search-results');
     let availableLocations = []; // 지역 목록을 저장할 빈 배열
@@ -99,4 +99,4 @@ $(document).ready(function () {
             }
         });
     });
-});
+}

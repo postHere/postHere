@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ForumCommentService {
 
     private final ForumCommentRepository forumCommentRepository;
@@ -25,19 +26,35 @@ public class ForumCommentService {
 
     /**
      * 특정 게시글의 모든 댓글을 조회합니다.
+     *
+     * @param forumId   포럼 게시글 ID
+     * @param userEmail 현재 로그인한 사용자의 이메일 (null일 수 있음)
      */
-    @Transactional(readOnly = true)
-    public List<ForumCommentResponseDto> getComments(Long forumId) {
+    public List<ForumCommentResponseDto> getComments(Long forumId, String userEmail) {
+        // 현재 로그인한 사용자의 ID를 가져옵니다. 로그인하지 않았다면 null
+        Long currentUserId = null;
+        if (userEmail != null) {
+            currentUserId = userInfoRepository.findByEmail(userEmail)
+                    .map(UserInfoEntity::getId)
+                    .orElse(null);
+        }
+
+        final Long finalCurrentUserId = currentUserId; // 람다식에서 사용하기 위해 final 변수로 선언
+
         return forumCommentRepository.findAllByForumIdOrderByCreatedAtAsc(forumId)
                 .stream()
-                .map(ForumCommentResponseDto::new)
+                .map(comment -> {
+                    // 댓글 작성자 ID와 현재 사용자 ID를 비교하여 author 값을 결정
+                    boolean author = finalCurrentUserId != null && comment.getWriter().getId().equals(finalCurrentUserId);
+                    return new ForumCommentResponseDto(comment, author);
+                })
                 .collect(Collectors.toList());
     }
+
 
     /**
      * 댓글을 생성합니다.
      */
-    @Transactional
     public ForumCommentResponseDto createComment(Long forumId, ForumCommentRequestDto request, String userEmail) {
         // 사용자 및 포럼 게시글 엔티티 조회
         UserInfoEntity writer = userInfoRepository.findByEmail(userEmail)
@@ -55,6 +72,31 @@ public class ForumCommentService {
         // 댓글 저장
         ForumCommentEntity savedComment = forumCommentRepository.save(newComment);
 
-        return new ForumCommentResponseDto(savedComment);
+        return new ForumCommentResponseDto(savedComment, true);
+    }
+
+    /**
+     * 댓글 삭제
+     *
+     * @param commentId 삭제할 댓글의 ID
+     * @param userEmail 현재 로그인한 사용자의 이메일
+     */
+    public void deleteComment(Long commentId, String userEmail) {
+        // 1. 삭제할 댓글 엔티티 조회
+        ForumCommentEntity comment = forumCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+
+        // 2. 현재 로그인한 사용자 엔티티 조회
+        UserInfoEntity currentUser = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 3. 댓글 작성자 권한 확인
+        // 댓글의 작성자 ID와 현재 사용자 ID를 비교하여, 동일한 경우에만 삭제를 허용
+        if (!comment.getWriter().getId().equals(currentUser.getId())) {
+            throw new IllegalArgumentException("해당 댓글을 삭제할 권한이 없습니다.");
+        }
+
+        // 4. 권한 확인 후 댓글 삭제
+        forumCommentRepository.delete(comment);
     }
 }

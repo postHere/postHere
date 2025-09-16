@@ -46,6 +46,39 @@ export function initMain() {
         }
     });
 
+    // 포스트 컨테이너에 이벤트 위임 방식으로 댓글 '삭제' 이벤트 바인딩
+    $('#post-list-container').on('click', '.comment-delete-button', async function () {
+        const button = $(this);
+        const commentId = button.data('comment-id');
+        const postCard = button.closest('.post-card');
+        const postId = postCard.data('post-id');
+
+        if (confirm("댓글을 삭제하시겠습니까?")) {
+            try {
+                const response = await fetch(`/api/forum/${postId}/comments/${commentId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.status === 204) {
+                    // 삭제 성공 시 DOM에서 댓글 아이템 제거
+                    button.closest('.comment-item').remove();
+                    updateCommentCount(postCard);
+                    alert('댓글이 삭제되었습니다.');
+                } else if (response.status === 401) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/login';
+                } else if (response.status === 403) {
+                    alert('댓글 삭제 권한이 없습니다.');
+                } else {
+                    throw new Error('댓글 삭제에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('삭제 오류:', error);
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        }
+    });
+
     $('#post-list-container').on('submit', '.comment-form', async function (e) {
         e.preventDefault();
         const form = $(this);
@@ -114,6 +147,53 @@ export function initMain() {
         }
     });
 
+    // 수정/삭제 모달 로직
+    // '...' 버튼 클릭 시 모달창 표시
+    $('#post-list-container').on('click', '.post-options-button', function () {
+        const postId = $(this).data('forum-id');
+        $('#action-modal').data('current-post-id', postId).show();
+    });
+
+    // 수정 버튼 클릭
+    $('#edit-button').on('click', function () {
+        const postId = $('#action-modal').data('current-post-id');
+        window.location.href = `/forum/${postId}/edit`; // 수정 페이지로 이동
+    });
+
+    // 삭제 버튼 클릭
+    $('#delete-button').on('click', function () {
+        $('#action-modal').hide(); // 액션 모달 숨기기
+        $('#confirm-delete-modal').show(); // 삭제 확인 모달 표시
+    });
+
+    // 삭제 확인 모달의 '예' 버튼 클릭
+    $('#confirm-delete-yes').on('click', async function () {
+        const postId = $('#action-modal').data('current-post-id');
+        try {
+            const response = await fetch(`/forum/${postId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('게시글 삭제에 실패했습니다.');
+            }
+
+            alert('게시글이 성공적으로 삭제되었습니다.');
+            // UI 업데이트
+            $(`.post-card[data-post-id="${postId}"]`).remove();
+            $('#confirm-delete-modal').hide();
+
+        } catch (error) {
+            console.error('삭제 오류:', error);
+            alert('삭제 중 오류가 발생했습니다.');
+        }
+    });
+
+    // 모달 닫기 버튼 또는 '아니오' 버튼 클릭
+    $('.modal .close-button, #confirm-delete-no').on('click', function () {
+        $(this).closest('.modal').hide();
+    });
+
 // key를 이용해 게시물을 불러오는 함수
     function loadPosts(key) {
         console.log(`'${key}' 지역의 게시물을 불러옵니다.`);
@@ -165,40 +245,49 @@ export function initMain() {
             post.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('')
             : '';
 
+        //작성자에게만 수정/삭제 버튼을 표시
+        const optionsHtml = post.author ? `
+            <div class="post-options-container">
+                <button class="post-options-button" data-forum-id="${post.id}">...</button>
+            </div>
+        ` : '';
+
         return `
-       <div class="post-card" data-post-id="${post.id}">
-            <div class="post-author">
-                <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
-                <div class="post-author-info">
-                    <div class="name">${post.writerNickname}</div>
-                    <div class="time">${timeAgoText}</div>
+           <div class="post-card" data-post-id="${post.id}">
+                <div class="post-header">
+                    <div class="post-author">
+                        <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
+                        <div class="post-author-info">
+                            <div class="name">${post.writerNickname}</div>
+                            <div class="time">${timeAgoText}</div>
+                        </div>
+                    </div>
+                    ${optionsHtml} </div>
+                <div class="post-content">
+                    <p>${escapeHTML(post.contentsText)}</p>
+                    ${imagesHtml}
+                </div>
+                <div class="post-actions">
+                    <div>
+                        <span class="like-button" data-forum-id="${post.id}">
+                            <span class="like-icon">${likeIcon}</span>
+                            <span class="like-count">${post.totalLikes}</span> likes
+                        </span>
+                        <a class="comment-trigger" href="#">💬 <span class="comment-count">${post.totalComments}</span> comments</a>
+                    </div>
+                </div>
+                <div class="liker-photos">
+                    ${recentLikerPhotosHtml}
+                </div>
+                <div class="comment-section" style="display:none;">
+                    <ul class="comment-list"></ul>
+                    <form class="comment-form">
+                        <input class="comment-input" placeholder="댓글을 입력하세요..." required type="text">
+                        <button class="comment-submit" type="submit">게시</button>
+                    </form>
                 </div>
             </div>
-            <div class="post-content">
-                <p>${escapeHTML(post.contentsText)}</p>
-                ${imagesHtml}
-            </div>
-            <div class="post-actions">
-                <div>
-                    <span class="like-button" data-forum-id="${post.id}">
-                        <span class="like-icon">${likeIcon}</span>
-                        <span class="like-count">${post.totalLikes}</span> likes
-                    </span>
-                    <a class="comment-trigger" href="#">💬 <span class="comment-count">${post.totalComments}</span> comments</a>
-                </div>
-            </div>
-            <div class="liker-photos">
-                ${recentLikerPhotosHtml}
-            </div>
-            <div class="comment-section" style="display:none;">
-                <ul class="comment-list"></ul>
-                <form class="comment-form">
-                    <input class="comment-input" placeholder="댓글을 입력하세요..." required type="text">
-                    <button class="comment-submit" type="submit">게시</button>
-                </form>
-            </div>
-        </div>
-    `;
+        `;
     }
 
 // 좋아요 상태 업데이트 함수
@@ -231,7 +320,10 @@ export function initMain() {
             const comments = await response.json();
             const commentList = postCard.find('.comment-list');
             commentList.empty(); // 기존 내용 초기화
-            comments.forEach(comment => addCommentToDOM(comment, postCard, false));
+
+            // 각 댓글에 대한 author 정보를 백엔드에서 받아와 addCommentToDOM에 전달
+            comments.forEach(comment => addCommentToDOM(comment, postCard, false, comment.author));
+
             updateCommentCount(postCard);
         } catch (error) {
             console.error('Error loading comments:', error);
@@ -239,16 +331,23 @@ export function initMain() {
     }
 
 // DOM에 댓글 추가 함수
-    function addCommentToDOM(comment, postCard, prepend = true) {
+    function addCommentToDOM(comment, postCard, prepend = true, author = false) {
         const commentList = postCard.find('.comment-list');
         const item = $('<li>').addClass('comment-item');
+
+        // 댓글 작성자만 삭제 버튼 보이게 하기 위한 코드
+        // author는 이전에 loadComments 함수에서 전달받은 값
+        const deleteButtonHtml = comment.author ?
+            `<button class="comment-delete-button" data-comment-id="${comment.id}">X</button>` : '';
+
         item.html(`
-        <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}">
-        <div class="comment-bubble">
-            <div class="author">${comment.authorNickname}</div>
-            <div class="content">${escapeHTML(comment.content)}</div>
-        </div>
-    `);
+            <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}">
+            <div class="comment-bubble">
+                <div class="author">${comment.authorNickname}</div>
+                <div class="content">${escapeHTML(comment.content)}</div>
+            </div>
+            ${deleteButtonHtml}
+        `);
         if (prepend) {
             commentList.prepend(item);
         } else {

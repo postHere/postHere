@@ -21,6 +21,24 @@
 
     <div id="post-list-container"></div>
 
+    <div class="modal" id="action-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <button class="modal-button" id="edit-button">수정</button>
+            <button class="modal-button" id="delete-button">삭제</button>
+        </div>
+    </div>
+
+    <div class="modal" id="confirm-delete-modal" style="display: none;">
+        <div class="modal-content">
+            <p>게시글을 정말 삭제하시겠습니까?</p>
+            <div class="modal-buttons">
+                <button class="modal-button confirm-yes" id="confirm-delete-yes">예</button>
+                <button class="modal-button confirm-no" id="confirm-delete-no">아니오</button>
+            </div>
+        </div>
+    </div>
+
     <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
 </div>
 </body>

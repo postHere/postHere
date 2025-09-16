@@ -42,18 +42,82 @@ public class ForumController {
     public WrapperDTO<ForumCreateResponseDto> createForum(
             @RequestBody ForumCreateRequestDto requestDto,
             Principal principal) throws IOException {
-
-        // 인증된 사용자의 이메일을 컨트롤러에서 직접 가져와 DTO에 설정
         String userEmail = principal.getName();
         requestDto.setUserEmail(userEmail);
 
-        // DTO를 서비스로 전달
+        // 이미지 ID 목록을 담은 DTO를 서비스로 전달
         ForumCreateResponseDto responseData = forumService.createForum(requestDto);
 
         return WrapperDTO.<ForumCreateResponseDto>builder()
                 .status(Code.OK.getCode())
                 .message(Code.OK.getValue())
                 .data(responseData)
+                .build();
+    }
+
+    /**
+     * 게시글 수정 페이지로 이동
+     *
+     * @param forumId     수정할 게시글 ID
+     * @param userDetails 현재 사용자 정보 (권한 확인용)
+     * @param model       Thymeleaf 모델
+     * @return 수정 페이지 뷰
+     */
+    @GetMapping("/forum/{forumId}/edit")
+    public String editForumPage(
+            @PathVariable("forumId") Long forumId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Model model) {
+
+        // 현재 사용자 ID를 서비스에 전달하여 게시글 정보와 권한을 함께 확인합니다.
+        ForumDetailResponseDto forumDetail = forumService.getForumDetail(forumId, userDetails.getUserInfo().getId());
+
+        // 모델에 게시글 정보를 추가
+        model.addAttribute("forum", forumDetail);
+
+        return "forum/forum-edit";
+    }
+
+
+    /**
+     * 게시글 수정 API
+     *
+     * @param forumId     수정할 게시글 ID
+     * @param requestDto  수정할 데이터와 삭제할 이미지 ID 목록
+     * @param userDetails 현재 사용자 정보
+     * @return 성공 메시지
+     */
+    @ResponseBody
+    @PostMapping("/forum/{forumId}")
+    public WrapperDTO<String> updateForum(
+            @PathVariable("forumId") Long forumId,
+            @RequestBody ForumUpdateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        // 클라이언트에서 보낸 DTO를 서비스로 전달
+        forumService.updateForum(forumId, requestDto, userDetails.getUserInfo().getId());
+        return WrapperDTO.<String>builder()
+                .status(Code.OK.getCode())
+                .message("게시글이 성공적으로 수정되었습니다.")
+                .data("/forumMain")
+                .build();
+    }
+
+    /**
+     * 게시글 삭제 API
+     *
+     * @param forumId     삭제할 게시글 ID
+     * @param userDetails 현재 사용자 정보
+     * @return 성공 메시지
+     */
+    @ResponseBody
+    @DeleteMapping("/forum/{forumId}")
+    public WrapperDTO<String> deleteForum(
+            @PathVariable("forumId") Long forumId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        forumService.deleteForum(forumId, userDetails.getUserInfo().getId());
+        return WrapperDTO.<String>builder()
+                .status(Code.OK.getCode())
+                .message("게시글이 성공적으로 삭제되었습니다.")
                 .build();
     }
 

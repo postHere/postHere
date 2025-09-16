@@ -63,3 +63,6 @@ try {
 } catch (Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
+
+// ✅ 명시적으로 google-services 플러그인 추가
+apply plugin: 'com.google.gms.google-services'

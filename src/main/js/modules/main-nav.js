@@ -41,24 +41,62 @@
 import {authHeaders} from './utils.js';
 
 export function initMainNav() {
+    const navLinks = document.querySelectorAll('.footer-nav a');
+    const currentPath = window.location.pathname;
 
-    // <!-- 진입 시 미읽음 개수 반영: >0 이면 빨간 점 표시
-    //  - 이후 주기 폴링(15s)은 /js/notification.js에서만 수행(중복 폴링 방지) -->
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        link.classList.remove('active'); // 모든 active 클래스 초기화
+
+        // 1. 메인 페이지(/forumMain)는 정확히 해당 경로일 때만 활성화
+        if (href === '/forumMain' && currentPath === '/forumMain') {
+            link.classList.add('active');
+        }
+            // 2. 글쓰기 페이지(/forum)는 '/forum'으로 시작하는 모든 하위 경로에서 활성화
+        //    단, '/forumMain'과 같은 메인 페이지는 제외
+        else if (href === '/forum' && currentPath.startsWith('/forum')) {
+            // '/forumMain' 페이지는 제외하고, '/forum', '/forum/write', '/forum/edit' 등에서 활성화
+            if (currentPath !== '/forumMain') {
+                link.classList.add('active');
+            }
+        }
+        // 3. 그 외의 링크는 현재 경로가 href로 시작할 때 활성화
+        else if (href !== '/forumMain' && href !== '/forum' && currentPath.startsWith(href)) {
+            link.classList.add('active');
+        }
+    });
+
+    // 어떤 링크도 활성화되지 않았을 경우, 기본적으로 홈 버튼을 활성화
+    const activeLink = document.querySelector('.footer-nav a.active');
+    if (!activeLink) {
+        const homeLink = document.querySelector('.footer-nav a[href="/forumMain"]');
+        if (homeLink) {
+            homeLink.classList.add('active');
+        }
+    }
+
+    // 클릭 이벤트 리스너 추가
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            navLinks.forEach(item => item.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+        });
+    });
+
+    // 알림 미읽음 카운트 업데이트 로직은 그대로 유지
     async function updateUnreadCount() {
         try {
             const res = await fetch('/notification/unread-count', {
                 method: 'POST',
-                // main-nav.js의 authHeaders가 있으면 CSRF 자동 첨부, 없으면 무시
                 headers: (typeof authHeaders === 'function')
                     ? authHeaders({Accept: 'application/json'})
                     : {Accept: 'application/json'}
             });
             if (!res.ok) return;
-            const n = await res.json(); // 서버가 숫자(long)로 응답
+            const n = await res.json();
             const dot = document.getElementById('nav-bell-dot');
             if (dot) dot.style.display = (n > 0) ? 'inline-block' : 'none';
         } catch (e) {
-            // 네트워크 실패 시 조용히 패스(네비 사용성 유지)
             console.error('Failed to update unread notification count:', e);
         }
     }

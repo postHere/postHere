@@ -7,6 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * FcmTokenRepository
+ * <p>
+ * 역할
+ * - 사용자별 토큰 조회 및 token 유니크 조회
+ */
 public interface FcmTokenRepository extends JpaRepository<FcmTokenEntity, Long> {
     Optional<FcmTokenEntity> findByToken(String token);
 

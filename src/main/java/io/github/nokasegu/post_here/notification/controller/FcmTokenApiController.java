@@ -13,9 +13,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.security.Principal;
 
 /**
- * POST /api/push/token
- * - 앱에서 발급받은 FCM registration token을 업로드
- * - Principal이 없으면 401
+ * FCM 토큰 업로드 API
+ * - POST /api/push/token
+ * - body: { token, platform, app }
  */
 @RestController
 @RequiredArgsConstructor
@@ -25,11 +25,10 @@ public class FcmTokenApiController {
     private final FcmTokenService fcmTokenService;
 
     @PostMapping("/token")
-    public void uploadToken(Principal principal, @RequestBody FcmTokenRequestDto body) {
-        if (principal == null || principal.getName() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 필요");
+    public void upload(Principal principal, @RequestBody FcmTokenRequestDto req) {
+        if (req == null || req.getToken() == null || req.getToken().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "token 필요");
         }
-        fcmTokenService.saveOrUpdate(principal.getName(), body);
-        // 200 OK (바디 없음)
+        fcmTokenService.upsert(principal, req);
     }
 }

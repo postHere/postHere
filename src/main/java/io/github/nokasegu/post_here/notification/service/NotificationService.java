@@ -50,6 +50,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository; // 알림 CRUD/배치 읽음처리
     private final UserInfoRepository userInfoRepository;         // 타겟 유저 검증/조회
     private final WebPushService webPushService;                 // Web Push 전송(브라우저 구독 대상)
+    private final FcmSenderService fcmSenderService;             // ✅ FCM 발송 (네이티브 앱 푸시)
 
     /**
      * [팔로우 알림 생성 및 Web Push 전송 시퀀스]
@@ -57,7 +58,7 @@ public class NotificationService {
      * - 1) Notification(FOLLOW) INSERT
      * - 2) service-worker와 합의된 payload 구성(JSON)
      * - 3) WebPushService.sendToUser(...)로 대상 유저의 모든 구독 endpoint에 푸시 전송
-     * - 주의: 푸시 실패는 저장을 롤백하지 않음(로그로 확인)
+     * - 주의: 푸시 실패가 저장을 롤백하진 않음(웹 푸시는 best-effort). 서버 로그로 확인 가능.
      */
 
     /**
@@ -102,6 +103,14 @@ public class NotificationService {
         // 타겟 유저의 모든 구독 엔드포인트로 WebPush 전송(성공/실패는 내부에서 로깅)
         webPushService.sendToUser(following.getFollowed(), payload);
 
+        // ✅ 네이티브 앱 대상 FCM 발송 (토큰 보유 시)
+        fcmSenderService.sendFollow(
+                following.getFollowed(),
+                following.getFollower().getNickname(),
+                following.getFollower().getProfilePhotoUrl(),
+                saved.getId()
+        );
+
         return saved;
     }
 
@@ -109,20 +118,6 @@ public class NotificationService {
      * /notification/list 응답 조합
      * - items: 페이지 리스트(알림 카드)
      * - unreadCount: 미읽음 개수(종 아이콘 배지/점 갱신에 사용)
-     */
-    /**
-     * 알림 목록 조회(+ 미읽음 카운트 함께 반환)
-     * <p>
-     * 파라미터
-     * - targetUserId: 알림 수신자(로그인 사용자)의 PK
-     * - page/size: 페이지네이션 파라미터 (PageRequest.of(page, size))
-     * <p>
-     * 반환
-     * - items: NotificationEntity → NotificationItemResponseDto 매핑 리스트
-     * - unreadCount: 현재 미읽음 개수
-     * <p>
-     * 예외
-     * - targetUserId가 존재하지 않으면 NoSuchElementException (컨트롤러 단에서 적절히 처리)
      */
     @Transactional(readOnly = true)
     public NotificationListResponseDto list(Long targetUserId, int page, int size) {
@@ -135,16 +130,6 @@ public class NotificationService {
 
     /**
      * /notification/read (멱등)
-     * - 클라이언트가 방금 본 알림 ID들을 넘기면 읽음으로 마킹
-     * - 반환값: 남은 미읽음 개수(배지/점 갱신)
-     */
-    /**
-     * 지정한 알림 ID 집합을 읽음 처리 (idempotent)
-     * <p>
-     * 동작
-     * - ids가 비어있으면 아무것도 하지 않고 현재 미읽음 개수만 반환
-     * - 타겟 유저의 소유 알림 중 ids에 포함된 항목만 checkStatus=true로 마킹
-     * - 최종적으로 남은 미읽음 개수 반환 (UI 배지/점 갱신에 사용)
      */
     @Transactional
     public long markRead(Long targetUserId, List<Long> ids) {
@@ -156,14 +141,6 @@ public class NotificationService {
 
     /**
      * 전체 읽음 처리 훅
-     * - 페이지/설정에서 "모두 읽음" 액션 시 사용 가능
-     */
-    /**
-     * 해당 유저의 모든 알림을 읽음 처리
-     * <p>
-     * 동작
-     * - targetUser의 모든 미읽음 알림을 checkStatus=true로 마킹
-     * - 남은 미읽음 개수 반환(대개 0)
      */
     @Transactional
     public long markAllRead(Long targetUserId) {
@@ -173,15 +150,7 @@ public class NotificationService {
     }
 
     /**
-     * /notification/unread-count
-     * - 하단 네비 종 아이콘 빨간점 표시/해제에 활용
-     */
-    /**
      * 미읽음 카운트 조회
-     * <p>
-     * 용도
-     * - 하단 네비 종 아이콘 빨간 점(on/off) 표시
-     * - Notification 페이지 진입 시 상단 배지 렌더링
      */
     @Transactional(readOnly = true)
     public long unreadCount(Long targetUserId) {

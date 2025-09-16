@@ -23,8 +23,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository; // 알림 CRUD/배치 읽음처리
     private final UserInfoRepository userInfoRepository;         // 타겟 유저 검증/조회
     private final WebPushService webPushService;                 // Web Push 전송(브라우저 구독 대상)
-    // ✅ 네이티브(Firebase FCM) 발송자
-    private final FcmSenderService fcmSenderService;
+    private final FcmSenderService fcmSenderService;             // 네이티브(Firebase FCM) 발송자
 
     @Transactional
     public NotificationEntity createFollowAndPush(FollowingEntity following) {
@@ -48,7 +47,6 @@ public class NotificationService {
 
         webPushService.sendToUser(following.getFollowed(), payload);
 
-        // ✅ 네이티브(Android)로도 동시 발송
         fcmSenderService.sendFollow(
                 following.getFollowed(),
                 following.getFollower().getNickname(),
@@ -76,9 +74,10 @@ public class NotificationService {
 
     @Transactional
     public long markRead(Long targetUserId, List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return 0;
         UserInfoEntity target = userInfoRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
-        return notificationRepository.markRead(target, ids);
+        return notificationRepository.markReadByIds(target, ids);
     }
 
     @Transactional

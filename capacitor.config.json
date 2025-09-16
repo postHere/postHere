@@ -1,9 +1,0 @@
-{
-  "appId": "com.nokasegu.post_here",
-  "appName": "post-here",
-  "webDir": "src/main/resources/static",
-  "server": {
-    "url": "http://1.235.197.58:8081",
-    "cleartext": true
-  }
-}

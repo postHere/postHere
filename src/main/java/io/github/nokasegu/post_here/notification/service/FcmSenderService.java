@@ -20,6 +20,7 @@ import java.util.Map;
  * FcmSenderService
  * - UserInfoEntity 기준으로 등록된 모든 FCM 토큰에 알림 발송
  * - Android 우선 구성 (iOS 필요 시 ApnsConfig 추가)
+ * - 팔로우, 댓글, 좋아요 알림 헬퍼 제공
  */
 @Slf4j
 @Service
@@ -75,8 +76,40 @@ public class FcmSenderService {
         data.put("notificationId", String.valueOf(notificationId));
         if (actorNickname != null) data.put("actorNickname", actorNickname);
         if (actorProfileUrl != null) data.put("actorProfileUrl", actorProfileUrl);
-        // 앱 딥링크 (원하면 수정)
         data.put("deeplink", "posthere://notification/follow");
+
+        sendToUser(target, title, body, data);
+    }
+
+    /**
+     * 댓글 알림 전용 헬퍼
+     */
+    public void sendComment(UserInfoEntity target, String actorNickname, String commentText, Long notificationId) {
+        String title = "새 댓글";
+        String body = actorNickname + "님이 댓글을 남겼습니다: " + commentText;
+
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "COMMENT");
+        data.put("notificationId", String.valueOf(notificationId));
+        if (actorNickname != null) data.put("actorNickname", actorNickname);
+        if (commentText != null) data.put("commentText", commentText);
+        data.put("deeplink", "posthere://notification/comment");
+
+        sendToUser(target, title, body, data);
+    }
+
+    /**
+     * 좋아요 알림 전용 헬퍼
+     */
+    public void sendLike(UserInfoEntity target, String actorNickname, Long notificationId) {
+        String title = "새 좋아요";
+        String body = actorNickname + "님이 회원님의 글을 좋아합니다";
+
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "LIKE");
+        data.put("notificationId", String.valueOf(notificationId));
+        if (actorNickname != null) data.put("actorNickname", actorNickname);
+        data.put("deeplink", "posthere://notification/like");
 
         sendToUser(target, title, body, data);
     }

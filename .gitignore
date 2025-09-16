@@ -43,6 +43,7 @@ android/app/build/
 android/capacitor-cordova-android-plugins/build/
 ios/build/
 node_modules/
+/SERVER_URL.js
 
 # Webpack build output
 /src/main/resources/static/js/bundle.js

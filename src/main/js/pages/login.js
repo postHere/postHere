@@ -57,7 +57,6 @@ export function initLogin() {
                     })
             })
             .fail(function (xhr, status, error) {
-                op
                 const message = xhr.responseJSON.message;
                 loginError.text(message);
             });

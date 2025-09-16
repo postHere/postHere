@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const { offsetX, offsetY } = getEventCoordinates(event);
+        const {offsetX, offsetY} = getEventCoordinates(event);
         selectedObject = null;
         lastSelectedTextObject = null;
 
@@ -214,7 +214,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 offsetY: touch.clientY - rect.top,
             };
         }
-        return { offsetX: event.offsetX, offsetY: event.offsetY };
+        return {offsetX: event.offsetX, offsetY: event.offsetY};
     }
 
     function dragOrDraw(event) {
@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const { offsetX, offsetY } = getEventCoordinates(event);
+        const {offsetX, offsetY} = getEventCoordinates(event);
         if (isDraggingObject && selectedObject) {
             selectedObject.translateX = offsetX - dragOffsetX;
             selectedObject.translateY = offsetY - dragOffsetY;
@@ -312,7 +312,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 formData.append("image", blob, "canvas.png");
 
                 // 서버로 전송
-                fetch("/profile/park/{profile_id}", {
+                fetch("/profile/park/{nickname}", {
                     method: "POST",
                     body: formData,
                 })

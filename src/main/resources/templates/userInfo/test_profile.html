@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Profile Page</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .profile-container {
+            width: 375px;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        /* Park 데이터가 표시될 영역의 스타일 */
+        #park-container {
+            min-height: 100px; /* 데이터 로딩 전 최소 높이 */
+            background-color: #fafafa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #888;
+        }
+
+        #park-container img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="profile-container">
+    <div class="profile-header">
+        <h2>Profile: <span th:text="${nickname}">User</span></h2>
+    </div>
+
+    <div id="park-container">
+        <p>Loading Park data...</p>
+    </div>
+
+    <div class="post-section">
+        <button>Find</button>
+        <button>Forum</button>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    // 페이지가 완전히 로드된 후 스크립트 실행
+    document.addEventListener('DOMContentLoaded', function () {
+        // Thymeleaf를 통해 컨트롤러에서 전달받은 nickname 값을 JS 변수에 저장
+        const nickname = /*[[${nickname}]]*/ 'default';
+
+        // Park 데이터를 표시할 컨테이너 요소를 선택
+        const parkContainer = document.getElementById('park-container');
+
+        // Fetch API를 사용하여 서버에 Park 데이터 요청 (AJAX)
+        fetch(`/profile/park/${nickname}`)
+            .then(response => {
+                // 응답이 성공적이지 않으면(예: 404 Not Found) 에러 처리
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // 응답 본문을 JSON으로 파싱
+                return response.json();
+            })
+            .then(data => {
+                // JSON 데이터 수신 성공
+                console.log('Received data:', data);
+
+                if (data && data.contentCaptureUrl) {
+                    // 컨테이너의 기본 텍스트를 비움
+                    parkContainer.innerHTML = '';
+
+                    // 새로운 img 요소 생성
+                    const parkImage = document.createElement('img');
+
+                    // 받아온 URL을 img의 src 속성으로 설정
+                    parkImage.src = data.contentCaptureUrl;
+                    parkImage.alt = nickname + "'s Park content";
+
+                    // 생성된 img 요소를 컨테이너에 추가
+                    parkContainer.appendChild(parkImage);
+                } else {
+                    // URL이 없는 경우
+                    parkContainer.textContent = 'Park data is not available.';
+                }
+            })
+            .catch(error => {
+                // 네트워크 오류나 서버 에러 발생 시
+                console.error('Error fetching park data:', error);
+                parkContainer.textContent = 'Failed to load Park data.';
+            });
+    });
+</script>
+
+</body>
+</html>

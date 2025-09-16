@@ -175,12 +175,12 @@ public class UserInfoController {
      * 다른 사람의 프로필에 접근할 때 필요한 API
      * 미완임 프로필 기능 완성 후 마저 완성 정민이 누나가 만들 예정
      */
-    @GetMapping("/profile/{userId}")
-    public String profile(@PathVariable Long userId, Model model) {
-        model.addAttribute("profileUserId", userId);
-        // 프로필 페이지가 아직 없는데 팔로우/언팔로우 기능 구현되나 보려고 만들었슴(정민)
-        return "userInfo/profile";
-    }
+//    @GetMapping("/profile/{userId}")
+//    public String profile(@PathVariable Long userId, Model model) {
+//        model.addAttribute("profileUserId", userId);
+//        // 프로필 페이지가 아직 없는데 팔로우/언팔로우 기능 구현되나 보려고 만들었슴(정민)
+//        return "userInfo/profile";
+//    }
 
 
     /**
@@ -203,5 +203,19 @@ public class UserInfoController {
         String newImageUrl = userInfoService.updateProfileImage(userEmail, imageFile);
 
         return ResponseEntity.ok(Collections.singletonMap("imageUrl", newImageUrl));
+    }
+
+    @GetMapping("/profile/{nickname}")
+    public String userProfilePage(@PathVariable String nickname, Model model) {
+        // Thymeleaf 템플릿에 닉네임 정보를 전달하여 JS에서 사용할 수 있게 합니다.
+        model.addAttribute("nickname", nickname);
+
+        // (확장) 여기서 UserInfoService를 호출하여
+        // 프로필 주인 유저의 기본 정보(프로필이미지, 팔로워/팔로잉 수 등)를
+        // 조회하고 model에 담아 HTML로 전달할 수 있습니다.
+        // UserInfoDto userInfo = userInfoService.getUserProfile(nickname);
+        // model.addAttribute("userInfo", userInfo);
+
+        return "userInfo/test_profile";
     }
 }

@@ -1,65 +1,30 @@
 package io.github.nokasegu.post_here.park.controller;
 
-import io.github.nokasegu.post_here.common.security.CustomUserDetails;
 import io.github.nokasegu.post_here.park.dto.ParkResponseDto;
 import io.github.nokasegu.post_here.park.service.ParkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-
-@Controller
-@RequestMapping("/profile/park")
+@RestController // View가 아닌 Data(JSON/XML)를 반환하는 컨트롤러
 @RequiredArgsConstructor
 public class ParkController {
 
     private final ParkService parkService;
 
     /**
-     * Park 정보 조회 (GET /profile/park/{profile_id})
+     * AJAX 요청을 처리하여 특정 유저의 Park 정보를 JSON으로 반환합니다.
      */
-    @GetMapping("/{profile_id}")
-    public ResponseEntity<ParkResponseDto> getPark(@PathVariable("profile_id") Long profileId) {
-        ParkResponseDto responseDto = parkService.getPark(profileId);
-        return ResponseEntity.ok(responseDto);
-    }
-
-    /**
-     * Park 작성 (POST /profile/park/{profile_id})
-     */
-    @PostMapping("/{profile_id}")
-    public ResponseEntity<String> updatePark(
-            @PathVariable("profile_id") Long profileId,
-            @RequestParam("image") MultipartFile imageFile,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) throws IOException {
-        Long currentUserId = userDetails.getUserInfo().getId();
-        String newImageUrl = parkService.updatePark(profileId, currentUserId, imageFile);
-        return ResponseEntity.ok(newImageUrl);
-    }
-
-    /**
-     * Park 초기화 (기존의 삭제 기능) (DELETE /profile/park/{profile_id})
-     */
-    @DeleteMapping("/{profile_id}")
-    public ResponseEntity<Void> resetPark(
-            @PathVariable("profile_id") Long profileId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        Long currentUserId = userDetails.getUserInfo().getId();
-        parkService.resetPark(profileId, currentUserId);
-        return ResponseEntity.noContent().build();
-    }
-
-
-    // 테스트용 페이지 맵핑 .. 지워도 됨
-    @GetMapping("/test-page")
-    public String parkTestPage() {
-        // resources/templates/userInfo/park-test.html 을 가리킵니다.
-        return "userInfo/park-test";
+    @GetMapping("/profile/park/{nickname}")
+    public ResponseEntity<ParkResponseDto> getParkData(@PathVariable String nickname) {
+        try {
+            ParkResponseDto parkDto = parkService.findParkByOwnerNickname(nickname);
+            return ResponseEntity.ok(parkDto);
+        } catch (IllegalArgumentException e) {
+            // 해당 닉네임의 유저나 Park 정보가 없을 경우 404 Not Found 응답
+            return ResponseEntity.notFound().build();
+        }
     }
 }

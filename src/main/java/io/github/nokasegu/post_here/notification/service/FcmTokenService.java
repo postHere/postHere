@@ -9,39 +9,39 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
+
 /**
  * FcmTokenService
- * - FCM registration token 저장/갱신 (멱등)
+ * <p>
+ * 역할
+ * - 로그인 사용자 기준으로 FCM 토큰 upsert
  */
 @Service
 @RequiredArgsConstructor
-@Transactional // 클래스 단위 (컨벤션 준수)
+@Transactional
 public class FcmTokenService {
 
     private final FcmTokenRepository fcmTokenRepository;
     private final UserInfoRepository userInfoRepository;
 
-    public void saveOrUpdate(String email, FcmTokenRequestDto req) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("인증 필요");
-        }
-        if (req == null || req.getToken() == null || req.getToken().isBlank()) {
-            throw new IllegalArgumentException("token 필요");
+    public void upsert(Principal principal, FcmTokenRequestDto req) {
+        if (principal == null || principal.getName() == null) {
+            throw new IllegalStateException("인증 필요");
         }
 
-        UserInfoEntity user = userInfoRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자 없음: " + email));
+        // principal.name = email (현재 보안 설정과 일관)
+        UserInfoEntity user = userInfoRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
 
-        // token 기준 멱등 upsert
-        FcmTokenEntity entity = fcmTokenRepository.findByToken(req.getToken())
-                .map(e -> {
-                    e.setUser(user);
-                    e.setPlatform(req.getPlatform());
-                    e.setApp(req.getApp());
-                    return e;
-                })
-                .orElseGet(() -> req.convertToEntity(user));
-
-        fcmTokenRepository.save(entity);
+        fcmTokenRepository.findByToken(req.getToken())
+                .orElseGet(() -> fcmTokenRepository.save(
+                        FcmTokenEntity.builder()
+                                .user(user)
+                                .token(req.getToken())
+                                .platform(req.getPlatform())
+                                .appName(req.getApp())
+                                .build()
+                ));
     }
 }

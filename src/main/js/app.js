@@ -26,9 +26,10 @@ import {initForumAreaSearch} from './pages/forum-area-search.js';
 import {initParkWrite} from './pages/park-write.js';
 import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
-// ✅ [PUSH] 서비스워커 라우팅/구독 유틸 추가
-import {ensurePushSubscription, listenServiceWorkerNavigate} from './modules/push-subscription.js';
-import {initForumEdit} from './pages/forum-edit'
+import {initForumEdit} from './pages/forum-edit';
+// ✅ [PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
+import {initPush} from '../../js/pages/push.js';
+
 
 // --- 3. 초기 경로 설정 ---
 // 앱이 처음 로드되었을 때(경로가 '/') 시작 페이지로 이동시킵니다.
@@ -65,18 +66,19 @@ App.addListener('backButton', ({canGoBack}) => {
 });
 
 
-// ✅ [PUSH] 푸시 구독은 로그인/회원가입 페이지가 아닐 때만 시도 (401 회피)
+// ✅ [PUSH] 네이티브 푸시(FCM)는 로그인/회원가입 페이지가 아닐 때만 초기화
 (async () => {
     try {
         const path = window.location.pathname;
         const isAuthPage = path === '/login' || path === '/signup';
         if (!isAuthPage) {
-            await ensurePushSubscription(); // 서비스워커 등록(또는 ready), 권한, 구독 생성, 서버 저장
+            initPush(); // 네이티브 푸시 초기화
         }
     } catch (e) {
         console.error('push init failed', e);
     }
 })();
+
 
 // --- 5. 페이지 라우터 ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
         case 'page-on-map' :
             initFindOnMap();
-            break
+            break;
         case 'page-forum-write':
             initForumWrite();
             break;

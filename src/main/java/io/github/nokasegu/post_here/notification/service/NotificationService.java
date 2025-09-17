@@ -1,6 +1,8 @@
 package io.github.nokasegu.post_here.notification.service;
 
 import io.github.nokasegu.post_here.follow.domain.FollowingEntity;
+import io.github.nokasegu.post_here.follow.repository.FollowingRepository;
+import io.github.nokasegu.post_here.follow.service.FollowingService.FollowCreatedEvent;
 import io.github.nokasegu.post_here.notification.domain.NotificationCode;
 import io.github.nokasegu.post_here.notification.domain.NotificationEntity;
 import io.github.nokasegu.post_here.notification.dto.NotificationItemResponseDto;
@@ -9,9 +11,12 @@ import io.github.nokasegu.post_here.notification.repository.NotificationReposito
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.Map;
@@ -22,18 +27,39 @@ import java.util.Map;
  * 역할
  * - 알림 생성/목록/읽음 처리/미읽음 카운트
  * - Web Push + FCM 동시 발사 연동(createFollowAndPush)
- * <p>
- * 주의
- * - 기존 주석/구조는 유지하고 필요한 최소 변경만 반영
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationService {
 
     private final NotificationRepository notificationRepository; // 알림 CRUD/배치 읽음처리
     private final UserInfoRepository userInfoRepository;         // 타겟 유저 검증/조회
     private final WebPushService webPushService;                 // Web Push 전송(브라우저 구독 대상)
     private final FcmSenderService fcmSenderService;             // FCM(Android) 전송
+    private final FollowingRepository followingRepository;       // ⬅ 커밋 후 리스너에서 조회용
+
+    // =========================
+    // 트랜잭션 커밋 후 리스너
+    // =========================
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onFollowCreated(FollowCreatedEvent ev) {
+        try {
+            // 커밋이 끝난 뒤 실행: 안전하게 엔티티 재조회
+            FollowingEntity entity = followingRepository.findById(ev.followingId()).orElse(null);
+            if (entity == null) {
+                log.warn("Follow entity not found for notification. followingId={}", ev.followingId());
+                return;
+            }
+            // 알림 레코드 생성 + WebPush/FCM 발사
+            createFollowAndPush(entity);
+
+        } catch (Exception e) {
+            // 알림 실패는 로깅만 — DB 커밋에는 영향 없음
+            log.warn("Follow notification failed. follower={}, followed={}, followingId={}",
+                    ev.followerId(), ev.followedId(), ev.followingId(), e);
+        }
+    }
 
     /**
      * 팔로우 발생 시 알림 생성 + WebPush/FCM 동시 발사

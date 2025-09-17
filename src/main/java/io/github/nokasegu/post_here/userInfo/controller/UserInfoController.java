@@ -11,7 +11,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -208,17 +211,17 @@ public class UserInfoController {
         return ResponseEntity.ok(Collections.singletonMap("imageUrl", newImageUrl));
     }
 
-    @GetMapping("/profile/{nickname}")
-    public String userProfilePage(@PathVariable String nickname, Model model) {
-        // Thymeleaf 템플릿에 닉네임 정보를 전달하여 JS에서 사용할 수 있게 합니다.
-        model.addAttribute("nickname", nickname);
-
-        // (확장) 여기서 UserInfoService를 호출하여
-        // 프로필 주인 유저의 기본 정보(프로필이미지, 팔로워/팔로잉 수 등)를
-        // 조회하고 model에 담아 HTML로 전달할 수 있습니다.
-        // UserInfoDto userInfo = userInfoService.getUserProfile(nickname);
-        // model.addAttribute("userInfo", userInfo);
-
-        return "userInfo/test_profile";
-    }
+//    @GetMapping("/profile/{nickname}")
+//    public String userProfilePage(@PathVariable String nickname, Model model) {
+//        // Thymeleaf 템플릿에 닉네임 정보를 전달하여 JS에서 사용할 수 있게 합니다.
+//        model.addAttribute("nickname", nickname);
+//
+//        // (확장) 여기서 UserInfoService를 호출하여
+//        // 프로필 주인 유저의 기본 정보(프로필이미지, 팔로워/팔로잉 수 등)를
+//        // 조회하고 model에 담아 HTML로 전달할 수 있습니다.
+//        // UserInfoDto userInfo = userInfoService.getUserProfile(nickname);
+//        // model.addAttribute("userInfo", userInfo);
+//
+//        return "userInfo/test_profile";
+//    }
 }

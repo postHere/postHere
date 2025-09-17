@@ -12,6 +12,10 @@
     <meta name="_csrf_header" th:attr="content=${_csrf?.headerName}">
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>Notification</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
     <!--
       역할(정확한 명칭)
@@ -60,11 +64,6 @@
     <button id="next">다음</button>
 </div>
 
-<!-- 하단 종 아이콘 + 빨간점: /notification/unread-count 결과로 on/off -->
-<!-- [배지 표기 메모]
-     - 초기 진입 시 /notification/unread-count 1회 요청으로 표시/숨김 결정.
-     - 이후 폴링(예: 15s)은 /js/notification.js에서만 수행(중복 폴링 방지).
-     - 서버가 0을 반환하면 #bell-dot.style.display='none', 양수면 '' 으로 노출. -->
-<div id="nav-bell">🔔<span class="badge" id="bell-dot" style="display:none"></span></div>
+<div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
 </body>
 </html>

@@ -1,4 +1,8 @@
 export function initParkWrite() {
+    const body = document.querySelector('#page-park-write');
+    const nickname = body.dataset.nickname;
+
+
     // 캔버스 설정
     const objectCanvas = document.getElementById("object-canvas");
     const objectCtx = objectCanvas.getContext("2d");
@@ -54,6 +58,7 @@ export function initParkWrite() {
         const dy = touch1.clientY - touch2.clientY;
         return Math.atan2(dy, dx);
     }
+
 
     function initializeCanvases() {
         const canvasContainer = document.getElementById("canvas-container");
@@ -311,8 +316,11 @@ export function initParkWrite() {
                 const formData = new FormData();
                 formData.append("image", blob, "canvas.png");
 
+                console.log("서버로 보낼 닉네임:", nickname);
+                const postUrl = `/profile/park/${nickname}`;
+
                 // 서버로 전송
-                fetch("/profile/park/{nickname}", {
+                fetch(postUrl, {
                     method: "POST",
                     body: formData,
                 })

@@ -6,7 +6,7 @@
     <link rel="stylesheet" th:href="@{/css/park-write.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
-<body id="page-park-write">
+<body id="page-park-write" th:data-nickname="${nickname}">
 <h1>Park</h1>
 <div id="canvas-container">
     <canvas id="object-canvas"></canvas>

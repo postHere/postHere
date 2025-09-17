@@ -30,6 +30,9 @@ public class UserInfoController {
 
     @GetMapping("/login")
     public String loginPage() {
+
+
+        log.info("로그인 페이지 호출");
         return "userInfo/login";
     }
 

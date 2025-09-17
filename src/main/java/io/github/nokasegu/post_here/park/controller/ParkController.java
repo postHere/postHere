@@ -2,36 +2,56 @@ package io.github.nokasegu.post_here.park.controller;
 
 import io.github.nokasegu.post_here.park.dto.ParkResponseDto;
 import io.github.nokasegu.post_here.park.service.ParkService;
+import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
+import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.ResponseBody;
 
+@Slf4j
 @Controller // View가 아닌 Data(JSON/XML)를 반환하는 컨트롤러
 @RequiredArgsConstructor
 public class ParkController {
 
     private final ParkService parkService;
+    private final UserInfoRepository userInfoRepository;
 
     @GetMapping("/park-write")
-    public String parkWrite() {
+    public String parkWrite(Model model,
+                            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        // 4. getUsername()으로 이메일 가져오기
+        String userEmail = userDetails.getUsername();
+
+        // 5. 이메일을 사용해 DB에서 UserInfoEntity 조회
+        UserInfoEntity currentUser = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("인증된 사용자 정보를 DB에서 찾을 수 없습니다: " + userEmail));
+
+        // 6. 조회된 Entity에서 닉네임 추출
+        String nickname = currentUser.getNickname();
+
+        // 7. 모델에 최종 닉네임 담기
+        model.addAttribute("nickname", nickname);
+        // 기존 Park 데이터 조회를 시도
+        try {
+            // ParkService를 통해 기존 Park 정보(URL)를 가져옴
+            ParkResponseDto parkDto = parkService.findParkByOwnerNickname(nickname);
+            // 모델에 기존 이미지 URL 추가
+            model.addAttribute("existingImageUrl", parkDto.getContentCaptureUrl());
+        } catch (IllegalArgumentException e) {
+            // 기존 Park가 없는 경우 (처음 작성하는 경우)
+            // 모델에 빈 값을 추가
+            model.addAttribute("existingImageUrl", "");
+        }
+
         return "/park/park-write";
     }
 
-    /**
-     * AJAX 요청을 처리하여 특정 유저의 Park 정보를 JSON으로 반환합니다.
-     */
-    @ResponseBody
-    @GetMapping("/profile/park/{nickname}")
-    public ResponseEntity<ParkResponseDto> getParkData(@PathVariable String nickname) {
-        try {
-            ParkResponseDto parkDto = parkService.findParkByOwnerNickname(nickname);
-            return ResponseEntity.ok(parkDto);
-        } catch (IllegalArgumentException e) {
-            // 해당 닉네임의 유저나 Park 정보가 없을 경우 404 Not Found 응답
-            return ResponseEntity.notFound().build();
-        }
-    }
 }

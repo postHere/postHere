@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,21 +75,25 @@ public class NotificationService {
                 .build();
         NotificationEntity saved = notificationRepository.save(n);
 
-        // Web Push payload
-        Map<String, Object> payload = Map.of(
-                "type", "FOLLOW",
-                "notificationId", saved.getId(),
-                "actor", Map.of(
-                        "nickname", following.getFollower().getNickname(),
-                        "profilePhotoUrl", following.getFollower().getProfilePhotoUrl()
-                ),
-                "text", "Started following you"
-        );
+        // Web Push payload (Map.of → HashMap + null-safe put 으로 NPE 방지)
+        Map<String, Object> actor = new HashMap<>();
+        if (following.getFollower().getNickname() != null) {
+            actor.put("nickname", following.getFollower().getNickname());
+        }
+        if (following.getFollower().getProfilePhotoUrl() != null) {
+            actor.put("profilePhotoUrl", following.getFollower().getProfilePhotoUrl());
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "FOLLOW");
+        payload.put("notificationId", saved.getId());
+        payload.put("actor", actor); // 빈 맵이라도 항상 포함 → 기존 프론트 스키마 유지
+        payload.put("text", "Started following you");
 
         // 웹 푸시
         webPushService.sendToUser(following.getFollowed(), payload);
 
-        // FCM(Android)
+        // FCM(Android) — 내부에서 user_info.fcm_token 컬럼을 사용하도록 구현되어 있어야 함
         fcmSenderService.sendFollow(
                 following.getFollowed(),
                 following.getFollower().getNickname(),

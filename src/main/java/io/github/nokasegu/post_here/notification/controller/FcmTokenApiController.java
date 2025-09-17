@@ -1,34 +1,61 @@
 package io.github.nokasegu.post_here.notification.controller;
 
-import io.github.nokasegu.post_here.notification.dto.FcmTokenRequestDto;
-import io.github.nokasegu.post_here.notification.service.FcmTokenService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
+import java.util.Map;
 
-/**
- * FCM 토큰 업로드 API
- * - POST /api/push/token
- * - body: { token, platform, app }
- */
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/push")
 public class FcmTokenApiController {
 
-    private final FcmTokenService fcmTokenService;
+    private static final Logger log = LoggerFactory.getLogger(FcmTokenApiController.class);
+    private final JdbcTemplate jdbcTemplate;
 
+    public FcmTokenApiController(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    /**
+     * 기존: fcm_token 테이블 upsert → 변경: user_info.fcm_token 칼럼 업데이트
+     */
     @PostMapping("/token")
-    public void upload(Principal principal, @RequestBody FcmTokenRequestDto req) {
-        if (req == null || req.getToken() == null || req.getToken().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "token 필요");
+    @Transactional
+    public ResponseEntity<?> upload(@RequestBody UploadTokenRequest req, Authentication auth) {
+        if (req == null || req.token == null || req.token.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "token is required"));
         }
-        fcmTokenService.upsert(principal, req);
+        final String email = auth.getName(); // 프로젝트 로그 상 email 기반 인증 사용
+        int updated = jdbcTemplate.update(
+                "UPDATE user_info SET fcm_token = ? WHERE email = ?",
+                req.token, email
+        );
+        log.info("FCM token updated. email={}, updated={}", email, updated);
+        return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
+    /**
+     * 디버그용: 내 토큰 확인 (선택)
+     */
+    @GetMapping("/token")
+    public ResponseEntity<?> myToken(Authentication auth) {
+        String email = auth.getName();
+        String token = jdbcTemplate.query(
+                "SELECT fcm_token FROM user_info WHERE email = ?",
+                ps -> ps.setString(1, email),
+                rs -> rs.next() ? rs.getString(1) : null
+        );
+        return ResponseEntity.ok(Map.of("email", email, "fcm_token", token));
+    }
+
+    public static class UploadTokenRequest {
+        public String token;
+        public String platform;   // optional
+        public String appName;    // optional
     }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 짙은 녹색 -->
+    <color name="green_900">#2F4F1D</color>
+    <color name="green_800">#3C6626</color>
+    <color name="green_700">#4A7D30</color>
+    <color name="green_600">#5B8F44</color>
+    <color name="green_500">#6D9F57</color>
+    <color name="green_400">#87B174</color>
+    <color name="green_300">#A0C38F</color>
+    <color name="green_200">#B8D6AB</color>
+</resources>

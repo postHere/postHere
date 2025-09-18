@@ -9,8 +9,6 @@ spring:
 
   jpa:
     hibernate:
-      #이걸 create로 바꾸시면 JPA가 테이블을 만들어줍니다
-      #create로 한 번 돌리시고 반드시 none으로 바꿔야 합니다
       ddl-auto: none
     properties:
       hibernate:
@@ -22,6 +20,7 @@ spring:
       enabled: true
       max-file-size: 5MB
       max-request-size: 10MB
+
 ---
 spring:
   config:
@@ -31,13 +30,20 @@ spring:
 
 logging:
   level:
+    # 트랜잭션 흐름 디버깅
+    org.springframework.transaction: TRACE
+    org.springframework.orm.jpa: DEBUG
+    # SQL/파라미터 로그
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE
+    org.hibernate.orm.jdbc.bind: TRACE
+    # 프로젝트 패키지 전체 디버깅
+    io.github.nokasegu.post_here: DEBUG
+
   file:
     path: /var/log/postHere-log
 
 ---
-
 spring:
   config:
     import: "optional:classpath:application-secret.yml"

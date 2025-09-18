@@ -1,6 +1,7 @@
 package io.github.nokasegu.post_here.userInfo.service;
 
 import io.github.nokasegu.post_here.common.util.S3UploaderService;
+import io.github.nokasegu.post_here.follow.service.FollowingService;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.dto.UserInfoDto;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
@@ -23,6 +24,8 @@ public class UserInfoService {
     private final PasswordEncoder passwordEncoder;
 
     private final S3UploaderService s3UploaderService;
+
+    private final FollowingService followingService;
 
     /**
      * 회원가입 로직
@@ -81,7 +84,19 @@ public class UserInfoService {
     public UserInfoDto getUserProfileByEmail(String email) {
         UserInfoEntity user = userInfoRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
-        return new UserInfoDto(user);
+        long followerCount = followingService.getFollowerCount(user.getId());
+        long followingCount = followingService.getFollowingCount(user.getId());
+
+        return UserInfoDto.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .profilePhotoUrl(user.getProfilePhotoUrl() != null
+                        ? user.getProfilePhotoUrl()
+                        : "https://placehold.co/112x112/E2E8F0/4A5568?text=User")
+                .followerCount(followerCount)   // 카운트 추가
+                .followingCount(followingCount) // 카운트 추가
+                .build();
     }
 
     /**

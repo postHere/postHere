@@ -26,8 +26,12 @@
                     <div class="profile-info__text">
                         <h2 class="profile-info__name">Watermelon</h2>
                         <div class="profile-stats">
-                            <a href="/followers"><span>Follower 6</span></a>
-                            <a href="/following"><span>Following 2</span></a>
+                            <a th:href="@{/friends(tab=followers)}">
+                                <span th:text="|Follower ${user.followerCount}|"></span>
+                            </a>
+                            <a th:href="@{/friends(tab=followings)}">
+                                <span th:text="|Following ${user.followingCount}|"></span>
+                            </a>
                         </div>
                     </div>
                 </div>

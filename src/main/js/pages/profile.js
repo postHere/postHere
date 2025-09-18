@@ -221,7 +221,50 @@ export function initProfile() {
         }, {passive: true});
     }
 
+    async function loadMyPark() {
+        const guestbookWrapper = document.querySelector('.guestbook-wrapper');
+        if (!guestbookWrapper) return;
+
+        // 기존의 p 태그를 찾아서 초기 메시지를 설정합니다.
+        const guestbookContent = guestbookWrapper.querySelector('.guestbook__content');
+
+        try {
+            // 1. 새로 만든 API('/api/v1/users/me/park')를 호출합니다.
+            const response = await fetch('/api/v1/users/me/park');
+
+            // 2. 응답이 성공적이면 (200 OK)
+            if (response.ok) {
+                const parkData = await response.json();
+
+                // 3. 기존 p 태그를 지우고, 받은 URL로 img 태그를 만들어 삽입합니다.
+                const guestbookSection = guestbookWrapper.querySelector('.guestbook');
+                guestbookSection.innerHTML = ''; // 내부 내용 초기화
+
+                const img = document.createElement('img');
+                img.src = parkData.contentCaptureUrl;
+                img.alt = 'My Park Guestbook Image';
+                img.style.width = '100%';
+                img.style.borderRadius = '12px'; // 예쁜 모서리
+                img.style.display = 'block';
+
+                guestbookSection.appendChild(img);
+
+            } else {
+                // 4. Park 데이터가 없는 경우 (404 Not Found 등) 메시지를 표시합니다.
+                if (guestbookContent) {
+                    guestbookContent.textContent = '작성된 Park 방명록이 없습니다.';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading Park data:', error);
+            if (guestbookContent) {
+                guestbookContent.textContent = 'Park를 불러오는 중 오류가 발생했습니다.';
+            }
+        }
+    }
+
     // --- Initial Render ---
     renderContent();
+    loadMyPark();
 }
 

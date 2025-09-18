@@ -38,4 +38,10 @@ public interface FollowingRepository extends JpaRepository<FollowingEntity, Long
             "from FollowingEntity f " +
             "where f.follower.id = :meId and f.followed.id in :targetIds")
     List<Long> findFollowedIdsByMeIn(@Param("meId") Long meId, @Param("targetIds") List<Long> targetIds);
+
+    // 특정 사용자를 팔로우하는 사람의 수 (팔로워 수)
+    long countByFollowed(UserInfoEntity followed);
+
+    // 특정 사용자가 팔로우하는 사람의 수 (팔로잉 수)
+    long countByFollower(UserInfoEntity follower);
 }

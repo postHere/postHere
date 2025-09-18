@@ -1,8 +1,6 @@
 package io.github.nokasegu.post_here.notification.service;
 
 import io.github.nokasegu.post_here.follow.domain.FollowingEntity;
-import io.github.nokasegu.post_here.follow.repository.FollowingRepository;
-import io.github.nokasegu.post_here.follow.service.FollowingService.FollowCreatedEvent;
 import io.github.nokasegu.post_here.notification.domain.NotificationCode;
 import io.github.nokasegu.post_here.notification.domain.NotificationEntity;
 import io.github.nokasegu.post_here.notification.dto.NotificationItemResponseDto;
@@ -14,99 +12,84 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * NotificationService
- * <p>
- * 역할
- * - 알림 생성/목록/읽음 처리/미읽음 카운트
- * - Web Push + FCM 동시 발사 연동(createFollowAndPush)
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationService {
 
-    private final NotificationRepository notificationRepository; // 알림 CRUD/배치 읽음처리
-    private final UserInfoRepository userInfoRepository;         // 타겟 유저 검증/조회
-    private final WebPushService webPushService;                 // Web Push 전송(브라우저 구독 대상)
-    private final FcmSenderService fcmSenderService;             // FCM(Android) 전송
-    private final FollowingRepository followingRepository;       // ⬅ 커밋 후 리스너에서 조회용
-
-    // =========================
-    // 트랜잭션 커밋 후 리스너
-    // =========================
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onFollowCreated(FollowCreatedEvent ev) {
-        try {
-            // 커밋이 끝난 뒤 실행: 안전하게 엔티티 재조회
-            FollowingEntity entity = followingRepository.findById(ev.followingId()).orElse(null);
-            if (entity == null) {
-                log.warn("Follow entity not found for notification. followingId={}", ev.followingId());
-                return;
-            }
-            // 알림 레코드 생성 + WebPush/FCM 발사
-            createFollowAndPush(entity);
-
-        } catch (Exception e) {
-            // 알림 실패는 로깅만 — DB 커밋에는 영향 없음
-            log.warn("Follow notification failed. follower={}, followed={}, followingId={}",
-                    ev.followerId(), ev.followedId(), ev.followingId(), e);
-        }
-    }
+    private final NotificationRepository notificationRepository;
+    private final UserInfoRepository userInfoRepository;
+    private final WebPushService webPushService;
+    private final FcmSenderService fcmSenderService;
 
     /**
-     * 팔로우 발생 시 알림 생성 + WebPush/FCM 동시 발사
+     * AFTER_COMMIT 리스너에서 호출되는 알림 생성/전송 메서드.
+     * 기존 트랜잭션이 이미 끝난 뒤 실행되므로 "새 트랜잭션"을 강제로 시작한다.
+     * (transactionManager 이름은 JPA TM 빈 이름에 맞게 필요 시 변경)
      */
-    @Transactional
+    @Transactional(transactionManager = "transactionManager", propagation = Propagation.REQUIRES_NEW)
     public NotificationEntity createFollowAndPush(FollowingEntity following) {
+        log.info("[NOTI] createFollowAndPush START");
+        log.info("[NOTI] before save");
+
         NotificationEntity n = NotificationEntity.builder()
                 .notificationCode(NotificationCode.FOLLOW)
                 .following(following)
                 .targetUser(following.getFollowed())
                 .checkStatus(false)
                 .build();
-        NotificationEntity saved = notificationRepository.save(n);
 
-        // Web Push payload (Map.of → HashMap + null-safe put 으로 NPE 방지)
-        Map<String, Object> actor = new HashMap<>();
-        if (following.getFollower().getNickname() != null) {
-            actor.put("nickname", following.getFollower().getNickname());
-        }
-        if (following.getFollower().getProfilePhotoUrl() != null) {
-            actor.put("profilePhotoUrl", following.getFollower().getProfilePhotoUrl());
-        }
+        // PK 바로 채우도록 flush까지 보장
+        NotificationEntity saved = notificationRepository.saveAndFlush(n);
+        log.info("[NOTI] after save id={}", saved.getId());
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("type", "FOLLOW");
-        payload.put("notificationId", saved.getId());
-        payload.put("actor", actor); // 빈 맵이라도 항상 포함 → 기존 프론트 스키마 유지
-        payload.put("text", "Started following you");
+        // Web Push
+        log.info("[NOTI] webPush send start");
+        webPushService.sendToUser(following.getFollowed(), buildFollowPayload(saved, following));
+        log.info("[NOTI] webPush send end");
 
-        // 웹 푸시
-        webPushService.sendToUser(following.getFollowed(), payload);
-
-        // FCM(Android) — 내부에서 user_info.fcm_token 컬럼을 사용하도록 구현되어 있어야 함
+        // FCM
+        log.info("[NOTI] fcm send start");
         fcmSenderService.sendFollow(
                 following.getFollowed(),
                 following.getFollower().getNickname(),
                 following.getFollower().getProfilePhotoUrl(),
                 saved.getId()
         );
+        log.info("[NOTI] fcm send end");
 
+        log.info("[NOTI] createFollowAndPush END id={}", saved.getId());
         return saved;
     }
 
-    /**
-     * 알림 목록 + 미읽음 카운트
-     */
+    private Map<String, Object> buildFollowPayload(NotificationEntity saved, FollowingEntity following) {
+        Map<String, Object> actor = new HashMap<>();
+        if (following.getFollower() != null) {
+            if (following.getFollower().getNickname() != null) {
+                actor.put("nickname", following.getFollower().getNickname());
+            }
+            if (following.getFollower().getProfilePhotoUrl() != null) {
+                actor.put("profilePhotoUrl", following.getFollower().getProfilePhotoUrl());
+            }
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "FOLLOW");
+        payload.put("notificationId", saved.getId());
+        payload.put("actor", actor);
+        payload.put("text", "Started following you");
+        return payload;
+    }
+
+    // ===== 리스트/읽음 관련 =====
+
     @Transactional(readOnly = true)
     public NotificationListResponseDto list(Long targetUserId, int page, int size) {
         UserInfoEntity target = userInfoRepository.findById(targetUserId)
@@ -124,10 +107,7 @@ public class NotificationService {
         return NotificationListResponseDto.of(items, unreadCount);
     }
 
-    /**
-     * 선택 읽음 처리
-     */
-    @Transactional
+    @Transactional(transactionManager = "transactionManager")
     public int markRead(Long targetUserId, List<Long> notificationIds) {
         if (notificationIds == null || notificationIds.isEmpty()) return 0;
 
@@ -137,10 +117,7 @@ public class NotificationService {
         return notificationRepository.markReadByIds(target, notificationIds);
     }
 
-    /**
-     * 전체 읽음 처리
-     */
-    @Transactional
+    @Transactional(transactionManager = "transactionManager")
     public int markAllRead(Long targetUserId) {
         UserInfoEntity target = userInfoRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
@@ -148,9 +125,6 @@ public class NotificationService {
         return notificationRepository.markAllRead(target);
     }
 
-    /**
-     * 미읽음 카운트
-     */
     @Transactional(readOnly = true)
     public long unreadCount(Long targetUserId) {
         UserInfoEntity target = userInfoRepository.findById(targetUserId)

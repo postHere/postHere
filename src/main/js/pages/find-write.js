@@ -1,4 +1,5 @@
 import {createTextBox, drawTextObjects, getAngle, getDistance, getEventCoordinates} from "./common-find_park.js";
+import {CanvasInteractionManager} from "./canvas-interaction";
 
 export function initFindWrite() {
 
@@ -177,286 +178,94 @@ export function initFindWrite() {
 
     }
 
-    function startDragOrDrawing(event) {
-        // 텍스트 입력란에 값이 있으면 텍스트 객체 조작을 비활성화합니다.
-        if (textInput.value !== "") {
-            return;
-        }
+    const interactionConfig = {
+        findSelectableObject: (coord) => {
+            if (textInput.value !== "") return null;
 
-        // --- [1] 두 손가락 제스처(핀치 줌 / 회전 / 패닝) 처리 ---
-        if (event.touches && event.touches.length === 2) {
-
-            isPinching = true;
-            isDrawing = false;
-            isDraggingObject = true;
-            const touch1 = event.touches[0];
-            const touch2 = event.touches[1];
-            initialPinchDistance = getDistance(touch1, touch2);
-            const pinchCenterX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
-            const pinchCenterY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
-
-            // --- 1-1. 텍스트 객체 우선 탐색 ---
-            selectedObject = null;  // 선택 초기화
-
+            // 1. 텍스트 객체 우선 탐색 (역변환 히트 테스트)
             for (let i = objects.length - 1; i >= 0; i--) {
-
                 const object = objects[i];
-
-                // 텍스트 객체애 대한 역변환 히트 테스트.
-                const relX = pinchCenterX - object.translateX;
-                const relY = pinchCenterY - object.translateY;
+                const relX = coord.x - object.translateX;
+                const relY = coord.y - object.translateY;
                 const angle = -object.rotation;
                 const rotatedX = relX * Math.cos(angle) - relY * Math.sin(angle);
                 const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
                 const transformedX = rotatedX / object.scale;
                 const transformedY = rotatedY / object.scale;
-                const textHeight = object.ascent + object.descent;  // 텍스트의 실제 높이.
-
-                // (이미지의 중심이 0, 0이므로 너비/높이의 절반과 비교)
+                const textHeight = object.ascent + object.descent;
                 if (Math.abs(transformedX) <= object.width / 2 && Math.abs(transformedY) <= textHeight / 2) {
-                    selectedObject = object;            // 텍스트 객체 선택.
-                    lastSelectedTextObject = object;    // UI 연동을 위해 저장.
-                    fontSizeContainer.style.display = "block";
-                    break;
+                    return object;
                 }
-
             }
 
-            // --- 1-2. 텍스트가 없으면 배경 이미지 선택 ---
-            if (selectedObject === null) {
-                if (backgroundImage) {
-
-                    // 텍스트 객체가 선택되지 않았으나 배경 이미지가 있으면 배경 이미지 선택.
-                    selectedObject = backgroundImage;
-                    fontSizeContainer.style.display = "none";
-
-                } else {
-
-                    // 택스트 객체도 선택되지 않고, 배경 이미지도 없으면 조작 종료.
-                    isPinching = false;
-                    isDraggingObject = false;
-                    return;
-
+            // 2. 배경 이미지 탐색
+            if (backgroundImage) {
+                const relX = coord.x - backgroundImage.translateX;
+                const relY = coord.y - backgroundImage.translateY;
+                const angle = -backgroundImage.rotation;
+                const rotatedX = relX * Math.cos(angle) - relY * Math.sin(angle);
+                const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
+                const transformedX = rotatedX / backgroundImage.scale;
+                const transformedY = rotatedY / backgroundImage.scale;
+                if (Math.abs(transformedX) <= backgroundImage.originalWidth / 2 && Math.abs(transformedY) <= backgroundImage.originalHeight / 2) {
+                    return backgroundImage;
                 }
-
             }
 
-            // --- 1-3. 선택된 객체(텍스트 또는 이미지)의 초기 상태 저장 ---
-
-            pinchStartImageState = {
-                translateX: selectedObject.translateX, // 처음에는 캔버스 중앙 x좌표
-                translateY: selectedObject.translateY,
-                scale: selectedObject.scale,
-                rotation: selectedObject.rotation,
-                pinchCenterX: pinchCenterX,
-                pinchCenterY: pinchCenterY,
-                initialAngle: getAngle(touch1, touch2),
-            };
-
-            return; // 두 손가락 조작(핀치 줌 모드)이므로, 아래의 한 손가락 로직(단일 클릭/터치)은 실행하지 않음.
-
-        }
-
-        // --- [2] 단일 제스처 (드래그 / 그리기) 로직 ---
-        // 클릭/터치 좌표 구하기 [페이지 좌상단 ~ 클릭/터치 위치]
-        const {offsetX, offsetY} = getEventCoordinates(event, rect);
-        selectedObject = null;
-        lastSelectedTextObject = null;
-
-        // --- 2-1. 텍스트 객체 우선 탐색 (단일 클릭 / 터치) ---
-        // 텍스트 객체(최상단 레이어)를 클릭했는지 확인 (가장 위 레이어부터)
-        for (let i = objects.length - 1; i >= 0; i--) {
-
-            const object = objects[i];
-
-            // 텍스트 객체에 대한 역변환 히트 테스트 (핀치 줌과 동일한 로직)
-            const relX = offsetX - object.translateX;
-            const relY = offsetY - object.translateY;
-            const angle = -object.rotation;
-            const rotatedX = relX * Math.cos(angle) - relY * Math.sin(angle);
-            const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
-            const transformedX = rotatedX / object.scale;
-            const transformedY = rotatedY / object.scale;
-            const textHeight = object.ascent + object.descent;
-
-            if (Math.abs(transformedX) <= object.width / 2 && Math.abs(transformedY) <= textHeight / 2) {
-
-                isDraggingObject = true;
-                selectedObject = object;
-                lastSelectedTextObject = object;
-
-                // 마우스와 객체 좌측 끝의 간격.
-                dragOffsetX = offsetX - object.translateX; // 간격[텍스트 객체 좌상단 ~ 클릭/터치]
-                dragOffsetY = offsetY - object.translateY;
-
-                // 슬라이더 UI 업데이트 (시각적 크기 반영)
+            // 3. 아무것도 선택되지 않으면 null 반환 (-> 그리기 모드 시작)
+            return null;
+        },
+        onObjectSelect: (selectedObject) => {
+            if (selectedObject.type === 'text') {
+                lastSelectedTextObject = selectedObject;
                 const visualSize = Math.round(selectedObject.fontSize * selectedObject.scale);
                 fontSizeSlider.value = visualSize;
                 fontSizeValue.textContent = visualSize;
                 fontSizeContainer.style.display = "block";
-
-                return;     // 텍스트 선택 성공.
-
-            }
-
-        }
-
-        // --- 2-2. 배경 이미지 탐색 (단일 클릭/터치) ---
-        // 2순위: 텍스트를 클릭하지 않았다면, 배경 이미지(최하단 레이어)를 클릭했는지 확인.
-        if (backgroundImage) {
-
-            // --- 클릭/터치 좌표 역변환 & 이미지 변형 이전 좌표 기준 클릭/터치 감지 로직 ---
-            // 1. 클릭 좌표를 이미지 중심으로 이동한 상대 좌표로 변환.
-            const relX = offsetX - backgroundImage.translateX;
-            const relY = offsetY - backgroundImage.translateY;
-
-            // 2. 클릭 좌표에 역회전(negative rotation)을 적용.
-            const angle = -backgroundImage.rotation;    // 반대 방향으로 회전.
-            const rotatedX = relX * Math.cos(angle) - relY * Math.sin(angle);
-            const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
-
-            // 3. 클릭 좌표에 역스케일(inverse scale)을 적용.
-            const transformedX = rotatedX / backgroundImage.scale;
-            const transformedY = rotatedY / backgroundImage.scale;
-
-            // 4. 변화된 좌표가 이미지 변형 이전 경계 내에 있는지 확인.
-            // (이미지의 중심이 0, 0이므로 너비/높이의 절반과 비교)
-            if (Math.abs(transformedX) <= backgroundImage.originalWidth / 2 && Math.abs(transformedY) <= backgroundImage.originalHeight / 2) {
-
-                // --- 이미지 선택 성공 ---
-                isDraggingObject = true;
-                selectedObject = backgroundImage;   // 선택된 객체로 이미지 지정.
-                dragOffsetX = offsetX - backgroundImage.translateX;
-                dragOffsetY = offsetY - backgroundImage.translateY;
-
-                // 배경 이미지를 선택했으므로, 그리기 모드를 시작하지 않고 메소드 종료.
+            } else {
+                lastSelectedTextObject = null;
                 fontSizeContainer.style.display = "none";
-                return;
-
             }
-
-        }
-
-        // --- 2-3. 그리기 모드 시작 ---
-        // 3순위: 아무 객체로 선택하지 않았다면 그리기 모드 시작.
-        isDrawing = true;
-        fontSizeContainer.style.display = "none";
-        [lastX, lastY] = [offsetX, offsetY];
-
-    }
-
-
-    function dragOrDraw(event) {
-
-        event.preventDefault(); // 모바일 환경에서의 스크롤 등 방지.
-
-        // --- 핀치 줌 동작 중일 때 이미지 크기 및 위치 조절 ---
-        if (isPinching && event.touches && event.touches.length === 2) {
-            if (!selectedObject) return;   // 배경 이미지가 없으면 실행하지 않음.
-
-            const touch1 = event.touches[0];
-            const touch2 = event.touches[1];
-
-            // --- 1. 스케일 계산 ---
-            const newDistance = getDistance(touch1, touch2);
-            const scaleFactor = newDistance / initialPinchDistance;
-
-            // --- 2. 회전 계산 ---
-            const currentAngle = getAngle(touch1, touch2);
-            const rotationDelta = currentAngle - pinchStartImageState.initialAngle; // 회전 변화량.
-
-            // --- 3. 이동(Pan) 계산 ---
-            // 핀치 제스처의 중심점을 계산
-            const currentPinchCenterX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
-            const currentPinchCenterY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
-            const deltaX = currentPinchCenterX - pinchStartImageState.pinchCenterX;
-            const deltaY = currentPinchCenterY - pinchStartImageState.pinchCenterY;
-
-            // selectedObject의 속성을 업데이트.
-            selectedObject.scale = pinchStartImageState.scale * scaleFactor;
-            selectedObject.rotation = pinchStartImageState.rotation + rotationDelta;
-            selectedObject.translateX = pinchStartImageState.translateX + deltaX;
-            selectedObject.translateY = pinchStartImageState.translateY + deltaY;
-
-            // selectedObject의 타입에 따라 적절한 그리기 함수 호출.
-            if (selectedObject.type === 'text') {
-
-                // --- 핀치 줌 중 UI 업데이트 ---
-                // 1. 시각적 글자 크기 계산.
-                let visualSize = Math.round(selectedObject.fontSize * selectedObject.scale);
-
-                // 2. 최대 크기 제한 적용 (200px).
-                const maxSize = 200;
-                if (visualSize > maxSize) {
-
-                    // fontSize, maxSize 기준 최대 scale 값 계산.
-                    selectedObject.scale = maxSize / selectedObject.fontSize;
-                    visualSize = maxSize;   // UI 표시값 최대값으로 고정.
-                    initialPinchDistance = newDistance;
-                    pinchStartImageState.scale = selectedObject.scale;
-
-                }
-
-                // 3. 슬라이더와 텍스트 값에 반영.
-                fontSizeSlider.value = visualSize;
-                fontSizeValue.textContent = visualSize;
-
-                drawTextObjects(objects, objectCtx, rect);
-
-            } else if (selectedObject.type === 'image') {
-
+        },
+        onObjectMove: () => {
+            // manager 내부의 selectedObject를 참조하여 타입에 맞게 다시 그림
+            const selectedObject = interactionManager.selectedObject;
+            if (selectedObject.type === 'image') {
                 drawImageObject();
-
+            } else if (selectedObject.type === 'text') {
+                drawTextObjects(objects, objectCtx, rect);
             }
-
-            return;             // 핀치 줌 로직만 실행하고 함수 종료.
-
-        }
-
-        // --- 단일 클릭/터치를 통한 드래그/그리기 로직 ---
-        const {offsetX, offsetY} = getEventCoordinates(event, rect);
-
-        if (isDraggingObject && selectedObject) {
-
-            // 드래그 중인 객체의 새로운 x, y 위치(객체의 좌상단 시작점)
-            // = 클릭(터치) 위치 좌표 - 간격[드래그 객체 좌상단 좌표 ~ 클릭 위치 좌표]
-            selectedObject.translateX = offsetX - dragOffsetX;
-            selectedObject.translateY = offsetY - dragOffsetY;
-
-            // 선택된 객체의 타입에 따라 다른 그리기 함수를 호출.
-            if (selectedObject.type === 'text') {
-                drawTextObjects(objects, objectCtx, rect);      // 텍스트 객체들을 다시 그림.
-            } else if (selectedObject.type === 'image') {
-                drawImageObject();      // 배경 이미지를 다시 그림.
-            }
-
-        } else if (isDrawing) {
-
+        },
+        onDrawStart: () => {
+            fontSizeContainer.style.display = "none";
+        },
+        onDrawMove: (from, to) => {
             paintCtx.strokeStyle = selectedColor;
             paintCtx.lineWidth = penThickness;
             paintCtx.beginPath();
-            paintCtx.moveTo(lastX, lastY);
-            paintCtx.lineTo(offsetX, offsetY);
-            paintCtx.stroke();      // 그림 레이어에만 그리기
-            [lastX, lastY] = [offsetX, offsetY];
+            paintCtx.moveTo(from.x, from.y);
+            paintCtx.lineTo(to.x, to.y);
+            paintCtx.stroke();
+        },
+        onPinchUpdate: (selectedObject) => {
+            if (selectedObject.type !== 'text') return false;
 
+            let visualSize = Math.round(selectedObject.fontSize * selectedObject.scale);
+            const maxSize = 200;
+            let updated = false;
+            if (visualSize > maxSize) {
+                selectedObject.scale = maxSize / selectedObject.fontSize;
+                visualSize = maxSize;
+                updated = true; // 스케일이 강제로 변경되었음을 알림
+            }
+            fontSizeSlider.value = visualSize;
+            fontSizeValue.textContent = visualSize;
+            return updated;
+        },
+        onInteractionEnd: () => {
+            // 이 파일에서는 특별히 할 작업 없음
         }
-
-    }
-
-    function stopDragOrDrawing(event) {
-
-        // [추가] 핀치 줌 상태 초기화.
-        isPinching = false;
-        initialPinchDistance = null;
-        pinchStartImageState = {};
-
-        // 그리기 관련 로직 초기화.
-        isDrawing = false;
-        isDraggingObject = false;
-        selectedObject = null;
-
-    }
+    };
 
     // --- 이벤트 리스너 등록 ---
     // 색상 변경
@@ -504,18 +313,9 @@ export function initFindWrite() {
     addImageBtn.addEventListener("click", () => imageLoader.click());
     imageLoader.addEventListener("change", loadImage);
 
-    // PC 마우스 이벤트
-    objectCanvas.addEventListener("mousedown", startDragOrDrawing);
-    objectCanvas.addEventListener("mousemove", dragOrDraw);
-    objectCanvas.addEventListener("mouseup", stopDragOrDrawing);
-    objectCanvas.addEventListener("mouseleave", stopDragOrDrawing);
-
-    // 모바일 터치 이벤트
-    objectCanvas.addEventListener("touchstart", startDragOrDrawing);
-    objectCanvas.addEventListener("touchmove", dragOrDraw);
-    objectCanvas.addEventListener("touchend", stopDragOrDrawing);
-
     // --- 초기 실행 ---
     initializeCanvases();
+    const interactionManager = new CanvasInteractionManager(objectCanvas, objects, interactionConfig);
+    interactionManager.registerEvents();
 
 }

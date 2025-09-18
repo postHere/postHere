@@ -1,4 +1,5 @@
 import {createTextBox, getAngle, getDistance, getEventCoordinates, drawTextObjects} from "./common-find_park.js";
+import {CanvasInteractionManager} from "./canvas-interaction";
 
 export function initParkWrite() {
     // 캔버스 설정
@@ -49,153 +50,55 @@ export function initParkWrite() {
         objectCtx.scale(scale, scale);
     }
 
-    function startDragOrDrawing(event) {
-        // 텍스트 입력란에 값이 있으면 텍스트 객체 조작을 비활성화합니다.
-        if (textInput.value !== "") {
-            return;
-        }
+    const interactionConfig = {
+        findSelectableObject: (coord) => {
+            if (textInput.value !== "") return null;
 
-        if (event.touches && event.touches.length === 2) {
-
-            isPinching = true;
-            isDraggingObject = true;
-            const touch1 = event.touches[0];
-            const touch2 = event.touches[1];
-            initialPinchDistance = getDistance(touch1, touch2);
-            const pinchCenterX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
-            const pinchCenterY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
-
-            selectedObject = null;
-
+            // 텍스트 객체만 탐색
             for (let i = objects.length - 1; i >= 0; i--) {
                 const object = objects[i];
-                const relX = pinchCenterX - object.translateX;
-                const relY = pinchCenterY - object.translateY;
+                const relX = coord.x - object.translateX;
+                const relY = coord.y - object.translateY;
                 const angle = -object.rotation;
                 const rotatedX = relX * Math.cos(angle) - relY * Math.sin(angle);
                 const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
                 const transformedX = rotatedX / object.scale;
                 const transformedY = rotatedY / object.scale;
                 const textHeight = object.ascent + object.descent;
-
                 if (Math.abs(transformedX) <= object.width / 2 && Math.abs(transformedY) <= textHeight / 2) {
-                    selectedObject = object;
-                    lastSelectedTextObject = object;
-                    fontSizeContainer.style.display = "block";
-                    break;
+                    return object;
                 }
-
             }
-
-            if (selectedObject === null) {
-                isPinching = false;
-                isDraggingObject = false;
-                return;
-            }
-
-            pinchStartObjectState = {
-                translateX: selectedObject.translateX,
-                translateY: selectedObject.translateY,
-                scale: selectedObject.scale,
-                rotation: selectedObject.rotation,
-                pinchCenterX: pinchCenterX,
-                pinchCenterY: pinchCenterY,
-                initialAngle: getAngle(touch1, touch2),
-            };
-
-            return;
-        }
-
-        const {offsetX, offsetY} = getEventCoordinates(event, rect);
-        selectedObject = null;
-        lastSelectedTextObject = null;
-
-        for (let i = objects.length - 1; i >= 0; i--) {
-
-            const object = objects[i];
-
-            const relX = offsetX - object.translateX;
-            const relY = offsetY - object.translateY;
-            const angle = -object.rotation;
-            const rotatedX = relX * Math.cos(angle) - relY * Math.sin(angle);
-            const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
-            const transformedX = rotatedX / object.scale;
-            const transformedY = rotatedY / object.scale;
-            const textHeight = object.ascent + object.descent;
-
-            if (Math.abs(transformedX) <= object.width / 2 && Math.abs(transformedY) <= textHeight / 2) {
-
-                isDraggingObject = true;
-                selectedObject = object;
-                lastSelectedTextObject = object;
-                dragOffsetX = offsetX - object.translateX;
-                dragOffsetY = offsetY - object.translateY;
-
-                const visualSize = Math.round(selectedObject.fontSize * selectedObject.scale);
-                fontSizeSlider.value = visualSize;
-                fontSizeValue.textContent = visualSize;
-                fontSizeContainer.style.display = "block";
-
-                return;
-
-            }
-
-        }
-
-    }
-
-    function dragOrDraw(event) {
-        event.preventDefault();
-
-        if (isPinching && event.touches && event.touches.length === 2) {
-            if (!selectedObject) return;
-
-            const touch1 = event.touches[0];
-            const touch2 = event.touches[1];
-            const newDistance = getDistance(touch1, touch2);
-            const scaleFactor = newDistance / initialPinchDistance;
-            const currentAngle = getAngle(touch1, touch2);
-            const rotationDelta = currentAngle - pinchStartObjectState.initialAngle;
-            const currentPinchCenterX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
-            const currentPinchCenterY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
-            const deltaX = currentPinchCenterX - pinchStartObjectState.pinchCenterX;
-            const deltaY = currentPinchCenterY - pinchStartObjectState.pinchCenterY;
-
-            selectedObject.scale = pinchStartObjectState.scale * scaleFactor;
-            selectedObject.rotation = pinchStartObjectState.rotation + rotationDelta;
-            selectedObject.translateX = pinchStartObjectState.translateX + deltaX;
-            selectedObject.translateY = pinchStartObjectState.translateY + deltaY;
-
+            return null; // 배경 이미지나 그리기가 없으므로, 못 찾으면 끝.
+        },
+        onObjectSelect: (selectedObject) => {
+            lastSelectedTextObject = selectedObject;
+            const visualSize = Math.round(selectedObject.fontSize * selectedObject.scale);
+            fontSizeSlider.value = visualSize;
+            fontSizeValue.textContent = visualSize;
+            fontSizeContainer.style.display = "block";
+        },
+        onObjectMove: () => {
+            drawTextObjects(objects, objectCtx, rect); // 텍스트 객체만 다시 그리면 됨
+        },
+        onPinchUpdate: (selectedObject) => {
             let visualSize = Math.round(selectedObject.fontSize * selectedObject.scale);
             const maxSize = 200;
+            let updated = false;
             if (visualSize > maxSize) {
                 selectedObject.scale = maxSize / selectedObject.fontSize;
                 visualSize = maxSize;
-                initialPinchDistance = newDistance;
-                pinchStartObjectState.scale = selectedObject.scale;
+                updated = true;
             }
-
             fontSizeSlider.value = visualSize;
             fontSizeValue.textContent = visualSize;
-            drawTextObjects(objects, objectCtx, rect);
-            return;
+            return updated;
+        },
+        onInteractionEnd: () => {
+            // 여기선 특별히 할 작업 없음
         }
-
-        const {offsetX, offsetY} = getEventCoordinates(event, rect);
-        if (isDraggingObject && selectedObject) {
-            selectedObject.translateX = offsetX - dragOffsetX;
-            selectedObject.translateY = offsetY - dragOffsetY;
-            drawTextObjects(objects, objectCtx, rect);
-        }
-    }
-
-    function stopDragOrDrawing(event) {
-        isPinching = false;
-        initialPinchDistance = null;
-        pinchStartObjectState = {};
-        isDraggingObject = false;
-        selectedObject = null;
-    }
+        // onDrawStart, onDrawMove는 필요 없으므로 정의하지 않음
+    };
 
     // --- 이벤트 리스너 등록 ---
     colorButtons.forEach((button) => {
@@ -213,7 +116,6 @@ export function initParkWrite() {
             }
         });
     });
-
     fontSizeSlider.addEventListener("input", (event) => {
         const newSize = event.target.value;
         fontSizeValue.textContent = newSize;
@@ -228,7 +130,6 @@ export function initParkWrite() {
         }
 
     });
-
     addTextBtn.addEventListener("click", () => {
         createTextBox(objects, obj => lastSelectedTextObject = obj, textInput, fontSizeContainer, fontSizeSlider, drawTextObjects, selectedColor, objectCtx, rect);
     });
@@ -261,13 +162,8 @@ export function initParkWrite() {
         });
     });
 
-    objectCanvas.addEventListener("mousedown", startDragOrDrawing);
-    objectCanvas.addEventListener("mousemove", dragOrDraw);
-    objectCanvas.addEventListener("mouseup", stopDragOrDrawing);
-    objectCanvas.addEventListener("mouseleave", stopDragOrDrawing);
-    objectCanvas.addEventListener("touchstart", startDragOrDrawing);
-    objectCanvas.addEventListener("touchmove", dragOrDraw);
-    objectCanvas.addEventListener("touchend", stopDragOrDrawing);
-
     initializeCanvases();
+    const interactionManager = new CanvasInteractionManager(objectCanvas, objects, interactionConfig);
+    interactionManager.registerEvents();
+
 }

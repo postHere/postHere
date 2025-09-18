@@ -1,146 +1,121 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Profile</title>
-    <!-- Font Awesome 아이콘 CDN -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" th:href="@{/css/profile.css}">
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
+    <title>Profile - PostHere</title>
+    <link href="/pwa/manifest.json" rel="manifest">
     <script defer th:src="@{/js/bundle.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/profile.css}">
 </head>
 <body id="page-profile">
 
-<div class="profile-card">
-    <div class="profile-content">
-
-        <!-- 프로필 사진 섹션 -->
-        <div class="profile-image-wrapper" id="profileImageContainer">
-            <img alt="Profile image" id="profileImage" src="https://placehold.co/112x112/E2E8F0/4A5568?text=User">
-            <div class="image-overlay">
-                <i class="fas fa-camera icon"></i>
-            </div>
-        </div>
-        <input accept="image/*" id="profileImageInput" name="profileImage" type="file">
-
-        <!-- 사용자 정보 -->
-        <div class="user-info">
-            <h2 class="nickname" id="nickname">Watermelon</h2>
-            <p class="email" id="email">user@example.com</p>
-        </div>
-
-        <div class="user-stats">
-            <div>
-                <p class="stat-value">6</p>
-                <p class="stat-label">Follower</p>
-            </div>
-            <div>
-                <p class="stat-value">2</p>
-                <p class="stat-label">Following</p>
-            </div>
+<div class="mobile-container">
+    <main class="main-content">
+        <!-- Section 1: 회원 정보 -->
+        <div class="profile-header-wrapper">
+            <section class="profile-header">
+                <div class="profile-info">
+                    <label class="profile-info__pic-label" for="profile-image-upload">
+                        <img alt="Profile Picture"
+                             class="profile-info__pic"
+                             src="https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=256&auto=format&fit=crop">
+                    </label>
+                    <input accept="image/*" id="profile-image-upload" style="display: none;" type="file">
+                    <div class="profile-info__text">
+                        <h2 class="profile-info__name">Watermelon</h2>
+                        <div class="profile-stats">
+                            <a href="/followers"><span>Follower 6</span></a>
+                            <a href="/following"><span>Following 2</span></a>
+                        </div>
+                    </div>
+                </div>
+                <button class="profile-action-btn" id="open-edit-modal-btn">&gt;&gt;</button>
+            </section>
         </div>
 
-        <!-- 자기소개 -->
-        <p class="bio">
-            Yoshihiro Togashi created not just an adventure, but a profound exploration of humanity.
-        </p>
+        <!-- Section 2: PARK명록 -->
+        <div class="guestbook-wrapper">
+            <a href="/park-guestbook-detail">
+                <section class="guestbook">
+                    <p class="guestbook__content">
+                        Yoshihiro Togashi created not just an adventure, but a profound exploration of humanity, making
+                        Hunter × Hunter one of the greatest works in manga and anime history.
+                    </p>
+                </section>
+            </a>
+        </div>
 
-        <!-- 저장 버튼 (이미지 변경 시 나타남) -->
-        <button class="btn-save" id="saveButton">
-            Save Changes
-        </button>
+        <!-- Section 3: Fin'd / Forum -->
+        <section class="posts-section">
+            <div class="content-tabs">
+                <button class="content-tabs__button active" id="tab-find">Fin'd <span>&gt;</span></button>
+                <button class="content-tabs__button" id="tab-forum">Forum <span>&gt;</span></button>
+            </div>
+            <div class="content-carousel-wrapper" id="carousel-wrapper">
+                <div class="content-carousel" id="carousel"></div>
+            </div>
+        </section>
+    </main>
 
-        <!-- 상태 메시지 영역 -->
-        <p class="status-message" id="statusMessage"></p>
+    <footer class="bottom-nav">
+        <nav><a href="#">🏠</a> <a href="#">✉️</a> <a href="#">✏️</a> <a href="#">🔔</a> <a class="active" href="#">👤</a>
+        </nav>
+    </footer>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="edit-profile-modal">
+    <div class="modal-content">
+        <h1 class="modal-logo">PostHere</h1>
+        <p class="modal-title">Edit your profile</p>
+        <form id="edit-profile-form">
+            <div class="input-group">
+                <label for="nickname">Nickname</label>
+                <div class="input-group-row">
+                    <input id="nickname" name="nickname" placeholder="Enter new nickname" required type="text">
+                    <button class="modal-button btn-secondary" id="check-nickname-btn" type="button">Check</button>
+                </div>
+                <p class="feedback-message" id="nickname-feedback"></p>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <button class="modal-button btn-secondary" id="open-password-modal-btn" type="button">Change Password
+                </button>
+            </div>
+            <div class="button-group">
+                <button class="modal-button btn-secondary" id="cancel-edit-btn" type="button">Cancel</button>
+                <button class="modal-button btn-primary" id="update-profile-btn" type="submit">Update</button>
+            </div>
+        </form>
     </div>
 </div>
-<script>
-    // 병합 양식 상 붙여놓은 js, 나중에 지울 예정
-    function authHeaders(base = {}) {
-        const headers = {...base};
-        const token = document.querySelector('meta[name="_csrf"]')?.content || '';
-        const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-        if (token) headers[headerName] = token;
-        return headers;
-    }
 
-    const serverUserId = document.querySelector('meta[name="profileUserId"]')?.content;
-    const targetId = serverUserId || location.pathname.split('/').pop();
-    const btn = document.getElementById('followBtn');
-
-    async function getUserBrief(id) {
-        const res = await fetch(`/profile/info/${id}`, {headers: authHeaders({'Accept': 'application/json'})});
-        if (!res.ok) throw new Error('유저 정보 불러오기 실패');
-        return res.json();
-    }
-
-    async function getStatus(id) {
-        const res = await fetch('/friend/status', {
-            method: 'POST',
-            headers: authHeaders({'Content-Type': 'application/json', 'Accept': 'application/json'}),
-            body: JSON.stringify({ids: [Number(id)]})
-        });
-        if (!res.ok) return false;
-        const data = await res.json();
-        return !!(data?.status?.[id]);
-    }
-
-    async function apiFollow(id) {
-        const res = await fetch('/friend/addfollowing', {
-            method: 'POST',
-            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
-            body: JSON.stringify({userId: Number(id)})
-        });
-        if (!res.ok) throw new Error('팔로우 실패 (HTTP ' + res.status + ')');
-        return res.json();
-    }
-
-    async function apiUnfollow(id) {
-        const res = await fetch('/friend/unfollowing', {
-            method: 'DELETE',
-            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
-            body: JSON.stringify({userId: Number(id)})
-        });
-        if (!res.ok) throw new Error('언팔로우 실패 (HTTP ' + res.status + ')');
-        return res.json();
-    }
-
-    function renderButton(following) {
-        btn.textContent = following ? '삭제' : '친구 추가';
-        btn.onclick = async () => {
-            try {
-                if (following) {
-                    await apiUnfollow(targetId);
-                    following = false;
-                } else {
-                    await apiFollow(targetId);
-                    following = true;
-                }
-                renderButton(following);
-            } catch (e) {
-                alert(e.message || '요청 실패');
-            }
-        };
-    }
-
-    (async function init() {
-        try {
-            const brief = await getUserBrief(targetId);
-            document.getElementById('nickname').textContent = brief.nickname || `(No name)`;
-            document.getElementById('userId').textContent = `#${brief.id}`;
-            const avatar = document.getElementById('avatar');
-            avatar.src = brief.profilePhotoUrl || `https://picsum.photos/seed/${brief.id}/160/160`;
-            avatar.onerror = () => avatar.style.visibility = 'hidden';
-
-            const following = await getStatus(targetId);
-            renderButton(following);
-        } catch (e) {
-            btn.textContent = '오류';
-            btn.disabled = true;
-            alert(e.message || '초기 로딩 실패');
-        }
-    })();
-</script>
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="change-password-modal">
+    <div class="modal-content">
+        <h1 class="modal-logo">PostHere</h1>
+        <p class="modal-title">Change your password</p>
+        <form id="change-password-form">
+            <div class="input-group">
+                <label for="new-password">New Password</label>
+                <input id="new-password" name="new-password" required type="password">
+            </div>
+            <div class="input-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input id="confirm-password" name="confirm-password" required type="password">
+                <p class="feedback-message" id="password-feedback"></p>
+            </div>
+            <div class="button-group">
+                <button class="modal-button btn-secondary" id="cancel-password-btn" type="button">Cancel</button>
+                <button class="modal-button btn-primary" disabled id="update-password-btn" type="submit">Update
+                    Password
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 </body>
 </html>
 

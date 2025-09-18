@@ -1,149 +1,179 @@
-/**
- * [알림센터 동작 시퀀스]
- * 1) 페이지 진입 시 /notification/list 호출로 알림 목록 로딩
- * 2) 방금 본 알림 ID들을 /notification/read 로 즉시 읽음 처리 (멱등성 고려)
- *    - 예: URL 쿼리 'focus' 또는 직전 클릭 알림 ID를 우선 포함
- *    - 실패해도 UI는 계속 표시하되, 재시도/토스트 안내 고려
- * 3) 하단 네비 종 아이콘 빨간점은 /notification/unread-count 재호출로 갱신
- *
- * 구현 팁:
- * - 읽음 처리 API는 멱등(idempotent)하도록 서버/클라이언트 설계
- * - 목록 로딩 ↔ 읽음 처리의 레이스컨디션은 후속 unread-count로 최종 동기화
- * - 가시성 변화(visibilitychange) 시 과도한 재호출 방지
- */
-
-/* 역할(정확한 명칭)
- * - 알림 목록 로딩:        POST /notification/list
- * - 선택 알림 읽음 처리:   POST /notification/read (멱등)
- * - 미읽음 카운트 갱신:    POST /notification/unread-count (배지/빨간점)
- * - 알림 행 클릭 시 이동:  GET  /profile/:userId
- */
+// /static/js/pages/notification.js
+// 역할: 알림 목록 로딩 + 페이징 + (있다면) 미읽음 배지 갱신
+// 템플릿과의 매칭: #list, #prev, #next, #page
 
 export function initNotification() {
-    const listEl = document.getElementById('list');
-    const pageEl = document.getElementById('page');
-    const prevBtn = document.getElementById('prev');
-    const nextBtn = document.getElementById('next');
-    const bellDot = document.getElementById('bell-dot');
+    // 이 페이지가 아니면 종료
+    if (document.body?.id !== 'page-notifications') return;
 
-    let page = 0, size = 20, last = false;
+    const $list = document.querySelector('#list');
+    const $btnPrev = document.querySelector('#prev');
+    const $btnNext = document.querySelector('#next');
+    const $page = document.querySelector('#page');
 
-    function authHeaders(base = {}) {
-        const h = {...base};
-        const token = document.querySelector('meta[name="_csrf"]')?.content || '';
-        const headerName = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-        if (token) h[headerName] = token;
-        return h;
+    if (!$list || !$btnPrev || !$btnNext || !$page) {
+        console.warn('[notification] 필수 DOM 요소를 찾지 못했습니다.');
+        return;
     }
 
-    function dayLabel(iso) {
-        const d = new Date(iso);
-        const diff = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
-        return (diff <= 0) ? '0d' : `${diff}d`;
-    }
+    // 백엔드 엔드포인트 (우선 /api, 필요 시 /notification 폴백)
+    const API_BASES = ['/api/notifications', '/notification'];
 
-    // 미읽음 카운트 갱신(정확한 명칭: POST /notification/unread-count) → 배지/빨간점 on/off
-    async function unreadCountSync() {
-        const res = await fetch('/notification/unread-count', {
-            method: 'POST', headers: authHeaders({'Accept': 'application/json'})
-        });
-        if (!res.ok) return;
-        const count = await res.json();
-        bellDot.style.display = count > 0 ? 'inline-block' : 'none';
-    }
-
-    // 선택 알림 읽음 처리(정확한 명칭: POST /notification/read) — 멱등
-    async function markRead(ids) {
-        if (!ids.length) return;
-        const res = await fetch('/notification/read', {
-            method: 'POST',
-            headers: authHeaders({'Content-Type': 'application/json', 'Accept': 'application/json'}),
-            body: JSON.stringify({notificationIds: ids})
-        });
-        if (res.ok) {
-            const remain = await res.json();
-            bellDot.style.display = remain > 0 ? 'inline-block' : 'none';
+    async function fetchJsonFallback(path, init = {}) {
+        for (const base of API_BASES) {
+            const res = await fetch(`${base}${path}`, {
+                credentials: 'include',
+                headers: {Accept: 'application/json', ...(init.headers || {})},
+                ...init,
+            });
+            const ct = res.headers.get('content-type') || '';
+            if (res.ok && ct.includes('application/json')) return res.json();
+            if (res.status === 401) throw new Error('UNAUTHORIZED');
+            // HTML이면 다음 베이스 시도
         }
+        throw new Error('All endpoints failed: ' + path);
     }
 
-    // 목록 렌더링(+ 방금 본 ID 수집 → markRead 호출)
-    function render(items, unreadCount) {
-        bellDot.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+    // 페이지 상태
+    let page = 0;
+    const size = 20;
+    let last = false;
+
+    const fmt = (ts) => {
+        if (!ts) return '';
+        const d = new Date(ts);
+        return isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
+    };
+
+    function render(items = []) {
+        $list.innerHTML = '';
         if (!items.length) {
-            listEl.innerHTML = '<div class="item"><div class="meta"><div class="text">알림이 없습니다.</div></div></div>';
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            empty.textContent = '새 알림이 없습니다.';
+            $list.appendChild(empty);
             return;
         }
-        const idsToRead = [];
-        listEl.innerHTML = items.map(it => `
-      <div class="item ${it.read ? 'read' : ''}" data-id="${it.id}" data-actor-id="${it.actor.userId}">
-        <div class="dot"></div>
-        <img class="avatar" src="${it.actor.profilePhotoUrl || ''}" alt="">
-        <div class="meta">
-          <div class="row1">
-            <span class="nick">${it.actor.nickname}</span>
-            <span class="ago">${dayLabel(it.createdAt)}</span>
-          </div>
-          <div class="text">${it.text}</div>
-        </div>
-      </div>
-    `).join('');
 
-        // 이번 진입에서 처음 확인한 알림 읽음 처리
-        items.filter(x => !x.read).forEach(x => idsToRead.push(x.id));
-        // render() 내부 : 방금 본 미읽음 읽음 처리
-        markRead(idsToRead);
-    }
+        const frag = document.createDocumentFragment();
 
-    // 행 전체 클릭 → 프로필 이동(정확한 명칭: GET /profile/:userId)
-    listEl.addEventListener('click', (e) => {
-        const row = e.target.closest('.item');
-        if (!row) return;
-        const actorId = row.getAttribute('data-actor-id');
-        if (actorId) location.href = `/profile/${actorId}`;
-    });
+        items.forEach((it) => {
+            const id = it.id ?? it.notificationId ?? it.notification_pk ?? null;
 
-    // 알림 목록 로딩 + 페이지 상태 업데이트(정확한 명칭: POST /notification/list)
-    async function load() {
-        listEl.innerHTML = '<div class="item"><div class="meta"><div class="text">로딩 중...</div></div></div>';
-        // 목록 로딩
-        const res = await fetch('/notification/list', {
-            method: 'POST',
-            headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
-            body: JSON.stringify({page, size})
+            // ✅ 응답 필드명 호환
+            const code = it.type ?? it.notificationCode ?? it.code ?? 'NOTI';
+            const text =
+                it.text ??
+                it.message ??
+                (code === 'FOLLOW' ? 'Started following you' : code);
+
+            // ✅ 닉네임 우선 표시(여러 케이스 대응)
+            const actorNick =
+                it.actor?.nickname ??
+                it.followerNickname ??
+                it.actor?.name ??
+                it.follower?.nickname ??
+                it.following?.follower?.nickname ??
+                '';
+
+            const createdAt = it.createdAt ?? it.created_at ?? null;
+
+            const row = document.createElement('div');
+            row.className = 'noti-card';
+            if (id != null) row.dataset.id = String(id);
+
+            const title = document.createElement('div');
+            title.className = 'noti-title';
+
+            // @nickname + 코드(FOLLOW) 같이 보여주기
+            if (actorNick) {
+                const nickEl = document.createElement('span');
+                nickEl.className = 'noti-actor';
+                nickEl.textContent = `@${actorNick}`;
+                title.appendChild(nickEl);
+                title.appendChild(document.createTextNode(' '));
+            }
+            if (code) {
+                const codeEl = document.createElement('span');
+                codeEl.className = 'noti-code';
+                codeEl.textContent = code;
+                title.appendChild(codeEl);
+            }
+
+            const body = document.createElement('div');
+            body.className = 'noti-text';
+            body.textContent = String(text);
+
+            const time = document.createElement('div');
+            time.className = 'noti-date';
+            time.textContent = fmt(createdAt);
+
+            row.appendChild(title);
+            row.appendChild(body);
+            row.appendChild(time);
+            frag.appendChild(row);
         });
-        if (!res.ok) {
-            listEl.innerHTML = `<div class="item"><div class="meta"><div class="text" style="color:#dc2626">HTTP ${res.status}</div></div></div>`;
-            return;
-        }
-        const data = await res.json();
-        last = (data.items || []).length < size;
-        pageEl.textContent = `페이지 ${page + 1}`;
-        prevBtn.disabled = page === 0;
-        nextBtn.disabled = last;
 
-        const items = (data.items || []).map(x => ({
-            id: x.id, type: x.type, actor: x.actor,
-            text: x.text, createdAt: x.createdAt, read: x.read || x.isRead
-        }));
-        // 렌더 → 내부에서 미읽음 ID 수집
-        render(items, data.unreadCount);
+        $list.appendChild(frag);
     }
 
-    prevBtn.addEventListener('click', () => {
-        if (page > 0) {
-            page--;
-            load();
+    async function refreshUnreadBadge() {
+        try {
+            const count = await fetchJsonFallback('/unread-count', {method: 'POST'});
+            const dot = document.getElementById('nav-bell-dot');
+            if (dot) dot.style.display = Number(count) > 0 ? 'inline-block' : 'none';
+        } catch (e) {
+            console.debug('[notification] unread badge update skipped:', e?.message || e);
         }
+    }
+
+    async function load(p = 0) {
+        try {
+            const data = await fetchJsonFallback('/list', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({page: p, size}),
+            });
+
+            // {items, unreadCount} 형태 또는 배열 대응
+            const items = Array.isArray(data?.items)
+                ? data.items
+                : Array.isArray(data)
+                    ? data
+                    : [];
+            render(items);
+
+            // 마지막 페이지 추정
+            last = items.length < size;
+
+            // 페이지 표시/버튼 상태
+            page = p;
+            $page.textContent = String(page + 1);
+            $btnPrev.disabled = page <= 0;
+            $btnPrev.setAttribute('aria-disabled', String($btnPrev.disabled));
+            $btnNext.disabled = !!last;
+            $btnNext.setAttribute('aria-disabled', String($btnNext.disabled));
+
+            // 미읽음 배지 업데이트
+            if (typeof data?.unreadCount === 'number') {
+                const dot = document.getElementById('nav-bell-dot');
+                if (dot) dot.style.display = data.unreadCount > 0 ? 'inline-block' : 'none';
+            } else {
+                refreshUnreadBadge();
+            }
+        } catch (e) {
+            console.error('[notification] load failed:', e?.message || e);
+        }
+    }
+
+    // 이벤트
+    $btnPrev.addEventListener('click', () => {
+        if (page > 0) load(page - 1);
     });
-    nextBtn.addEventListener('click', () => {
-        if (!last) {
-            page++;
-            load();
-        }
+    $btnNext.addEventListener('click', () => {
+        if (!last) load(page + 1);
     });
 
-    load();
-    // 별도 주기 싱크
-    // 뱃지 갱신 (정확한 명칭: POST /notification/unread-count, 주기적)
-    setInterval(unreadCountSync, 15000);
+    // 최초 로드
+    load(0);
 }

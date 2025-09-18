@@ -47,28 +47,22 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
      * - 다른 유형(COMMENT/등)을 함께 보여주려면 별도 쿼리 또는 UNION 전략 필요.
      */
     @Query("""
-               select n
-                 from NotificationEntity n
-                 join fetch n.following f
-                 join fetch f.follower ff
-                where n.targetUser = :target
-                order by n.createdAt desc, n.id desc
+            select n
+              from NotificationEntity n
+              join fetch n.following f
+              join fetch f.follower ff
+             where n.targetUser = :target
+             order by n.createdAt desc, n.id desc
             """)
     List<NotificationEntity> findListByTarget(@Param("target") UserInfoEntity target, Pageable pageable);
 
     /**
      * [미읽음 개수 조회]
-     * - 네비게이션 배지(빨간 점) 및 목록 화면 상단 표시에 사용.
      */
     long countByTargetUserAndCheckStatusIsFalse(UserInfoEntity target);
 
     /**
      * [선택 알림 읽음 처리]
-     * - ids에 포함된 알림들만 읽음(checkStatus=true)으로 마킹.
-     * <p>
-     * 전제:
-     * - Service 단에서 ids 비어있음(empty) 호출 금지(IN () 방지).
-     * - @Transactional 경계 내에서 호출.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update NotificationEntity n set n.checkStatus = true where n.targetUser = :target and n.id in :ids")
@@ -76,10 +70,6 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 
     /**
      * [전체 읽음 처리]
-     * - targetUser 소유의 모든 미읽음 알림을 일괄 읽음으로 마킹.
-     * <p>
-     * 전제:
-     * - @Transactional 경계 내에서 호출.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update NotificationEntity n set n.checkStatus = true where n.targetUser = :target and n.checkStatus = false")

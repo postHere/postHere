@@ -6,19 +6,48 @@
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
 
     <!-- CSRF (null-safe) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
     <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/friends.css}">
+    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
     <link href="/pwa/manifest.json" rel="manifest">
     <script th:src="@{/js/bundle.js}"></script>
 </head>
 <body id="page-friends">
-<h1>Friends</h1>
+<header class="header">
+    <button aria-label="뒤로 가기" class="back-btn" onclick="history.back()">
+        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+    </button>
+    <h1>Friends</h1>
+</header>
 
 <div class="tabs">
-    <button class="tab active" data-tab="followers">Follower</button>
-    <button class="tab" data-tab="followings">Following</button>
-    <button class="tab" data-tab="search">Search</button>
+    <button class="tab active" data-tab="followers">
+        <svg aria-hidden="true" class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.992 9.992 0 0010 12c-2.31 0-4.438.784-6.131 2.095z"></path>
+        </svg>
+        Follower
+    </button>
+    <button class="tab" data-tab="followings">
+        <svg aria-hidden="true" class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.992 9.992 0 0010 12c-2.31 0-4.438.784-6.131 2.095z"></path>
+        </svg>
+        Following
+    </button>
+    <button class="tab" data-tab="search">
+        <svg aria-hidden="true" class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path clip-rule="evenodd"
+                  d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                  fill-rule="evenodd"></path>
+        </svg>
+        Search
+    </button>
 </div>
+
 
 <section class="panel active" id="panel-followers">
     <div aria-live="polite" class="list" id="list-followers"></div>
@@ -41,7 +70,7 @@
 <section class="panel" id="panel-search">
     <!-- ✅ Enter로 검색되도록 form 래핑 -->
     <form class="searchbar" id="searchForm">
-        <label class="sr-only" for="searchInput">닉네임으로 검색</label>
+        <label for="searchInput">닉네임으로 검색</label>
         <input aria-label="닉네임으로 검색" autocomplete="off" id="searchInput" placeholder="닉네임으로 검색" type="text"/>
         <button id="searchBtn" type="submit">검색</button>
     </form>
@@ -52,5 +81,6 @@
         <button id="next-search">다음</button>
     </div>
 </section>
+<div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
 </body>
 </html>

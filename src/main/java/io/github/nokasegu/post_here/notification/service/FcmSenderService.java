@@ -1,4 +1,3 @@
-// File: src/main/java/io/github/nokasegu/post_here/notification/service/FcmSenderService.java
 package io.github.nokasegu.post_here.notification.service;
 
 import com.google.firebase.messaging.AndroidConfig;
@@ -17,20 +16,20 @@ import java.util.Map;
 
 /**
  * FcmSenderService
- * - (변경) user_info.fcm_token 단일 컬럼 기반으로 FCM 발송
+ * - user_info.fcm_token 단일 컬럼 기반으로 FCM 발송 (Firebase Admin SDK 사용)
  * - Android 우선 구성 (iOS 필요 시 ApnsConfig 추가)
- * - 팔로우, 댓글, 좋아요 알림 헬퍼 제공
+ * - 팔로우/댓글/좋아요 전용 헬퍼 제공
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FcmSenderService {
 
-    // (변경) 레포지토리 제거 → 단일 컬럼 직접 조회
+    // 단일 토큰 조회를 위해 JdbcTemplate 사용
     private final JdbcTemplate jdbcTemplate;
 
     /**
-     * 내부 유틸: DB에서 단일 토큰 조회
+     * DB에서 대상 사용자 fcm_token 조회
      */
     private String resolveToken(Long userId) {
         try {
@@ -83,28 +82,29 @@ public class FcmSenderService {
     }
 
     /**
-     * 팔로우 알림 전용 헬퍼
+     * 팔로우 알림
      */
     public void sendFollow(UserInfoEntity target, String actorNickname, String actorProfileUrl, Long notificationId) {
         String title = "새 팔로우";
-        String body = actorNickname + "님이 팔로우했습니다";
+        String body = (actorNickname != null ? actorNickname : "누군가") + "님이 팔로우했습니다";
 
         Map<String, String> data = new HashMap<>();
         data.put("type", "FOLLOW");
         data.put("notificationId", String.valueOf(notificationId));
         if (actorNickname != null) data.put("actorNickname", actorNickname);
         if (actorProfileUrl != null) data.put("actorProfileUrl", actorProfileUrl);
-        data.put("deeplink", "posthere://notification/follow");
+        data.put("deeplink", "posthere://notification/follow"); // 앱에서 처리할 딥링크
 
         sendToUser(target, title, body, data);
     }
 
     /**
-     * 댓글 알림 전용 헬퍼
+     * 댓글 알림
      */
     public void sendComment(UserInfoEntity target, String actorNickname, String commentText, Long notificationId) {
         String title = "새 댓글";
-        String body = actorNickname + "님이 댓글을 남겼습니다: " + commentText;
+        String body = (actorNickname != null ? actorNickname : "누군가") + "님이 댓글을 남겼습니다"
+                + (commentText != null ? (": " + commentText) : "");
 
         Map<String, String> data = new HashMap<>();
         data.put("type", "COMMENT");
@@ -117,11 +117,11 @@ public class FcmSenderService {
     }
 
     /**
-     * 좋아요 알림 전용 헬퍼
+     * 좋아요 알림
      */
     public void sendLike(UserInfoEntity target, String actorNickname, Long notificationId) {
         String title = "새 좋아요";
-        String body = actorNickname + "님이 회원님의 글을 좋아합니다";
+        String body = (actorNickname != null ? actorNickname : "누군가") + "님이 회원님의 글을 좋아합니다";
 
         Map<String, String> data = new HashMap<>();
         data.put("type", "LIKE");

@@ -2,7 +2,10 @@ package io.github.nokasegu.post_here.park.domain;
 
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -17,7 +20,8 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class ParkEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "park_pk")
     private Long id;
 
@@ -35,4 +39,8 @@ public class ParkEntity {
     @LastModifiedDate
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updateUrl(String newUrl) {
+        this.contentCaptureUrl = newUrl;
+    }
 }

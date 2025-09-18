@@ -1,0 +1,244 @@
+/* 기본적으로 모든 패널을 숨깁니다. */
+.panel {
+    display: none;
+}
+
+/* 'active' 클래스가 있는 패널만 보여줍니다. */
+.panel.active {
+    display: block;
+}
+
+/* 기본 스타일 초기화 및 전체 레이아웃 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    /* 하단 바 공간 확보 */
+    padding-bottom: 80px;
+    background-color: #fff;
+    color: #1c1c1e;
+}
+
+/* 전체 페이지 컨테이너 */
+#page-friends {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+/* 헤더 (뒤로가기, 타이틀) */
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    justify-content: center;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.header .back-btn {
+    position: absolute;
+    left: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.header .back-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* 탭 메뉴 스타일 (디자인 수정) */
+.tabs {
+    display: flex;
+    gap: 8px; /* 탭 사이 간격 */
+    margin-bottom: 24px;
+}
+
+.tab {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* 아이콘과 텍스트 간격 */
+
+    /* 비활성 탭 스타일 */
+    background-color: #ffffff;
+    color: #333;
+    border: 1px solid #e5e5e5;
+}
+
+.tab .icon {
+    width: 18px;
+    height: 18px;
+}
+
+.tab.active {
+    /* 활성 탭 스타일 */
+    background-color: #1c1c1e; /* 검은색 배경 */
+    color: #ffffff; /* 흰색 글씨 */
+    border-color: #1c1c1e;
+}
+
+/* 리스트 및 행(row) 스타일 */
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    cursor: pointer;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+    /* 아바타 다시 보이게 설정 */
+    display: block;
+}
+
+.meta {
+    flex-grow: 1;
+}
+
+.name {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* 친구 추가 버튼 스타일 */
+.icon-btn {
+    background: #fde68a;
+    border: none;
+    border-radius: 8px; /* 둥근 모서리 */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.icon-btn .icon {
+    width: 24px;
+    height: 24px;
+    color: #78350f; /* 아이콘 색상 흰색으로 */
+}
+
+
+/* 검색창 스타일은 일단 그대로 둡니다 */
+.searchbar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.searchbar label {
+    font-size: 14px;
+    color: #8e8e93;
+    margin-bottom: 8px;
+}
+
+#searchInput {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    padding: 8px 0;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+#searchInput:focus {
+    border-bottom-color: #000;
+}
+
+#searchForm button[type="submit"] {
+    display: none;
+}
+
+.pager {
+    display: none;
+}
+
+#panel-followings .icon-btn {
+    background-color: #d8c8b8; /* 갈색 계열 배경 */
+}
+
+#panel-followings .icon-btn .icon {
+    color: #5d4a3a; /* 어두운 갈색 아이콘 */
+}
+
+/* 검색 탭 전용 스타일 추가 */
+
+/* 1. 검색창 스타일 수정 */
+#panel-search .searchbar {
+    position: relative;
+    flex-direction: row; /* 가로 정렬로 복원 */
+    align-items: center;
+}
+
+#panel-search .searchbar label {
+    display: none; /* 라벨은 다시 숨김 */
+}
+
+/* 검색 아이콘을 내부에 위치 */
+#panel-search .searchbar::before {
+    content: '';
+    position: absolute;
+    left: 16px; /* 왼쪽 여백 */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23555' aria-hidden='true'%3E%3Cpath fill-rule='evenodd' d='M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z' clip-rule='evenodd'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: contain;
+    z-index: 1;
+}
+
+#panel-search #searchInput {
+    background-color: #f0f0f0; /* 배경색 추가 */
+    border-radius: 12px; /* 둥근 모서리 */
+    border: none; /* 테두리 제거 */
+    padding: 12px 16px 12px 44px; /* 아이콘을 위한 왼쪽 여백 추가 */
+    font-size: 16px;
+}
+
+/* 2. 검색 결과 버튼 스타일 */
+#panel-search .icon-btn {
+    background-color: #fde68a; /* 노란색 계열 배경 */
+}
+
+#panel-search .icon-btn .icon {
+    color: #78350f; /* 어두운 갈색 아이콘 */
+}
+
+

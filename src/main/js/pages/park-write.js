@@ -2,6 +2,10 @@ import {createTextBox, getAngle, getDistance, getEventCoordinates, drawTextObjec
 import {CanvasInteractionManager} from "./canvas-interaction";
 
 export function initParkWrite() {
+    const body = document.querySelector('#page-park-write');
+    const nickname = body.dataset.nickname;
+
+
     // 캔버스 설정
     const objectCanvas = document.getElementById("object-canvas");
     const objectCtx = objectCanvas.getContext("2d");
@@ -141,9 +145,13 @@ export function initParkWrite() {
                 const formData = new FormData();
                 formData.append("image", blob, "canvas.png");
 
+                console.log("서버로 보낼 닉네임:", nickname);
+                const postUrl = `/profile/park/${nickname}`;
+
                 // 서버로 전송
-                fetch("/profile/park/{profile_id}", {
-                    method: "POST", body: formData,
+                fetch(postUrl, {
+                    method: "POST",
+                    body: formData,
                 })
                     .then((response) => {
                         if (response.ok) {

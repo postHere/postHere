@@ -1,3 +1,5 @@
+import {createTextBox, drawTextObjects, getAngle, getDistance, getEventCoordinates} from "./common-find_park.js";
+
 export function initFindWrite() {
 
     // 캔버스 설정
@@ -43,32 +45,8 @@ export function initFindWrite() {
         return;
     }
 
-    /**
-     * @description 두 터치 지점 사이의 유클리드 거리를 계산합니다.
-     * @param {Touch} touch1
-     * @param {Touch} touch2
-     * @return {number} 두 지점 사이의 거리.
-     */
-    function getDistance(touch1, touch2) {
+    // getDistance 제거 위치
 
-        // clientX, Y는 웹 브라우저 창 전체를 기준으로 한 좌표.
-        const dx = touch1.clientX - touch2.clientX;
-        const dy = touch1.clientY - touch2.clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-
-    }
-
-    /**
-     * @description 두 지점 사이의 각도를 계산합니다. (라디안)
-     * @param {Touch} touch1
-     * @param {Touch} touch2
-     * @return {number} 각도 (라디안)
-     */
-    function getAngle(touch1, touch2) {
-        const dx = touch1.clientX - touch2.clientX;
-        const dy = touch1.clientY - touch2.clientY;
-        return Math.atan2(dy, dx);
-    }
 
     function initializeCanvases() {
         const canvasContainer = document.getElementById("canvas-container");
@@ -121,49 +99,13 @@ export function initFindWrite() {
         imageCtx.scale(backgroundImage.scale, backgroundImage.scale);
 
         // 4. 이미지 그리기 (이미지가 가운데 정렬 되도록 설정 포함.)
-        imageCtx.drawImage(
-            backgroundImage.image,
-            -backgroundImage.originalWidth / 2, // x(좌측 끝 좌표) = 기존값(캔버스 중앙 x좌표) - 그림 너비의 절반값
-            -backgroundImage.originalHeight / 2,
-            backgroundImage.originalWidth,
-            backgroundImage.originalHeight,
-        )
+        imageCtx.drawImage(backgroundImage.image, -backgroundImage.originalWidth / 2, // x(좌측 끝 좌표) = 기존값(캔버스 중앙 x좌표) - 그림 너비의 절반값
+            -backgroundImage.originalHeight / 2, backgroundImage.originalWidth, backgroundImage.originalHeight,)
         // 크기가 넘칠 경우, 캔버스 크기에 알맞게 조절하는 로직은 아래 loadImage 메소드에서 담당.
 
         // 5. 캔버스 상태 복원 (이미지 제외 타 객체 상태 복원)
         imageCtx.restore();
 
-    }
-
-
-    // 텍스트 레이어(objectCanvas)만 다시 그리는 함수
-    function createTextBox() {
-
-        const text = textInput.value;
-        if (!text) return;
-
-        const textBox = {
-            type: 'text',
-            text: text,
-
-            // 캔버스 내 텍스트 객체 좌측 끝 좌표. 캔버스 축을 이동하는 translate와는 별개.
-            translateX: 50,
-            translateY: 50,
-            color: selectedColor,
-            fontSize: parseInt(fontSizeSlider.value),
-            scale: 1,
-            rotation: 0,
-            width: 0,   // 측정값을 저장할 속성 초기화
-            ascent: 0,
-            descent: 0,
-        };
-
-        objects.push(textBox);
-        lastSelectedTextObject = textBox;
-        textInput.value = "";
-        fontSizeContainer.style.display = "block";
-
-        drawTextObjects();
     }
 
 
@@ -208,15 +150,10 @@ export function initFindWrite() {
 
                 // 1. 이미지 정보를 전역 변수 backgroundImage에 객체로 저장합니다.
                 backgroundImage = {
-                    type: 'image',
-                    image: image,
-                    originalWidth: width,
-                    originalHeight: height,
-                    // 이미지 삽입 시 가운데 정렬하기 위한 x, y 좌표 계산.
+                    type: 'image', image: image, originalWidth: width, originalHeight: height, // 이미지 삽입 시 가운데 정렬하기 위한 x, y 좌표 계산.
                     // translateX는 이미지의 '중심점'이 캔버스에서 위치하는 'x좌표'.
                     translateX: rect.width / 2,   // 캔버스 중앙 x좌표 (가운데 정렬은 imageCtx.drawImage()에서 처리)
-                    translateY: rect.height / 2,
-                    // width: width,   // 최종 조절된 너비.
+                    translateY: rect.height / 2, // width: width,   // 최종 조절된 너비.
                     // height: height, // 최종 조절된 높이.
                     scale: 1,           // 현재 확대/축소 비율.
                     rotation: 0         // 현재 회전 각도(라디안).
@@ -240,43 +177,11 @@ export function initFindWrite() {
 
     }
 
-    function drawTextObjects() {
-        objectCtx.clearRect(0, 0, rect.width, rect.height);
-
-        objects.forEach(object => {
-
-            // 1. 캔버스 상태 저장
-            objectCtx.save();
-
-            // 2. 캔버스 변형 적용 (이동, 회전, 확대/축소)
-            objectCtx.translate(object.translateX, object.translateY);
-            objectCtx.rotate(object.rotation);
-            objectCtx.scale(object.scale, object.scale);
-
-            // 3. 텍스트 속성 설정 (fontSize는 기본값 적용)
-            objectCtx.font = `${object.fontSize}px sans-serif`;
-            objectCtx.fillStyle = object.color;
-
-            // 4. 텍스트 크기 측정 (히트박스 및 중앙 정렬에 사용)
-            const metrics = objectCtx.measureText(object.text);
-            object.width = metrics.width;
-            object.ascent = metrics.actualBoundingBoxAscent;
-            object.descent = metrics.actualBoundingBoxDescent;
-
-            // 5. 텍스트 중앙 정렬하여 그리기 (x = 0, y = 0을 중심으로)
-            objectCtx.textAlign = "center";
-            objectCtx.textBaseline = "middle";
-            objectCtx.fillText(object.text, 0, 0);
-
-            // 6. 캔버스 상태 복원
-            objectCtx.restore();
-
-        });
-
-    }
-
-
     function startDragOrDrawing(event) {
+        // 텍스트 입력란에 값이 있으면 텍스트 객체 조작을 비활성화합니다.
+        if (textInput.value !== "") {
+            return;
+        }
 
         // --- [1] 두 손가락 제스처(핀치 줌 / 회전 / 패닝) 처리 ---
         if (event.touches && event.touches.length === 2) {
@@ -305,18 +210,14 @@ export function initFindWrite() {
                 const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
                 const transformedX = rotatedX / object.scale;
                 const transformedY = rotatedY / object.scale;
-
                 const textHeight = object.ascent + object.descent;  // 텍스트의 실제 높이.
 
                 // (이미지의 중심이 0, 0이므로 너비/높이의 절반과 비교)
-                if (Math.abs(transformedX) <= object.width / 2
-                    && Math.abs(transformedY) <= textHeight / 2) {
-
+                if (Math.abs(transformedX) <= object.width / 2 && Math.abs(transformedY) <= textHeight / 2) {
                     selectedObject = object;            // 텍스트 객체 선택.
                     lastSelectedTextObject = object;    // UI 연동을 위해 저장.
                     fontSizeContainer.style.display = "block";
                     break;
-
                 }
 
             }
@@ -343,7 +244,6 @@ export function initFindWrite() {
             // --- 1-3. 선택된 객체(텍스트 또는 이미지)의 초기 상태 저장 ---
 
             pinchStartImageState = {
-
                 translateX: selectedObject.translateX, // 처음에는 캔버스 중앙 x좌표
                 translateY: selectedObject.translateY,
                 scale: selectedObject.scale,
@@ -351,9 +251,7 @@ export function initFindWrite() {
                 pinchCenterX: pinchCenterX,
                 pinchCenterY: pinchCenterY,
                 initialAngle: getAngle(touch1, touch2),
-
             };
-
 
             return; // 두 손가락 조작(핀치 줌 모드)이므로, 아래의 한 손가락 로직(단일 클릭/터치)은 실행하지 않음.
 
@@ -361,7 +259,7 @@ export function initFindWrite() {
 
         // --- [2] 단일 제스처 (드래그 / 그리기) 로직 ---
         // 클릭/터치 좌표 구하기 [페이지 좌상단 ~ 클릭/터치 위치]
-        const {offsetX, offsetY} = getEventCoordinates(event);
+        const {offsetX, offsetY} = getEventCoordinates(event, rect);
         selectedObject = null;
         lastSelectedTextObject = null;
 
@@ -379,11 +277,9 @@ export function initFindWrite() {
             const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
             const transformedX = rotatedX / object.scale;
             const transformedY = rotatedY / object.scale;
-
             const textHeight = object.ascent + object.descent;
 
-            if (Math.abs(transformedX) <= object.width / 2
-                && Math.abs(transformedY) <= textHeight / 2) {
+            if (Math.abs(transformedX) <= object.width / 2 && Math.abs(transformedY) <= textHeight / 2) {
 
                 isDraggingObject = true;
                 selectedObject = object;
@@ -425,8 +321,7 @@ export function initFindWrite() {
 
             // 4. 변화된 좌표가 이미지 변형 이전 경계 내에 있는지 확인.
             // (이미지의 중심이 0, 0이므로 너비/높이의 절반과 비교)
-            if (Math.abs(transformedX) <= backgroundImage.originalWidth / 2
-                && Math.abs(transformedY) <= backgroundImage.originalHeight / 2) {
+            if (Math.abs(transformedX) <= backgroundImage.originalWidth / 2 && Math.abs(transformedY) <= backgroundImage.originalHeight / 2) {
 
                 // --- 이미지 선택 성공 ---
                 isDraggingObject = true;
@@ -450,20 +345,6 @@ export function initFindWrite() {
 
     }
 
-    function getEventCoordinates(event) {
-
-        if (event.touches) {
-            const touch = event.touches[0];
-            return {
-                // clientX, Y는 웹 브라우저 창 전체를 기준으로 한 좌표.
-                // 캔버스 기준(내부)의 좌표를 구하기 위해서는, 캔버스의 왼쪽 여백(rect.left)만큼 빼야 함.
-                offsetX: touch.clientX - rect.left,
-                offsetY: touch.clientY - rect.top,
-            };
-        }
-
-        return {offsetX: event.offsetX, offsetY: event.offsetY};
-    }
 
     function dragOrDraw(event) {
 
@@ -520,7 +401,7 @@ export function initFindWrite() {
                 fontSizeSlider.value = visualSize;
                 fontSizeValue.textContent = visualSize;
 
-                drawTextObjects();
+                drawTextObjects(objects, objectCtx, rect);
 
             } else if (selectedObject.type === 'image') {
 
@@ -533,7 +414,7 @@ export function initFindWrite() {
         }
 
         // --- 단일 클릭/터치를 통한 드래그/그리기 로직 ---
-        const {offsetX, offsetY} = getEventCoordinates(event);
+        const {offsetX, offsetY} = getEventCoordinates(event, rect);
 
         if (isDraggingObject && selectedObject) {
 
@@ -544,7 +425,7 @@ export function initFindWrite() {
 
             // 선택된 객체의 타입에 따라 다른 그리기 함수를 호출.
             if (selectedObject.type === 'text') {
-                drawTextObjects();      // 텍스트 객체들을 다시 그림.
+                drawTextObjects(objects, objectCtx, rect);      // 텍스트 객체들을 다시 그림.
             } else if (selectedObject.type === 'image') {
                 drawImageObject();      // 배경 이미지를 다시 그림.
             }
@@ -590,7 +471,7 @@ export function initFindWrite() {
             if (lastSelectedTextObject) {
 
                 lastSelectedTextObject.color = newColor;
-                drawTextObjects();
+                drawTextObjects(objects, objectCtx, rect);
 
             }
         });
@@ -607,15 +488,19 @@ export function initFindWrite() {
         const newSize = event.target.value;
         fontSizeValue.textContent = newSize;
 
+        if (textInput.value !== "") {
+            return;
+        }
+
         if (lastSelectedTextObject) {
-
             lastSelectedTextObject.scale = newSize / lastSelectedTextObject.fontSize;
-            drawTextObjects();
-
+            drawTextObjects(objects, objectCtx, rect);
         }
     })
 
-    addTextBtn.addEventListener("click", createTextBox);
+    addTextBtn.addEventListener("click", () => {
+        createTextBox(objects, obj => lastSelectedTextObject = obj, textInput, fontSizeContainer, fontSizeSlider, drawTextObjects, selectedColor, objectCtx, rect);
+    });
     addImageBtn.addEventListener("click", () => imageLoader.click());
     imageLoader.addEventListener("change", loadImage);
 

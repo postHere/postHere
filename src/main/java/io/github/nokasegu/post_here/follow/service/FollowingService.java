@@ -175,4 +175,30 @@ public class FollowingService {
         //  - 자신(me) 제외, 닉네임 LIKE 검색, 정렬: nickname asc, id asc
         return userInfoRepository.findByNicknameContainingAndIdNotOrderByNicknameAscIdAsc(meUserId, keyword, pageable);
     }
+
+    /**
+     * 특정 유저의 팔로워 수를 반환합니다.
+     *
+     * @param userId 조회할 유저의 ID
+     * @return 팔로워 수
+     */
+    @Transactional(readOnly = true)
+    public long getFollowerCount(Long userId) {
+        UserInfoEntity user = userInfoRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return followingRepository.countByFollowed(user);
+    }
+
+    /**
+     * 특정 유저의 팔로잉 수를 반환합니다.
+     *
+     * @param userId 조회할 유저의 ID
+     * @return 팔로잉 수
+     */
+    @Transactional(readOnly = true)
+    public long getFollowingCount(Long userId) {
+        UserInfoEntity user = userInfoRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return followingRepository.countByFollower(user);
+    }
 }

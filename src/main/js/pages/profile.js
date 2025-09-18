@@ -1,73 +1,227 @@
 export function initProfile() {
 
-    const profileImageContainer = document.getElementById('profileImageContainer');
-    const profileImageInput = document.getElementById('profileImageInput');
-    const profileImage = document.getElementById('profileImage');
-    const saveButton = document.getElementById('saveButton');
-    const statusMessage = document.getElementById('statusMessage');
+    // --- Mock Data (예시 데이터) ---
+    const findsData = [
+        {
+            id: 1,
+            imageUrl: 'https://images.unsplash.com/photo-1597362925123-5165345093a3?q=80&w=400&auto=format&fit=crop',
+            location: 'Samsung-dong',
+            isExpiring: true
+        },
+        {
+            id: 2,
+            imageUrl: 'https://images.unsplash.com/photo-1588622146903-04938971f153?q=80&w=400&auto=format&fit=crop',
+            location: 'Sungsu-dong',
+            isExpiring: false
+        },
+        {
+            id: 3,
+            imageUrl: 'https://images.unsplash.com/photo-1519996529649-34b33d7935d2?q=80&w=400&auto=format&fit=crop',
+            location: 'Gangnam',
+            isExpiring: false
+        },
+        {
+            id: 4,
+            imageUrl: 'https://images.unsplash.com/photo-1582287135311-8c4f8d2b9f10?q=80&w=400&auto=format&fit=crop',
+            location: 'Hongdae',
+            isExpiring: true
+        },
+    ];
+    const forumsData = [
+        {
+            id: 1,
+            imageUrl: 'https://images.unsplash.com/photo-1543364195-077a16c30ff3?q=80&w=400&auto=format&fit=crop',
+            location: 'Jamsil'
+        },
+        {
+            id: 2,
+            imageUrl: 'https://images.unsplash.com/photo-1585154392221-516752dd132f?q=80&w=400&auto=format&fit=crop',
+            location: 'Itaewon'
+        },
+        {
+            id: 3,
+            imageUrl: 'https://images.unsplash.com/photo-1621282243983-50e5a5933a39?q=80&w=400&auto=format&fit=crop',
+            location: 'Sinsa'
+        },
+        {
+            id: 4,
+            imageUrl: 'https://images.unsplash.com/photo-1563237023-b1e970526dcb?q=80&w=400&auto=format&fit=crop',
+            location: 'Myeong-dong'
+        },
+    ];
 
-// 1. 프로필 이미지 영역 클릭 시, 숨겨진 파일 입력 필드 클릭
-    profileImageContainer.addEventListener('click', () => {
-        profileImageInput.click();
+    // --- UI Element References ---
+    const openEditModalBtn = document.getElementById('open-edit-modal-btn');
+    const editProfileModal = document.getElementById('edit-profile-modal');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const openPasswordModalBtn = document.getElementById('open-password-modal-btn');
+    const nicknameInput = document.getElementById('nickname');
+    const checkNicknameBtn = document.getElementById('check-nickname-btn');
+    const nicknameFeedback = document.getElementById('nickname-feedback');
+    const changePasswordModal = document.getElementById('change-password-modal');
+    const newPasswordInput = document.getElementById('new-password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const passwordFeedback = document.getElementById('password-feedback');
+    const updatePasswordBtn = document.getElementById('update-password-btn');
+    const cancelPasswordBtn = document.getElementById('cancel-password-btn');
+    const tabFind = document.getElementById('tab-find');
+    const tabForum = document.getElementById('tab-forum');
+    const carousel = document.getElementById('carousel');
+    const carouselWrapper = document.getElementById('carousel-wrapper');
+
+    let currentTab = 'find', currentPage = 0;
+    const postsPerPage = 2;
+    let isNicknameAvailable = false;
+    let newPassword = null;
+
+    // --- Modal Logic ---
+    function openModal(modal) {
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeModal(modal) {
+        if (modal) modal.style.display = 'none';
+    }
+
+    if (openEditModalBtn) openEditModalBtn.addEventListener('click', () => openModal(editProfileModal));
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => closeModal(editProfileModal));
+    if (openPasswordModalBtn) openPasswordModalBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal(editProfileModal);
+        openModal(changePasswordModal);
+    });
+    if (cancelPasswordBtn) cancelPasswordBtn.addEventListener('click', () => {
+        closeModal(changePasswordModal);
+        openModal(editProfileModal);
     });
 
-// 2. 사용자가 파일을 선택했을 때의 처리
-    profileImageInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (!file) {
-            return; // 파일 선택 취소 시 아무것도 하지 않음
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            profileImage.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-
-        // 'Save Changes' 버튼을 보여줌 (클래스명 변경에 따라 수정)
-        saveButton.classList.add('visible');
-        statusMessage.textContent = '';
-    });
-
-// 3. 'Save Changes' 버튼 클릭 시, 서버로 이미지 전송
-    saveButton.addEventListener('click', async () => {
-        const file = profileImageInput.files[0];
-        if (!file) {
-            alert('Please select an image file.');
+    if (checkNicknameBtn) checkNicknameBtn.addEventListener('click', () => {
+        const nickname = nicknameInput.value;
+        if (!nickname) {
+            nicknameFeedback.textContent = '닉네임을 입력해주세요.';
+            nicknameFeedback.style.color = 'red';
+            isNicknameAvailable = false;
             return;
         }
-
-        const formData = new FormData();
-        formData.append('profileImage', file);
-
-        saveButton.disabled = true;
-        saveButton.textContent = 'Saving...';
-        statusMessage.textContent = '';
-
-        try {
-            const response = await fetch('/api/profile/image', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                throw new Error('Image upload failed. Please try again.');
+        // This is a simulation of an API call
+        setTimeout(() => {
+            if (nickname.toLowerCase() === 'admin') {
+                nicknameFeedback.textContent = '닉네임 변경 불가!';
+                nicknameFeedback.style.color = 'red';
+                isNicknameAvailable = false;
+            } else {
+                nicknameFeedback.textContent = '닉네임 변경 가능!';
+                nicknameFeedback.style.color = 'green';
+                isNicknameAvailable = true;
             }
-
-            const result = await response.json();
-
-            statusMessage.textContent = 'Profile image updated successfully!';
-            statusMessage.style.color = 'rgb(34 197 94)';
-
-            // 버튼 숨기기 (클래스명 변경에 따라 수정)
-            saveButton.classList.remove('visible');
-
-        } catch (error) {
-            statusMessage.textContent = error.message;
-            statusMessage.style.color = 'rgb(239 68 68)';
-        } finally {
-            saveButton.disabled = false;
-            saveButton.textContent = 'Save Changes';
-        }
+        }, 500);
     });
+
+    function validatePassword() {
+        if (newPasswordInput.value && newPasswordInput.value === confirmPasswordInput.value) {
+            passwordFeedback.textContent = '비밀번호가 일치합니다.';
+            passwordFeedback.style.color = 'green';
+            updatePasswordBtn.disabled = false;
+        } else {
+            passwordFeedback.textContent = '비밀번호가 일치하지 않습니다.';
+            passwordFeedback.style.color = 'red';
+            updatePasswordBtn.disabled = true;
+        }
+    }
+
+    if (newPasswordInput) newPasswordInput.addEventListener('input', validatePassword);
+    if (confirmPasswordInput) confirmPasswordInput.addEventListener('input', validatePassword);
+
+    const changePasswordForm = document.getElementById('change-password-form');
+    if (changePasswordForm) changePasswordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        newPassword = newPasswordInput.value;
+        alert('비밀번호가 임시 저장되었습니다. Update 버튼을 눌러 최종 적용하세요.');
+        closeModal(changePasswordModal);
+        openModal(editProfileModal);
+    });
+
+    const editProfileForm = document.getElementById('edit-profile-form');
+    if (editProfileForm) editProfileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        let updateMessage = '프로필 업데이트:';
+        if (isNicknameAvailable && nicknameInput.value) {
+            updateMessage += `\n- 새 닉네임: ${nicknameInput.value}`;
+        }
+        if (newPassword) {
+            updateMessage += `\n- 새 비밀번호 설정 완료`;
+        }
+        alert(updateMessage);
+        closeModal(editProfileModal);
+    });
+
+    // --- Carousel and Tab Logic ---
+    function renderContent() {
+        if (!carousel) return;
+        const data = currentTab === 'find' ? findsData : forumsData;
+        const totalPages = Math.ceil(data.length / postsPerPage);
+        carousel.innerHTML = '';
+        if (totalPages === 0) {
+            carousel.innerHTML = `<div style="text-align:center;width:100%;color:var(--secondary-text-color);">게시물이 없습니다.</div>`;
+            return;
+        }
+        carousel.style.width = `${totalPages * 100}%`;
+        for (let i = 0; i < totalPages; i++) {
+            const pageElement = document.createElement('div');
+            pageElement.className = 'content-page';
+            let pageHTML = '';
+            const pageData = data.slice(i * postsPerPage, (i + 1) * postsPerPage);
+            pageData.forEach(post => {
+                const postLink = currentTab === 'find' ? `/find-detail/${post.id}` : `/forum-detail/${post.id}`;
+                const statusIcon = post.isExpiring ? '<div class="post-item__status-icon">⏰</div>' : '';
+                pageHTML += `<a href="${postLink}" class="post-item"><img class="post-item__image" src="${post.imageUrl}" alt="Post image">${statusIcon}<p class="post-item__location">📍 ${post.location}</p></a>`;
+            });
+            pageElement.innerHTML = pageHTML;
+            carousel.appendChild(pageElement);
+        }
+        goToPage(0);
+    }
+
+    function goToPage(pageIndex) {
+        if (!carousel) return;
+        const data = currentTab === 'find' ? findsData : forumsData;
+        const totalPages = Math.ceil(data.length / postsPerPage) || 1;
+        if (pageIndex < 0) pageIndex = 0;
+        if (pageIndex >= totalPages) pageIndex = totalPages - 1;
+        currentPage = pageIndex;
+        const offset = -currentPage * (100 / totalPages);
+        carousel.style.transform = `translateX(${offset}%)`;
+    }
+
+    if (tabFind) tabFind.addEventListener('click', () => {
+        if (currentTab === 'find') return;
+        currentTab = 'find';
+        tabFind.classList.add('active');
+        tabForum.classList.remove('active');
+        renderContent();
+    });
+    if (tabForum) tabForum.addEventListener('click', () => {
+        if (currentTab === 'forum') return;
+        currentTab = 'forum';
+        tabForum.classList.add('active');
+        tabFind.classList.remove('active');
+        renderContent();
+    });
+
+    let touchStartX = 0;
+    if (carouselWrapper) {
+        carouselWrapper.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, {passive: true});
+        carouselWrapper.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const swipeDistance = touchEndX - touchStartX;
+            if (swipeDistance < -50) goToPage(currentPage + 1);
+            else if (swipeDistance > 50) goToPage(currentPage - 1);
+        }, {passive: true});
+    }
+
+    // --- Initial Render ---
+    renderContent();
 }
+

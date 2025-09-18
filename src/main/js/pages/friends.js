@@ -70,19 +70,24 @@ export function initFriends() {
     };
 
 // 아이콘
+// ...
+// 아이콘
     const personAddSvg = `
 <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
-  <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M19 8v6M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-</svg>`;
-    const personRemoveSvg = `
-<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
-  <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="2"/>
+    <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M19 8v6m-3-3h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
 </svg>`;
 
+
+    const personRemoveSvg = `
+<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="2"/>
+    <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="m17 10 4 4m0-4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>`;
+
+// ...
 // 헬퍼
     function authHeaders(base = {}) {
         const headers = {...base};

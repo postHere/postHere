@@ -6,7 +6,8 @@
     padding-bottom: 60px;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 110px);
+    flex-grow: 1;
+    position: relative; /* 내부 콘텐츠(게시글, 네비바)를 배치하기 위해 flex 속성 */
 }
 
 /* 상단 바 */
@@ -14,19 +15,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
+    padding: 10px 20px;
     background-color: #fff;
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 1000;
-    max-width: 400px;
 }
 
 /* 상단바 컨테이너 스타일 */
 .top-bar-inner {
     width: 100%;
-    max-width: 400px;
     display: flex;
     justify-content: space-between;
     align-items: center;

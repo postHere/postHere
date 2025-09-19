@@ -36,14 +36,52 @@ export function initNotification() {
 
     // 페이지 상태
     let page = 0;
-    const size = 20;
+    const size = 10; // ✅ 10개 페이징
     let last = false;
+    let readAllOnce = false; // ✅ 진입 후 1회만 read-all
 
-    const fmt = (ts) => {
-        if (!ts) return '';
-        const d = new Date(ts);
-        return isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
-    };
+    // createdAt → "now" | "Xm" | "Xh" | "Xd"
+    function timeAgo(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        const diff = Date.now() - d.getTime();
+        const s = Math.floor(diff / 1000);
+        if (s < 60) return 'now';
+        const m = Math.floor(s / 60);
+        if (m < 60) return `${m}m`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `${h}h`;
+        const dd = Math.floor(h / 24);
+        return `${dd}d`; // ✅ 7일 이상도 Xd 유지
+    }
+
+    // (기존) 미읽음 배지 갱신 유틸 — 본 페이지 체류 중에는 자동으로 숨기지 않기 위해 사용 안 함
+    async function refreshUnreadBadge() {
+        try {
+            const count = await fetchJsonFallback('/unread-count', {method: 'POST'});
+            const dot = document.getElementById('nav-bell-dot');
+            if (dot) dot.style.display = Number(count) > 0 ? 'inline-block' : 'none';
+        } catch (e) {
+            console.debug('[notification] unread badge update skipped:', e?.message || e);
+        }
+    }
+
+    // 전역 도트 표시/숨김
+    function setNavDotVisible(visible) {
+        const dot = document.getElementById('nav-bell-dot');
+        if (dot) dot.style.display = visible ? 'inline-block' : 'none';
+    }
+
+    // 페이지를 떠날 때(탭 이동/닫기/다른 페이지로 이동) 전역 도트 숨김
+    function attachLeaveHandlersOnce() {
+        const hide = () => setNavDotVisible(false);
+        window.addEventListener('pagehide', hide, {once: true});
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) hide();
+        }, {once: true});
+        window.addEventListener('beforeunload', hide, {once: true});
+    }
 
     function render(items = []) {
         $list.innerHTML = '';
@@ -67,7 +105,7 @@ export function initNotification() {
                 it.message ??
                 (code === 'FOLLOW' ? 'Started following you' : code);
 
-            // ✅ 닉네임 우선 표시(여러 케이스 대응)
+            // ✅ 닉네임/아바타
             const actorNick =
                 it.actor?.nickname ??
                 it.followerNickname ??
@@ -76,55 +114,75 @@ export function initNotification() {
                 it.following?.follower?.nickname ??
                 '';
 
+            const avatarUrl =
+                it.actor?.profilePhotoUrl ??
+                it.followerProfilePhotoUrl ??
+                '/img/profile-default.png';
+
             const createdAt = it.createdAt ?? it.created_at ?? null;
 
-            const row = document.createElement('div');
+            // ✅ 읽음 여부(여러 키 호환)
+            const read =
+                (typeof it.read === 'boolean') ? it.read :
+                    (typeof it.checkStatus === 'boolean') ? it.checkStatus :
+                        (typeof it.checked === 'boolean') ? it.checked : false;
+
+            // === 카드(전체를 링크로) ===
+            const row = document.createElement('a');
             row.className = 'noti-card';
             if (id != null) row.dataset.id = String(id);
+            row.href = actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#';
+            row.setAttribute('aria-label', actorNick ? `${actorNick} ${text}` : text);
 
-            const title = document.createElement('div');
-            title.className = 'noti-title';
-
-            // @nickname + 코드(FOLLOW) 같이 보여주기
-            if (actorNick) {
-                const nickEl = document.createElement('span');
-                nickEl.className = 'noti-actor';
-                nickEl.textContent = `@${actorNick}`;
-                title.appendChild(nickEl);
-                title.appendChild(document.createTextNode(' '));
-            }
-            if (code) {
-                const codeEl = document.createElement('span');
-                codeEl.className = 'noti-code';
-                codeEl.textContent = code;
-                title.appendChild(codeEl);
+            // 좌측 빨간 점(미읽음만)
+            if (!read) {
+                const dot = document.createElement('span');
+                dot.className = 'noti-unread-dot';
+                row.appendChild(dot);
             }
 
-            const body = document.createElement('div');
-            body.className = 'noti-text';
-            body.textContent = String(text);
+            // 프로필 이미지
+            const img = document.createElement('img');
+            img.className = 'noti-avatar';
+            img.alt = actorNick ? `${actorNick} profile` : 'profile';
+            img.src = avatarUrl || '/img/profile-default.png';
+            img.onerror = () => {
+                img.src = '/img/profile-default.png';
+            };
+            row.appendChild(img);
 
-            const time = document.createElement('div');
-            time.className = 'noti-date';
-            time.textContent = fmt(createdAt);
+            // 본문 래퍼
+            const main = document.createElement('div');
+            main.className = 'noti-main';
 
-            row.appendChild(title);
-            row.appendChild(body);
-            row.appendChild(time);
+            // (1줄) 닉네임 + 시간
+            const head = document.createElement('div');
+            head.className = 'noti-head';
+
+            const nickEl = document.createElement('span');
+            nickEl.className = 'noti-nick';
+            nickEl.textContent = actorNick ? `@${actorNick}` : '(알 수 없음)';
+
+            const timeEl = document.createElement('span');
+            timeEl.className = 'noti-time';
+            timeEl.textContent = timeAgo(createdAt);
+
+            head.appendChild(nickEl);
+            head.appendChild(timeEl);
+
+            // (2줄) 메시지
+            const textEl = document.createElement('div');
+            textEl.className = 'noti-text';
+            textEl.textContent = String(text);
+
+            main.appendChild(head);
+            main.appendChild(textEl);
+
+            row.appendChild(main);
             frag.appendChild(row);
         });
 
         $list.appendChild(frag);
-    }
-
-    async function refreshUnreadBadge() {
-        try {
-            const count = await fetchJsonFallback('/unread-count', {method: 'POST'});
-            const dot = document.getElementById('nav-bell-dot');
-            if (dot) dot.style.display = Number(count) > 0 ? 'inline-block' : 'none';
-        } catch (e) {
-            console.debug('[notification] unread badge update skipped:', e?.message || e);
-        }
     }
 
     async function load(p = 0) {
@@ -154,12 +212,25 @@ export function initNotification() {
             $btnNext.disabled = !!last;
             $btnNext.setAttribute('aria-disabled', String($btnNext.disabled));
 
-            // 미읽음 배지 업데이트
-            if (typeof data?.unreadCount === 'number') {
-                const dot = document.getElementById('nav-bell-dot');
-                if (dot) dot.style.display = data.unreadCount > 0 ? 'inline-block' : 'none';
-            } else {
-                refreshUnreadBadge();
+            // ▼▼▼ IMPORTANT: 알림 페이지에서는 "떠날 때 도트 제거" 정책을 위해
+            // 아래 전역 도트 즉시 갱신 로직을 사용하지 않습니다.
+            // if (typeof data?.unreadCount === 'number') {
+            //     const dot = document.getElementById('nav-bell-dot');
+            //     if (dot) dot.style.display = data.unreadCount > 0 ? 'inline-block' : 'none';
+            // } else {
+            //     refreshUnreadBadge();
+            // }
+
+            // ✅ 진입 후 1회만 전체 읽음 처리(서버 상태만 즉시 갱신)
+            if (!readAllOnce) {
+                readAllOnce = true;
+                try {
+                    await fetchJsonFallback('/read-all', {method: 'POST'});
+                    // 전역 도트는 "페이지를 떠날 때" 숨김
+                    attachLeaveHandlersOnce();
+                } catch (e) {
+                    console.debug('[notification] read-all failed:', e?.message || e);
+                }
             }
         } catch (e) {
             console.error('[notification] load failed:', e?.message || e);

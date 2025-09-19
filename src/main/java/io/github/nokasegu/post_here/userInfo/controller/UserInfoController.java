@@ -240,7 +240,7 @@ public class UserInfoController {
     public String userProfilePage(@PathVariable String nickname, @AuthenticationPrincipal UserDetails currentUser, Model model) {
 
         // 1. URL로 들어온 닉네임의 프로필 정보를 조회합니다.
-        UserInfoDto profileUser = userInfoService.getUserProfileByNickname(nickname);
+        UserInfoDto profileUser = userInfoService.getUserProfileByNickname(nickname, currentUser);
 
         // 2. 현재 로그인한 사용자인지 여부를 확인합니다.
         boolean isMyProfile = false;

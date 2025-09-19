@@ -428,4 +428,25 @@ a {
     border: 1px solid #eee;
 }
 
+.follow-button-container {
+    margin-top: 8px;
+}
 
+.follow-btn {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.follow-btn.follow {
+    background-color: #fde047;
+    color: #422006;
+}
+
+.follow-btn.unfollow {
+    background-color: #e5e7eb;
+    color: #4b5563;
+}

@@ -25,6 +25,18 @@
                     <input accept="image/*" id="profile-image-upload" style="display: none;" type="file">
                     <div class="profile-info__text">
                         <h2 class="profile-info__name" th:text="|${profileUser.nickname}|"></h2>
+
+                        <div class="follow-button-container" th:if="${!isMyProfile}">
+                            <button class="follow-btn follow"
+                                    th:data-userid="${profileUser.userId}"
+                                    th:if="${!profileUser.isFollowing}">Follow
+                            </button>
+                            <button class="follow-btn unfollow"
+                                    th:data-userid="${profileUser.userId}"
+                                    th:if="${profileUser.isFollowing}">Following
+                            </button>
+                        </div>
+
                         <div class="profile-stats">
                             <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followers')}">
                                 <span th:text="|Follower ${profileUser.followerCount}|"></span>
@@ -54,7 +66,8 @@
         <!-- Section 3: Fin'd / Forum -->
         <section class="posts-section">
             <div class="content-tabs">
-                <button class="content-tabs__button active" id="tab-find">Fin'd <span>&gt;</span></button>
+                <button class="content-tabs__button active" id="tab-find" th:if="${isMyProfile}">Fin'd <span>&gt;</span>
+                </button>
                 <button class="content-tabs__button" id="tab-forum">Forum <span>&gt;</span></button>
             </div>
             <div class="content-carousel-wrapper" id="carousel-wrapper">

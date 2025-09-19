@@ -6,12 +6,14 @@ import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.dto.UserInfoDto;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 //import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
@@ -146,13 +148,22 @@ public class UserInfoService {
      * @param nickname 조회할 사용자의 닉네임
      * @return 사용자 프로필 정보를 담은 DTO
      */
-    public UserInfoDto getUserProfileByNickname(String nickname) {
+    public UserInfoDto getUserProfileByNickname(String nickname, UserDetails currentUser) {
         UserInfoEntity user = userInfoRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with nickname: " + nickname));
 
         // FollowingService를 통해 팔로워/팔로잉 수 조회
         long followerCount = followingService.getFollowerCount(user.getId());
         long followingCount = followingService.getFollowingCount(user.getId());
+
+        boolean isFollowing = false;
+        if (currentUser != null) {
+            UserInfoEntity loggedInUser = userInfoRepository.findByEmail(currentUser.getUsername()).orElse(null);
+            if (loggedInUser != null) {
+                // FollowingService의 getFollowingStatus를 활용하여 팔로우 상태 확인
+                isFollowing = followingService.getFollowingStatus(loggedInUser.getId(), List.of(user.getId())).getOrDefault(user.getId(), false);
+            }
+        }
 
         // DTO를 빌더 패턴으로 생성하여 반환
         return UserInfoDto.builder()
@@ -164,6 +175,7 @@ public class UserInfoService {
                         : "https://placehold.co/112x112/E2E8F0/4A5568?text=User")
                 .followerCount(followerCount)
                 .followingCount(followingCount)
+                .isFollowing(isFollowing)
                 .build();
     }
 

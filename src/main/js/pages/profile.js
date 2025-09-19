@@ -22,6 +22,7 @@ export function initProfile() {
     const carouselWrapper = document.getElementById('carousel-wrapper');
     const profileBody = document.getElementById('page-profile');
     const profileNickname = profileBody.dataset.profileNickname;
+    const followBtn = document.querySelector('.follow-btn');
 
     // 상태 관리 변수
     let currentTab = 'find';
@@ -320,6 +321,50 @@ export function initProfile() {
             carouselWrapper.classList.remove('dragging');
             carousel.style.transition = 'transform 0.3s ease-in-out';
             goToPage(currentPageIndex, true); // 원래 페이지로 복귀
+        });
+    }
+
+    if (followBtn) {
+        followBtn.addEventListener('click', async (event) => {
+            const button = event.currentTarget;
+            const userId = button.dataset.userid;
+            const isFollowing = button.classList.contains('unfollow');
+
+            const url = isFollowing ? '/friend/unfollowing' : '/friend/addfollowing';
+            const method = isFollowing ? 'DELETE' : 'POST';
+
+            // CSRF 토큰 헤더 준비 (Spring Security 사용 시 필요)
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+            const headers = {'Content-Type': 'application/json'};
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: headers,
+                    body: JSON.stringify({userId: userId})
+                });
+
+                if (response.ok) {
+                    // 성공 시 버튼 모양과 텍스트를 즉시 변경
+                    if (isFollowing) {
+                        button.classList.replace('unfollow', 'follow');
+                        button.textContent = 'Follow';
+                    } else {
+                        button.classList.replace('follow', 'unfollow');
+                        button.textContent = 'Following';
+                    }
+                    // (선택) 팔로워 수 실시간 변경이 필요하면 페이지를 새로고침 할 수도 있습니다.
+                    // location.reload();
+                } else {
+                    alert('요청 처리 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                console.error('Follow error:', error);
+            }
         });
     }
 

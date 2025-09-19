@@ -16,6 +16,7 @@ public class UserInfoDto {
     private String profilePhotoUrl;
     private long followerCount;
     private long followingCount;
+    private boolean isFollowing;
 
     /**
      * ✅ [수정] 잘못된 메소드를 올바른 생성자로 변경합니다.

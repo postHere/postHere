@@ -1,0 +1,82 @@
+/* ===== Notification list basic layout ===== */
+#page-notifications .list {
+    /* 네비게이션 바가 가리지 않도록 아래쪽에 여백 확보 */
+    padding: 8px 12px 88px; /* 마지막 줄이 footer-nav 뒤에 숨지지 않게 */
+    max-width: 360px; /* footer-nav와 동일 폭으로 중앙 정렬 */
+    margin: 0 auto;
+}
+
+/* 한 행(카드) */
+.noti-card {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 6px;
+    border-bottom: 1px solid #eee;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* 미읽음 빨간 점 (좌측) */
+.noti-unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #e74c3c;
+    flex: 0 0 8px;
+}
+
+/* 프로필 이미지: 원형 */
+.noti-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 42px;
+}
+
+/* 본문 래퍼 */
+.noti-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0; /* 닉네임 길어도 줄넘김 잘 되도록 */
+    flex: 1 1 auto;
+}
+
+/* 1줄: 닉네임 + 시간 */
+.noti-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.noti-nick {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.noti-time {
+    margin-left: auto; /* 같은 줄 오른쪽 끝 정렬 */
+    font-size: 12px;
+    color: #999;
+}
+
+/* 2줄: 메시지 */
+.noti-text {
+    color: #555;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+/* 페이저가 네비와 겹치지 않도록 간격 확보 */
+.pager {
+    max-width: 360px;
+    margin: 12px auto 100px; /* 아래로 여유 */
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}

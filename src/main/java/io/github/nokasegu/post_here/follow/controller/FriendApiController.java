@@ -33,20 +33,34 @@ public class FriendApiController {
     private final UserInfoRepository userInfoRepository;
 
     /**
-     * 현재 로그인 사용자 ID만 사용(커스텀 헤더 제거)
+     * 현재 로그인 사용자 ID 해석
+     * - 프로젝트 전반 정책과 통일: 이메일 우선 → 실패 시 숫자(PK) → (레거시) loginId
      */
     private Long resolveUserId(Principal principal) {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 필요");
         }
         String name = principal.getName();
+
+        // 1) 이메일 기반
+        UserInfoEntity byEmail = userInfoRepository.findByEmail(name).orElse(null);
+        if (byEmail != null) return byEmail.getId();
+
+        // 2) 숫자 문자열이면 PK 조회
         try {
-            return Long.valueOf(name); // 숫자면 PK
-        } catch (NumberFormatException ignore) {
-            UserInfoEntity user = userInfoRepository.findByLoginId(name);
-            if (user == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자(loginId) 없음: " + name);
-            return user.getId();
+            long asId = Long.parseLong(name);
+            return userInfoRepository.findById(asId)
+                    .map(UserInfoEntity::getId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자 없음"));
+        } catch (NumberFormatException ignored) {
+            // pass
         }
+
+        // 3) (레거시) loginId 메서드 — 현재 쿼리는 email 기준으로 매핑됨
+        UserInfoEntity byLoginId = userInfoRepository.findByLoginId(name);
+        if (byLoginId != null) return byLoginId.getId();
+
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 주체를 해석할 수 없음");
     }
 
     /**

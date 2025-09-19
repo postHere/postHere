@@ -1,21 +1,11 @@
-body {
-    background-color: #d6d6d6;
-    font-family: 'Noto Sans KR', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-}
-
 .signup-container {
-    background-color: #fff;
-    width: 100%;
-    max-width: 400px;
-    padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-color: #fff;
+    box-sizing: border-box;
 }
 
 /* 헤더 스타일링 */
@@ -60,7 +50,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 360px;
 }
 
 .form-section {
@@ -90,7 +79,6 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
-    min-width: 320px;
 }
 
 /* label 스타일 */
@@ -98,12 +86,12 @@ label {
     font-weight: bold;
     color: #333;
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
 }
 
 /* 비밀번호 확인 라벨의 윗 여백 추가 */
 label[for="passwordCheck"] {
-    margin-top: 1.5rem; /* 원하는 만큼의 여백을 rem 단위로 설정 */
+    margin-top: 0.7rem; /* 원하는 만큼의 여백을 rem 단위로 설정 */
 }
 
 /* 입력 필드 스타일링 */
@@ -112,6 +100,7 @@ label[for="passwordCheck"] {
     padding: 0.75rem 1rem;
     border: 1px solid #ddd;
     border-radius: 8px;
+    box-sizing: border-box;
     outline: none;
 }
 
@@ -125,6 +114,7 @@ label[for="passwordCheck"] {
     background-color: #72966a;
     color: #fff;
     border: none;
+    box-sizing: border-box;
 }
 
 /* 버튼 컨테이너 스타일링 */
@@ -207,7 +197,7 @@ label[for="passwordCheck"] {
     font-size: 0.8rem;
     color: #666;
     position: absolute;
-    right: 45px;
+    right: 15px;
     top: 50%;
     transform: translateY(-50%);
 }

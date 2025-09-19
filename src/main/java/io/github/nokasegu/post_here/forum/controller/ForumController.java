@@ -7,7 +7,12 @@ import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.service.ForumService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -184,5 +189,20 @@ public class ForumController {
                 .message(Code.OK.getValue())
                 .data(areaKey)
                 .build();
+    }
+
+    /**
+     * [추가] 현재 로그인된 사용자의 Forum 게시물 목록을 반환하는 API
+     */
+    @ResponseBody
+    @GetMapping("/api/v1/forums/my-posts")
+    public ResponseEntity<Page<ForumPostSummaryDto>> getMyForums(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PageableDefault(size = 4) Pageable pageable) {
+
+        if (userDetails == null) return ResponseEntity.status(401).build();
+
+        Page<ForumPostSummaryDto> result = forumService.getMyForums(userDetails.getUsername(), pageable);
+        return ResponseEntity.ok(result);
     }
 }

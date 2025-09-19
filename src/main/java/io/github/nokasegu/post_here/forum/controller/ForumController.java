@@ -205,4 +205,14 @@ public class ForumController {
         Page<ForumPostSummaryDto> result = forumService.getMyForums(userDetails.getUsername(), pageable);
         return ResponseEntity.ok(result);
     }
+
+    @ResponseBody
+    @GetMapping("/api/v1/users/{nickname}/forums")
+    public ResponseEntity<Page<ForumPostSummaryDto>> getForumsForUser(
+            @PathVariable String nickname,
+            @PageableDefault(size = 4) Pageable pageable) {
+
+        Page<ForumPostSummaryDto> result = forumService.getForumsByNickname(nickname, pageable);
+        return ResponseEntity.ok(result);
+    }
 }

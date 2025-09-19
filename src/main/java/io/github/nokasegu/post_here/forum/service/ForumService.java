@@ -254,4 +254,24 @@ public class ForumService {
                     .build();
         });
     }
+
+    @Transactional(readOnly = true)
+    public Page<ForumPostSummaryDto> getForumsByNickname(String nickname, Pageable pageable) {
+        UserInfoEntity user = userInfoRepository.findByNickname(nickname)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Page<ForumEntity> forumsPage = forumRepository.findByWriterOrderByIdDesc(user, pageable);
+
+        return forumsPage.map(forum -> {
+            String imageUrl = forum.getImages().isEmpty()
+                    ? "https://placehold.co/400x400/E2E8F0/4A5568?text=No+Image" // 이미지가 없을 경우 기본 이미지
+                    : forum.getImages().get(0).getImgUrl(); // 첫 번째 이미지를 대표 이미지로 사용
+
+            return ForumPostSummaryDto.builder()
+                    .id(forum.getId())
+                    .imageUrl(imageUrl)
+                    .location(forum.getLocation().getAddress())
+                    .build();
+        });
+    }
 }

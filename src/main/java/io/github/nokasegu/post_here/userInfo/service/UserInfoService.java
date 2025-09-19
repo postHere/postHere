@@ -76,7 +76,7 @@ public class UserInfoService {
     }
 
     /**
-     * [추가] 이메일로 사용자 프로필 정보를 조회하여 DTO로 반환합니다.
+     * 이메일로 사용자 프로필 정보를 조회하여 DTO로 반환합니다.
      *
      * @param email Principal.getName()으로 얻은 현재 로그인된 사용자의 이메일
      * @return 사용자 프로필 정보를 담은 DTO
@@ -138,6 +138,33 @@ public class UserInfoService {
         }
 
         return newImageUrl;
+    }
+
+    /**
+     * 닉네임으로 사용자 프로필 정보를 조회하여 DTO로 반환합니다.
+     *
+     * @param nickname 조회할 사용자의 닉네임
+     * @return 사용자 프로필 정보를 담은 DTO
+     */
+    public UserInfoDto getUserProfileByNickname(String nickname) {
+        UserInfoEntity user = userInfoRepository.findByNickname(nickname)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with nickname: " + nickname));
+
+        // FollowingService를 통해 팔로워/팔로잉 수 조회
+        long followerCount = followingService.getFollowerCount(user.getId());
+        long followingCount = followingService.getFollowingCount(user.getId());
+
+        // DTO를 빌더 패턴으로 생성하여 반환
+        return UserInfoDto.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .profilePhotoUrl(user.getProfilePhotoUrl() != null
+                        ? user.getProfilePhotoUrl()
+                        : "https://placehold.co/112x112/E2E8F0/4A5568?text=User")
+                .followerCount(followerCount)
+                .followingCount(followingCount)
+                .build();
     }
 
 

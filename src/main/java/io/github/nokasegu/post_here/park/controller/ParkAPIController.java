@@ -89,4 +89,14 @@ public class ParkAPIController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/api/v1/users/{nickname}/park")
+    public ResponseEntity<ParkResponseDto> getParkDataForUser(@PathVariable String nickname) {
+        try {
+            ParkResponseDto parkDto = parkService.findParkByOwnerNickname(nickname);
+            return ResponseEntity.ok(parkDto);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

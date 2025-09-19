@@ -39,4 +39,24 @@ public class FindService {
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
                 .build());
     }
+
+    /**
+     * 닉네임으로 특정 사용자의 Find 게시물 목록을 페이지 단위로 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<FindPostSummaryDto> getFindsByNickname(String nickname, Pageable pageable) {
+        UserInfoEntity user = userInfoRepository.findByNickname(nickname)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Page<FindEntity> findsPage = findRepository.findByWriterOrderByIdDesc(user, pageable);
+
+        return findsPage.map(find -> FindPostSummaryDto.builder()
+                .id(find.getId())
+                .imageUrl(find.getContentCaptureUrl())
+                // TODO: 현재 좌표만 저장되어 있으므로, 위치 이름은 일단 "Unknown"으로 처리합니다.
+                //       좌표->주소 변환 서비스(Reverse Geocoding)가 있다면 여기서 호출합니다.
+                .location("Unknown")
+                .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
+                .build());
+    }
 }

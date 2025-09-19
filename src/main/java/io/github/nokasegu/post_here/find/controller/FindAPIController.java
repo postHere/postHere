@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,6 +27,15 @@ public class FindAPIController {
         if (userDetails == null) return ResponseEntity.status(401).build();
 
         Page<FindPostSummaryDto> result = findService.getMyFinds(userDetails.getUsername(), pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/api/v1/users/{nickname}/finds")
+    public ResponseEntity<Page<FindPostSummaryDto>> getFindsForUser(
+            @PathVariable String nickname,
+            @PageableDefault(size = 4) Pageable pageable) {
+
+        Page<FindPostSummaryDto> result = findService.getFindsByNickname(nickname, pageable);
         return ResponseEntity.ok(result);
     }
 }

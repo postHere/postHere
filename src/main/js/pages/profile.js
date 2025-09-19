@@ -20,6 +20,8 @@ export function initProfile() {
     const tabForum = document.getElementById('tab-forum');
     const carousel = document.getElementById('carousel');
     const carouselWrapper = document.getElementById('carousel-wrapper');
+    const profileBody = document.getElementById('page-profile');
+    const profileNickname = profileBody.dataset.profileNickname;
 
     // 상태 관리 변수
     let currentTab = 'find';
@@ -42,8 +44,9 @@ export function initProfile() {
         tabState.isLoading = true;
         try {
             const endpoint = tab === 'find'
-                ? `/api/v1/finds/my-posts?page=${page}&size=4`
-                : `/api/v1/forums/my-posts?page=${page}&size=4`;
+                ? `/api/v1/users/${profileNickname}/finds?page=${page}&size=4`
+                : `/api/v1/users/${profileNickname}/forums?page=${page}&size=4`;
+
 
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch posts');
@@ -67,7 +70,7 @@ export function initProfile() {
         const guestbookContent = guestbookWrapper.querySelector('.guestbook__content');
 
         try {
-            const response = await fetch('/api/v1/users/me/park');
+            const response = await fetch(`/api/v1/users/${profileNickname}/park`);
             if (response.ok) {
                 const parkData = await response.json();
                 const guestbookSection = guestbookWrapper.querySelector('.guestbook');

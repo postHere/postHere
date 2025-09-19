@@ -9,7 +9,7 @@
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/profile.css}">
 </head>
-<body id="page-profile">
+<body id="page-profile" th:data-profile-nickname="${profileUser.nickname}">
 
 <div class="mobile-container">
     <main class="main-content">
@@ -24,13 +24,13 @@
                     </label>
                     <input accept="image/*" id="profile-image-upload" style="display: none;" type="file">
                     <div class="profile-info__text">
-                        <h2 class="profile-info__name">Watermelon</h2>
+                        <h2 class="profile-info__name" th:text="|${profileUser.nickname}|"></h2>
                         <div class="profile-stats">
-                            <a th:href="@{/friends(tab=followers)}">
-                                <span th:text="|Follower ${user.followerCount}|"></span>
+                            <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followers')}">
+                                <span th:text="|Follower ${profileUser.followerCount}|"></span>
                             </a>
-                            <a th:href="@{/friends(tab=followings)}">
-                                <span th:text="|Following ${user.followingCount}|"></span>
+                            <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followings')}">
+                                <span th:text="|Following ${profileUser.followingCount}|"></span>
                             </a>
                         </div>
                     </div>

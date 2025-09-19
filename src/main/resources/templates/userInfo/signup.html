@@ -13,77 +13,80 @@
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
 <body id="page-signup">
-<div class="signup-container">
-    <div class="header">
-        <h1 class="logo">PostHere</h1>
-        <p class="subtitle">회원가입</p>
-        <p class="description">아래 항목을 작성하여 가입해주세요.</p>
-    </div>
+<div id="app-container">
+    <div class="signup-container">
+        <div class="header">
+            <h1 class="logo">PostHere</h1>
+            <p class="subtitle">회원가입</p>
+            <p class="description">아래 항목을 작성하여 가입해주세요.</p>
+        </div>
 
-    <form action="/signup" id="signupForm" method="POST">
-        <div class="main-form-section">
-            <div class="form-section" id="emailSection">
-                <div class="input-group-container">
-                    <label for="email">이메일</label>
-                    <div class="input-group">
-                        <input autocomplete="email" class="form-input" id="email" name="email"
-                               placeholder="example@email.com"
-                               required type="email">
-                    </div>
-                    <p class="feedback-message" id="emailFeedback"></p>
-                    <div class="btn-container">
-                        <button class="btn btn-full-width check-btn" disabled id="checkEmailBtn" type="button">중복 확인
-                        </button>
-                        <button class="btn btn-full-width hidden" id="sendCodeBtn" type="button">인증 코드 전송</button>
-                    </div>
+        <form action="/signup" id="signupForm" method="POST">
+            <div class="main-form-section">
+                <div class="form-section" id="emailSection">
+                    <div class="input-group-container">
+                        <label for="email">이메일</label>
+                        <div class="input-group">
+                            <input autocomplete="email" class="form-input" id="email" name="email"
+                                   placeholder="example@email.com"
+                                   required type="email">
+                        </div>
+                        <p class="feedback-message" id="emailFeedback"></p>
+                        <div class="btn-container">
+                            <button class="btn btn-full-width check-btn" disabled id="checkEmailBtn" type="button">중복 확인
+                            </button>
+                            <button class="btn btn-full-width hidden" id="sendCodeBtn" type="button">인증 코드 전송</button>
+                        </div>
 
-                    <div class="hidden" id="verificationSection">
-                        <label for="verificationCode">인증 코드</label>
-                        <div>
-                            <div class="input-group">
-                                <div class="relative-wrapper">
-                                    <input class="form-input" id="verificationCode" placeholder="코드 입력" required
-                                           type="text">
-                                    <span id="timer"></span>
+                        <div class="hidden" id="verificationSection">
+                            <label for="verificationCode">인증 코드</label>
+                            <div>
+                                <div class="input-group">
+                                    <div class="relative-wrapper">
+                                        <input class="form-input" id="verificationCode" placeholder="코드 입력" required
+                                               type="text">
+                                        <span id="timer"></span>
+                                    </div>
                                 </div>
-                            </div>
-                            <p class="feedback-message" id="codeFeedback"></p>
-                            <div class="btn-container flex-gap">
-                                <button class="btn btn-full-width check-btn" disabled id="verifyCodeBtn" type="button">
-                                    확인
-                                </button>
-                                <button class="btn btn-full-width hidden" id="resendCodeBtn" type="button">인증 코드 재전송
-                                </button>
+                                <p class="feedback-message" id="codeFeedback"></p>
+                                <div class="btn-container flex-gap">
+                                    <button class="btn btn-full-width check-btn" disabled id="verifyCodeBtn"
+                                            type="button">
+                                        확인
+                                    </button>
+                                    <button class="btn btn-full-width hidden" id="resendCodeBtn" type="button">인증 코드 재전송
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-section hidden" id="userInfoSection">
-                <div class="input-group-container">
-                    <label for="password">비밀번호</label>
-                    <input autocomplete="new-password" class="form-input" id="password" name="password" required
-                           type="password">
+                <div class="form-section hidden" id="userInfoSection">
+                    <div class="input-group-container">
+                        <label for="password">비밀번호</label>
+                        <input autocomplete="new-password" class="form-input" id="password" name="password" required
+                               type="password">
 
-                    <label for="passwordCheck">비밀번호 확인</label>
-                    <input autocomplete="new-password" class="form-input" id="passwordCheck" required
-                           type="password">
-                    <p class="feedback-message" id="passwordFeedback"></p>
-                    <label for="nickname">닉네임</label>
-                    <div class="input-group">
-                        <input class="form-input" id="nickname" name="nickname" placeholder="닉네임 입력" required
-                               type="text">
-                        <button class="btn" id="checkNicknameBtn" type="button">확인</button>
-                    </div>
-                    <p class="feedback-message" id="nicknameFeedback"></p>
-                    <div class="btn-container">
-                        <button class="btn btn-full-width" disabled id="signupBtn" type="submit">가입하기</button>
+                        <label for="passwordCheck">비밀번호 확인</label>
+                        <input autocomplete="new-password" class="form-input" id="passwordCheck" required
+                               type="password">
+                        <p class="feedback-message" id="passwordFeedback"></p>
+                        <label for="nickname">닉네임</label>
+                        <div class="input-group">
+                            <input class="form-input" id="nickname" name="nickname" placeholder="닉네임 입력" required
+                                   type="text">
+                            <button class="btn" id="checkNicknameBtn" type="button">확인</button>
+                        </div>
+                        <p class="feedback-message" id="nicknameFeedback"></p>
+                        <div class="btn-container">
+                            <button class="btn btn-full-width" disabled id="signupBtn" type="submit">가입하기</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 </body>
 </html>

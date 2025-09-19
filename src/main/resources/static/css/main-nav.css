@@ -10,7 +10,9 @@
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: calc(100vh * 9 / 19.5);
+
+    max-width: 360px;
+
     background-color: #fff;
     border-top: 1px solid var(--border-color);
     padding: 10px 0;

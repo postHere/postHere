@@ -68,7 +68,8 @@
             <div class="content-tabs">
                 <button class="content-tabs__button active" id="tab-find" th:if="${isMyProfile}">Fin'd <span>&gt;</span>
                 </button>
-                <button class="content-tabs__button" id="tab-forum">Forum <span>&gt;</span></button>
+                <button class="content-tabs__button" id="tab-forum" th:classappend="${!isMyProfile} ? 'active' : ''">
+                    Forum <span>&gt;</span></button>
             </div>
             <div class="content-carousel-wrapper" id="carousel-wrapper">
                 <div class="content-carousel" id="carousel"></div>

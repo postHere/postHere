@@ -25,7 +25,8 @@ export function initProfile() {
     const followBtn = document.querySelector('.follow-btn');
 
     // 상태 관리 변수
-    let currentTab = 'find';
+    const initialTab = tabFind ? 'find' : 'forum';
+    let currentTab = initialTab;
     let currentPageIndex = 0;
     const postsPerPage = 2;
     let isNicknameAvailable = false;
@@ -169,7 +170,9 @@ export function initProfile() {
         if (currentTab === tab) return;
         currentTab = tab;
 
-        tabFind.classList.toggle('active', tab === 'find');
+        if (tabFind) {
+            tabFind.classList.toggle('active', tab === 'find');
+        }
         tabForum.classList.toggle('active', tab === 'forum');
 
         currentPageIndex = 0; // 탭 전환 시 첫 페이지로
@@ -370,6 +373,6 @@ export function initProfile() {
 
     // --- 6. 초기 실행 ---
     loadMyPark();
-    loadPosts('find', 0); // 페이지 로드 시 Fin'd 탭의 첫 페이지 데이터를 불러옵니다.
+    loadPosts(initialTab, 0);
 }
 

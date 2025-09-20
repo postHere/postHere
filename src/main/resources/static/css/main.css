@@ -1,3 +1,15 @@
+/* 전역: 스크롤 가능하도록 해제 */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    background-color: #f0f2f5;
+    /* 기존 overflow: hidden → auto (또는 기본값) */
+    overflow: auto;
+}
+
 :root {
     --shadow-color: rgba(0, 0, 0, 0.1);
 }

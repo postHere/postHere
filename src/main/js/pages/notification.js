@@ -1,5 +1,5 @@
 // /static/js/pages/notification.js
-// 역할: 알림 목록 로딩 + 페이징 + (있다면) 미읽음 배지 갱신
+// 역할: 알림 목록 로딩 + 페이징 + (읽음 처리 단일 엔드포인트 연계)
 // 템플릿과의 매칭: #list, #prev, #next, #page
 
 export function initNotification() {
@@ -16,22 +16,23 @@ export function initNotification() {
         return;
     }
 
-    // 백엔드 엔드포인트 (우선 /api, 필요 시 /notification 폴백)
-    const API_BASES = ['/api/notifications', '/notification'];
+    // 백엔드 엔드포인트
+    const API_BASE = '/api/notifications'; // 목록/카운트 전용
+    // 읽음 처리(전체/선택)는 POST /notification 단일 엔드포인트 사용
 
-    async function fetchJsonFallback(path, init = {}) {
-        for (const base of API_BASES) {
-            const res = await fetch(`${base}${path}`, {
-                credentials: 'include',
-                headers: {Accept: 'application/json', ...(init.headers || {})},
-                ...init,
-            });
-            const ct = res.headers.get('content-type') || '';
-            if (res.ok && ct.includes('application/json')) return res.json();
+    async function postJson(url, bodyObj) {
+        const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+            body: bodyObj ? JSON.stringify(bodyObj) : '{}'
+        });
+        const ct = res.headers.get('content-type') || '';
+        if (!res.ok || !ct.includes('application/json')) {
             if (res.status === 401) throw new Error('UNAUTHORIZED');
-            // HTML이면 다음 베이스 시도
+            throw new Error(`Unexpected response: ${res.status}`);
         }
-        throw new Error('All endpoints failed: ' + path);
+        return res.json();
     }
 
     // 페이지 상태
@@ -54,17 +55,6 @@ export function initNotification() {
         if (h < 24) return `${h}h`;
         const dd = Math.floor(h / 24);
         return `${dd}d`; // ✅ 7일 이상도 Xd 유지
-    }
-
-    // (기존) 미읽음 배지 갱신 유틸 — 본 페이지 체류 중에는 자동으로 숨기지 않기 위해 사용 안 함
-    async function refreshUnreadBadge() {
-        try {
-            const count = await fetchJsonFallback('/unread-count', {method: 'POST'});
-            const dot = document.getElementById('nav-bell-dot');
-            if (dot) dot.style.display = Number(count) > 0 ? 'inline-block' : 'none';
-        } catch (e) {
-            console.debug('[notification] unread badge update skipped:', e?.message || e);
-        }
     }
 
     // 전역 도트 표시/숨김
@@ -117,7 +107,7 @@ export function initNotification() {
             const avatarUrl =
                 it.actor?.profilePhotoUrl ??
                 it.followerProfilePhotoUrl ??
-                '/img/profile-default.png';
+                '/images/profile-default.png'; // ✅ 기본 경로 확정
 
             const createdAt = it.createdAt ?? it.created_at ?? null;
 
@@ -145,9 +135,9 @@ export function initNotification() {
             const img = document.createElement('img');
             img.className = 'noti-avatar';
             img.alt = actorNick ? `${actorNick} profile` : 'profile';
-            img.src = avatarUrl || '/img/profile-default.png';
+            img.src = avatarUrl || '/images/profile-default.png';
             img.onerror = () => {
-                img.src = '/img/profile-default.png';
+                img.src = '/images/profile-default.png';
             };
             row.appendChild(img);
 
@@ -187,11 +177,7 @@ export function initNotification() {
 
     async function load(p = 0) {
         try {
-            const data = await fetchJsonFallback('/list', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({page: p, size}),
-            });
+            const data = await postJson(`${API_BASE}/list`, {page: p, size});
 
             // {items, unreadCount} 형태 또는 배열 대응
             const items = Array.isArray(data?.items)
@@ -212,20 +198,11 @@ export function initNotification() {
             $btnNext.disabled = !!last;
             $btnNext.setAttribute('aria-disabled', String($btnNext.disabled));
 
-            // ▼▼▼ IMPORTANT: 알림 페이지에서는 "떠날 때 도트 제거" 정책을 위해
-            // 아래 전역 도트 즉시 갱신 로직을 사용하지 않습니다.
-            // if (typeof data?.unreadCount === 'number') {
-            //     const dot = document.getElementById('nav-bell-dot');
-            //     if (dot) dot.style.display = data.unreadCount > 0 ? 'inline-block' : 'none';
-            // } else {
-            //     refreshUnreadBadge();
-            // }
-
             // ✅ 진입 후 1회만 전체 읽음 처리(서버 상태만 즉시 갱신)
             if (!readAllOnce) {
                 readAllOnce = true;
                 try {
-                    await fetchJsonFallback('/read-all', {method: 'POST'});
+                    await postJson('/notification', {}); // 단일 엔드포인트 (suffix 금지)
                     // 전역 도트는 "페이지를 떠날 때" 숨김
                     attachLeaveHandlersOnce();
                 } catch (e) {

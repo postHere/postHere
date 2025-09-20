@@ -23,6 +23,8 @@ export function initProfile() {
     const profileBody = document.getElementById('page-profile');
     const profileNickname = profileBody.dataset.profileNickname;
     const followBtn = document.querySelector('.follow-btn');
+    const profileImageInput = document.getElementById('profile-image-upload');
+    const profileImage = document.querySelector('.profile-info__pic');
 
     // 상태 관리 변수
     const initialTab = tabFind ? 'find' : 'forum';
@@ -367,6 +369,53 @@ export function initProfile() {
                 }
             } catch (error) {
                 console.error('Follow error:', error);
+            }
+        });
+    }
+
+    if (profileImageInput) {
+        profileImageInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return; // 파일 선택을 취소한 경우
+            }
+
+            // 1. FormData 객체를 만들어 선택한 파일을 담습니다.
+            const formData = new FormData();
+            formData.append('profileImage', file); // Controller의 @RequestParam("profileImage")와 이름이 같아야 합니다.
+
+            // CSRF 토큰 헤더 준비
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+            const headers = {};
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            try {
+                // 2. FormData를 body에 담아 /api/profile/image로 POST 요청을 보냅니다.
+                const response = await fetch('/api/profile/image', {
+                    method: 'POST',
+                    headers: headers, // FormData 전송 시 Content-Type은 브라우저가 자동으로 설정하므로 넣지 않습니다.
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+
+                    // 3. 성공 시, 응답으로 받은 새 이미지 URL을 <img> 태그의 src에 적용합니다.
+                    // 캐시 문제를 피하기 위해 타임스탬프를 추가합니다.
+                    profileImage.src = result.imageUrl + '?t=' + new Date().getTime();
+
+                    alert('프로필 이미지가 성공적으로 변경되었습니다.');
+                } else {
+                    // 서버에서 오류 응답이 온 경우
+                    const errorResult = await response.json();
+                    alert('이미지 변경에 실패했습니다: ' + (errorResult.message || '서버 오류'));
+                }
+            } catch (error) {
+                console.error('Error uploading profile image:', error);
+                alert('이미지 업로드 중 오류가 발생했습니다.');
             }
         });
     }

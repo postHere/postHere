@@ -20,7 +20,7 @@
                     <label class="profile-info__pic-label" for="profile-image-upload">
                         <img alt="Profile Picture"
                              class="profile-info__pic"
-                             src="https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=256&auto=format&fit=crop">
+                             th:src="${profileUser.profilePhotoUrl}">
                     </label>
                     <input accept="image/*" id="profile-image-upload" style="display: none;" type="file">
                     <div class="profile-info__text">

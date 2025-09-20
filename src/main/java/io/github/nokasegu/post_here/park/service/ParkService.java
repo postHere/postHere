@@ -69,4 +69,21 @@ public class ParkService {
         return new ParkResponseDto(park.getContentCaptureUrl());
     }
 
+    /**
+     * [추가] 유저 이메일을 기반으로 Park 정보를 조회하는 비즈니스 로직
+     *
+     * @param email 조회할 사용자의 이메일
+     * @return Park 정보 DTO
+     */
+    @Transactional(readOnly = true)
+    public ParkResponseDto findParkByOwnerEmail(String email) {
+        UserInfoEntity user = userInfoRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+        ParkEntity park = parkRepository.findOneByOwner(user)
+                .orElseThrow(() -> new IllegalArgumentException("Park not found for user with email: " + email));
+
+        return new ParkResponseDto(park.getContentCaptureUrl());
+    }
+
 }

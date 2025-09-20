@@ -1,17 +1,22 @@
 package io.github.nokasegu.post_here.userInfo.dto;
 
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserInfoDto {
 
     private Long userId;
     private String nickname;
     private String email;
     private String profilePhotoUrl;
+    private long followerCount;
+    private long followingCount;
+    private boolean isFollowing;
 
     /**
      * ✅ [수정] 잘못된 메소드를 올바른 생성자로 변경합니다.
@@ -26,5 +31,6 @@ public class UserInfoDto {
         this.profilePhotoUrl = user.getProfilePhotoUrl() != null
                 ? user.getProfilePhotoUrl()
                 : "https://placehold.co/112x112/E2E8F0/4A5568?text=User"; // 기본 이미지
+
     }
 }

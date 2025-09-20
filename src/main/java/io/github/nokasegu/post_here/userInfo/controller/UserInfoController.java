@@ -162,27 +162,27 @@ public class UserInfoController {
      * @param model
      * @return profile HTML
      */
-    @GetMapping("/profile")
-    public String profilePage(@AuthenticationPrincipal UserDetails user, Model model) {
-
-        String userEmail = user.getUsername();
-        UserInfoDto userProfile = userInfoService.getUserProfileByEmail(userEmail);
-
-        model.addAttribute("user", userProfile);
-        return "userInfo/profile";
-    }
-
-    /**
-     * 다른 사람의 프로필 페이지(닉네임 기반)
-     * - 템플릿은 동일하게 userInfo/profile 사용
-     * - 뷰에서 profileUserNickname 유무로 내/타인 분기 가능
-     */
-    @GetMapping("/profile/{nickname}")
-    public String otherProfilePage(@PathVariable String nickname, Model model) {
-        model.addAttribute("profileUserNickname", nickname);
-        // 필요시: userInfoService.getUserProfileByNickname(nickname)으로 미리 바인딩
-        return "userInfo/profile";
-    }
+//    @GetMapping("/profile")
+//    public String profilePage(@AuthenticationPrincipal UserDetails user, Model model) {
+//
+//        String userEmail = user.getUsername();
+//        UserInfoDto userProfile = userInfoService.getUserProfileByEmail(userEmail);
+//
+//        model.addAttribute("user", userProfile);
+//        return "userInfo/profile";
+//    }
+//
+//    /**
+//     * 다른 사람의 프로필 페이지(닉네임 기반)
+//     * - 템플릿은 동일하게 userInfo/profile 사용
+//     * - 뷰에서 profileUserNickname 유무로 내/타인 분기 가능
+//     */
+//    @GetMapping("/profile/{nickname}")
+//    public String otherProfilePage(@PathVariable String nickname, Model model) {
+//        model.addAttribute("profileUserNickname", nickname);
+//        // 필요시: userInfoService.getUserProfileByNickname(nickname)으로 미리 바인딩
+//        return "userInfo/profile";
+//    }
 
     /**
      * [수정] 프로필 이미지를 업데이트하는 API
@@ -204,5 +204,58 @@ public class UserInfoController {
         String newImageUrl = userInfoService.updateProfileImage(userEmail, imageFile);
 
         return ResponseEntity.ok(Collections.singletonMap("imageUrl", newImageUrl));
+    }
+
+    /**
+     * [수정] 내 프로필 페이지를 직접 보여줍니다. (리다이렉트 없음)
+     * URL: /profile
+     */
+    @GetMapping("/profile")
+    public String myProfilePage(@AuthenticationPrincipal UserDetails user, Model model) {
+        // 1. 로그인하지 않은 사용자는 로그인 페이지로 보냅니다.
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        // 2. 현재 로그인된 사용자의 이메일로 프로필 정보를 조회합니다.
+        String userEmail = user.getUsername();
+        UserInfoDto userProfile = userInfoService.getUserProfileByEmail(userEmail);
+
+        // 3. 모델에 'profileUser'라는 이름으로 사용자 정보를 담습니다.
+        model.addAttribute("profileUser", userProfile);
+        // 4. 이 페이지가 '내 프로필'임을 명확히 알려주는 플래그를 추가합니다.
+        model.addAttribute("isMyProfile", true);
+
+        // 5. 프로필 템플릿을 직접 렌더링합니다.
+        return "userInfo/profile";
+    }
+
+    /**
+     * [수정] 닉네임 기반으로 다른 사용자의 프로필 페이지를 보여줍니다.
+     * URL: /profile/{nickname}
+     */
+    @GetMapping("/profile/{nickname}")
+    public String userProfilePage(@PathVariable String nickname, @AuthenticationPrincipal UserDetails currentUser, Model model) {
+
+        // 1. URL로 들어온 닉네임의 프로필 정보를 조회합니다.
+        UserInfoDto profileUser = userInfoService.getUserProfileByNickname(nickname, currentUser);
+
+        // 2. 현재 로그인한 사용자인지 여부를 확인합니다.
+        boolean isMyProfile = false;
+        if (currentUser != null) {
+            // 현재 로그인한 사용자의 닉네임과 URL의 닉네임이 같은지 비교합니다.
+            // 참고: currentUser.getUsername()은 이메일이므로, DB 조회가 한 번 더 필요합니다.
+            UserInfoDto myInfo = userInfoService.getUserProfileByEmail(currentUser.getUsername());
+            if (myInfo.getNickname().equals(nickname)) {
+                // 만약 같다면, 내 프로필 URL(/profile)로 보내버리는 것이 더 사용자 경험에 좋습니다.
+                return "redirect:/profile";
+            }
+        }
+
+        // 3. 모델에 데이터 추가
+        model.addAttribute("profileUser", profileUser);
+        model.addAttribute("isMyProfile", isMyProfile); // 이 경우 항상 false가 됩니다.
+
+        return "userInfo/profile";
     }
 }

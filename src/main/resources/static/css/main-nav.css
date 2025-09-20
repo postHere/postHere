@@ -10,7 +10,9 @@
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: calc(100vh * 9 / 19.5);
+
+    max-width: 360px;
+
     background-color: #fff;
     border-top: 1px solid var(--border-color);
     padding: 10px 0;
@@ -43,4 +45,17 @@
 .footer-nav a:hover i,
 .footer-nav a.active i {
     color: var(--primary-color) !important;
+}
+
+/* ===== 전역 알림 빨간 점 (종 아이콘 우상단) ===== */
+.nav-dot {
+    position: absolute;
+    right: 6px;
+    top: 3px;
+    width: 9px;
+    height: 9px;
+    border-radius: 9999px;
+    background: #e74c3c;
+    display: none; /* JS가 inline-block으로 토글 */
+    box-shadow: 0 0 0 2px #fff; /* 아이콘 위에서 또렷하게 보이도록 */
 }

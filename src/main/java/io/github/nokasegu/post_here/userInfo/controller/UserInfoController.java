@@ -30,8 +30,6 @@ public class UserInfoController {
 
     @GetMapping("/login")
     public String loginPage() {
-
-
         log.info("로그인 페이지 호출");
         return "userInfo/login";
     }
@@ -164,27 +162,27 @@ public class UserInfoController {
      * @param model
      * @return profile HTML
      */
-//    @GetMapping("/profile")
-//    public String profilePage(@AuthenticationPrincipal UserDetails user, Model model) {
-//
-//        String userEmail = user.getUsername();
-//        UserInfoDto userProfile = userInfoService.getUserProfileByEmail(userEmail);
-//
-//        model.addAttribute("user", userProfile);
-//        return "userInfo/profile";
-//    }
+    @GetMapping("/profile")
+    public String profilePage(@AuthenticationPrincipal UserDetails user, Model model) {
+
+        String userEmail = user.getUsername();
+        UserInfoDto userProfile = userInfoService.getUserProfileByEmail(userEmail);
+
+        model.addAttribute("user", userProfile);
+        return "userInfo/profile";
+    }
 
     /**
-     * 다른 사람의 프로필에 접근할 때 필요한 API
-     * 미완임 프로필 기능 완성 후 마저 완성 정민이 누나가 만들 예정
+     * 다른 사람의 프로필 페이지(닉네임 기반)
+     * - 템플릿은 동일하게 userInfo/profile 사용
+     * - 뷰에서 profileUserNickname 유무로 내/타인 분기 가능
      */
-//    @GetMapping("/profile/{userId}")
-//    public String profile(@PathVariable Long userId, Model model) {
-//        model.addAttribute("profileUserId", userId);
-//        // 프로필 페이지가 아직 없는데 팔로우/언팔로우 기능 구현되나 보려고 만들었슴(정민)
-//        return "userInfo/profile";
-//    }
-
+    @GetMapping("/profile/{nickname}")
+    public String otherProfilePage(@PathVariable String nickname, Model model) {
+        model.addAttribute("profileUserNickname", nickname);
+        // 필요시: userInfoService.getUserProfileByNickname(nickname)으로 미리 바인딩
+        return "userInfo/profile";
+    }
 
     /**
      * [수정] 프로필 이미지를 업데이트하는 API

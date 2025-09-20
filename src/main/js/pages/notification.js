@@ -16,6 +16,37 @@ export function initNotification() {
         return;
     }
 
+    // ===== 뒤로가기 버튼 처리 (좌상단 아이콘) =====
+    const $back = document.getElementById('noti-back');
+    if ($back) {
+        $back.addEventListener('click', (e) => {
+            e.preventDefault();
+            // 같은 오리진 & 히스토리가 있으면 back, 아니면 /forumMain 폴백
+            if (document.referrer && document.referrer.startsWith(location.origin) && history.length > 1) {
+                history.back();
+            } else {
+                location.assign('/forumMain');
+            }
+        });
+    }
+
+    // ===== ▼ (있다면) 네비 높이를 CSS 변수(--footer-height)에 반영 =====
+    function syncFooterHeightVar() {
+        try {
+            const nav = document.querySelector('.main-nav-bar');
+            const h = nav ? Math.ceil(nav.getBoundingClientRect().height) : 0;
+            const px = (h && Number.isFinite(h)) ? `${h}px` : null;
+            if (px) document.documentElement.style.setProperty('--footer-height', px);
+        } catch { /* ignore */
+        }
+    }
+
+    syncFooterHeightVar();
+    setTimeout(syncFooterHeightVar, 300);
+    window.addEventListener('resize', syncFooterHeightVar);
+    window.addEventListener('orientationchange', syncFooterHeightVar);
+    // ===== ▲ 추가 끝 =====
+
     // 백엔드 엔드포인트
     const API_BASE = '/api/notifications'; // 목록/카운트 전용
     // 읽음 처리(전체/선택)는 POST /notification 단일 엔드포인트 사용
@@ -124,12 +155,8 @@ export function initNotification() {
             row.href = actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#';
             row.setAttribute('aria-label', actorNick ? `${actorNick} ${text}` : text);
 
-            // 좌측 빨간 점(미읽음만)
-            if (!read) {
-                const dot = document.createElement('span');
-                dot.className = 'noti-unread-dot';
-                row.appendChild(dot);
-            }
+            // ✅ 빨간 점: DOM 생성 대신 data-unread 속성 사용(정렬 고정)
+            row.dataset.unread = String(!read);
 
             // 프로필 이미지
             const img = document.createElement('img');
@@ -145,7 +172,7 @@ export function initNotification() {
             const main = document.createElement('div');
             main.className = 'noti-main';
 
-            // (1줄) 닉네임 + 시간
+            // (1줄) 닉네임 + 시간 (같은 줄)
             const head = document.createElement('div');
             head.className = 'noti-head';
 
@@ -173,6 +200,9 @@ export function initNotification() {
         });
 
         $list.appendChild(frag);
+
+        // ❌ (변경) 여기서는 도트를 숨기지 않는다.
+        // setNavDotVisible(false);
     }
 
     async function load(p = 0) {
@@ -203,7 +233,11 @@ export function initNotification() {
                 readAllOnce = true;
                 try {
                     await postJson('/notification', {}); // 단일 엔드포인트 (suffix 금지)
-                    // 전역 도트는 "페이지를 떠날 때" 숨김
+
+                    // ❌ (변경) 입장만으로는 종 도트를 숨기지 않는다.
+                    // setNavDotVisible(false);
+
+                    // 전역 도트는 "페이지를 떠날 때"만 숨김 보장
                     attachLeaveHandlersOnce();
                 } catch (e) {
                     console.debug('[notification] read-all failed:', e?.message || e);
@@ -216,9 +250,12 @@ export function initNotification() {
 
     // 이벤트
     $btnPrev.addEventListener('click', () => {
+        // ✅ 내부 페이지 이동 시에만 종 도트를 숨김
+        setNavDotVisible(false);
         if (page > 0) load(page - 1);
     });
     $btnNext.addEventListener('click', () => {
+        setNavDotVisible(false);
         if (!last) load(page + 1);
     });
 

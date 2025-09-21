@@ -408,15 +408,17 @@ export function initMain() {
                 <button class="post-options-button" data-forum-id="${post.id}">...</button>
             </div>
         ` : '';
-        const likeButtonClass = post.liked ? 'like-button liked' : 'like-button';
-        const heartIcon = post.liked ? '♥' : '♡'; // 변경: 유니코드 하트 문자 사용
+        const likeButtonClass = post.isLiked ? 'like-button liked' : 'like-button';
+        const heartIcon = post.isLiked ? '♥' : '♡';
         return `
            <div class="post-card" data-post-id="${post.id}">
                 <div class="post-header">
                     <div class="post-author">
-                        <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
+                        <a href="/profile/${post.writerNickname}" class="profile-link">
+                            <img alt="${post.writerNickname}" src="${post.writerProfilePhotoUrl}" class="profile-img">
+                        </a>
                         <div class="post-author-info">
-                            <div class="name">${post.writerNickname}</div>
+                             <a href="/profile/${post.writerNickname}" class="profile-link name">${post.writerNickname}</a>
                             <div class="time">${timeAgoText}</div>
                         </div>
                     </div>

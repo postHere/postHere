@@ -25,6 +25,7 @@ export function initProfile() {
     const followBtn = document.querySelector('.follow-btn');
     const profileImageInput = document.getElementById('profile-image-upload');
     const profileImage = document.querySelector('.profile-info__pic');
+    const isMyProfile = profileBody.dataset.isMyProfile === 'true';
 
     // 상태 관리 변수
     const initialTab = tabFind ? 'find' : 'forum';
@@ -277,56 +278,52 @@ export function initProfile() {
 
     let isMouseDown = false;
     if (carouselWrapper) {
+        // 드래그를 종료하는 로직을 하나의 함수로 통합 (mouseup, mouseleave 공통 사용)
+        const endDrag = (e) => {
+            if (!isMouseDown) return;
+            isMouseDown = false;
+            carouselWrapper.classList.remove('dragging');
+            // 애니메이션 효과를 다시 켭니다.
+            carousel.style.transition = 'transform 0.3s ease-in-out';
+
+            const touchEndX = e.clientX;
+            const swipeDistance = touchEndX - touchStartX;
+
+            // 드래그 거리를 판정하여 페이지 이동 또는 원위치를 결정합니다.
+            if (swipeDistance < -50) { // 왼쪽으로 충분히 스와이프
+                goToPage(currentPageIndex + 1);
+            } else if (swipeDistance > 50) { // 오른쪽으로 충분히 스와이프
+                goToPage(currentPageIndex - 1);
+            } else {
+                // 드래그 거리가 짧으면 원래 페이지로 부드럽게 복귀
+                goToPage(currentPageIndex, true);
+            }
+        };
+
         // 1. 마우스를 누르기 시작할 때
         carouselWrapper.addEventListener('mousedown', (e) => {
             isMouseDown = true;
-            touchStartX = e.clientX; // 마우스의 시작 X좌표 저장
-            carouselWrapper.classList.add('dragging'); // '잡고있는' 커서 모양으로 변경
-
-            // 이미지나 링크를 드래그하는 브라우저 기본 동작 방지
-            e.preventDefault();
+            touchStartX = e.clientX;
+            carouselWrapper.classList.add('dragging');
+            e.preventDefault(); // 브라우저 기본 드래그 동작 방지
         });
 
-        // 2. 마우스를 움직일 때 (실시간으로 살짝 움직이는 효과)
+        // 2. 마우스를 움직일 때 (실시간 드래그 효과)
         carouselWrapper.addEventListener('mousemove', (e) => {
             if (!isMouseDown) return;
             const currentX = e.clientX;
             const distance = currentX - touchStartX;
 
-            // 현재 페이지 위치에서 드래그한 거리만큼 살짝 움직여 보이게 함
             const baseOffset = -currentPageIndex * 100;
-            carousel.style.transition = 'none'; // 실시간 이동 중에는 transition을 끔
+            carousel.style.transition = 'none'; // 실시간 이동 중에는 애니메이션 효과를 끔
             carousel.style.transform = `translateX(calc(${baseOffset}% + ${distance}px))`;
         });
 
-        // 3. 마우스 버튼을 뗄 때 (스와이프 동작 실행)
-        carouselWrapper.addEventListener('mouseup', (e) => {
-            if (!isMouseDown) return;
-            isMouseDown = false;
-            carouselWrapper.classList.remove('dragging'); // 커서 모양 원래대로
-            carousel.style.transition = 'transform 0.3s ease-in-out'; // transition 다시 켬
+        // 3. 마우스 버튼을 뗄 때 드래그 종료
+        carouselWrapper.addEventListener('mouseup', endDrag);
 
-            const touchEndX = e.clientX;
-            const swipeDistance = touchEndX - touchStartX;
-
-            if (swipeDistance < -50) { // 왼쪽으로 충분히 드래그했으면
-                goToPage(currentPageIndex + 1);
-            } else if (swipeDistance > 50) { // 오른쪽으로 충분히 드래그했으면
-                goToPage(currentPageIndex - 1);
-            } else {
-                // 충분히 드래그하지 않았으면 원래 페이지로 복귀
-                goToPage(currentPageIndex, true);
-            }
-        });
-
-        // 4. 마우스가 영역을 벗어났을 때 (드래그 취소)
-        carouselWrapper.addEventListener('mouseleave', () => {
-            if (!isMouseDown) return;
-            isMouseDown = false;
-            carouselWrapper.classList.remove('dragging');
-            carousel.style.transition = 'transform 0.3s ease-in-out';
-            goToPage(currentPageIndex, true); // 원래 페이지로 복귀
-        });
+        // 4. 마우스가 영역 밖으로 나갔을 때도 드래그 종료로 처리 (오류 수정)
+        carouselWrapper.addEventListener('mouseleave', endDrag);
     }
 
     if (followBtn) {
@@ -373,7 +370,7 @@ export function initProfile() {
         });
     }
 
-    if (profileImageInput) {
+    if (isMyProfile && profileImageInput) {
         profileImageInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) {

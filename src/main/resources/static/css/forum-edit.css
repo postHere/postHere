@@ -8,7 +8,7 @@
 }
 
 /* 폼 스타일링: header와 main, footer를 수직으로 배치 */
-#forum-form {
+#edit-forum-form {
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -40,32 +40,10 @@
     color: #333;
 }
 
-.toolbar-top {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 15px;
-    padding: 70px 10px 5px 30px;
-}
-
-.toolbar-top .icon-button {
-    background: #fff;
-    border: none;
-    font-size: 1.3rem;
-    cursor: pointer;
-    padding: 8px; /* 아이콘과 배경 사이의 여백 */
-    border-radius: 50%; /* 원형 배경 */
-    color: #333;
-    display: flex; /* 아이콘을 중앙에 배치하기 위해 추가 */
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 /* 텍스트 작성 영역 스타일링 */
 .writing-area {
     flex-grow: 1;
-    padding: 8px 20px 0 20px;
+    padding: 40px 20px 0 20px;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -84,7 +62,7 @@
     width: 100%;
     height: 100%;
     border: none;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 500;
     resize: none;
     outline: none;
@@ -95,29 +73,27 @@
     color: #b0b0b0;
 }
 
-/* 하단 공유 버튼 스타일링 */
+/* 하단 공유 버튼 스타일링 (forum-write.css 스타일 적용) */
 .submit-button {
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    width: 300px; /* 더 짧은 너비로 변경 */
-    max-width: none; /* 최대 너비 제한을 없앱니다. */
+    width: 300px;
+    max-width: none;
     padding: 8px 20px;
     border-radius: 5px;
     border: none;
-    background-color: #ddd;
-    color: #fff;
     font-size: 0.9rem;
     font-weight: bold;
     text-align: center;
     cursor: not-allowed;
-    align-self: center; /* 가운데 정렬 */
-    transition: background-color 0.3s, box-shadow 0.3s;
+    align-self: center;
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
 }
 
 .submit-button:disabled {
-    background-color: #ddd; /* 비활성화 시 배경색 */
+    background-color: #ddd;
     color: #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -137,7 +113,7 @@
 
 /* 이미지 미리보기 컨테이너 및 삭제 버튼 스타일 */
 .image-preview-container {
-    position: absolute;;
+    position: absolute;
     bottom: 80px; /* 공유 버튼과의 간격 조정 */
     left: 0;
     right: 0;
@@ -186,7 +162,7 @@
     align-items: center;
     font-size: 12px;
     cursor: pointer;
-    backdrop-filter: blur(2px); /* 투명한 회색 배경 */
+    backdrop-filter: blur(2px);
 }
 
 

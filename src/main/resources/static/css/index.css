@@ -7,6 +7,7 @@ html, body {
     justify-content: center;
     background-color: #f0f2f5;
     overflow: hidden; /* 스크롤바를 제거하여 앱처럼 보이게 함 */
+    font-family: 'Noto Sans KR', sans-serif;
 }
 
 /* 앱 화면 컨테이너 */
@@ -22,11 +23,19 @@ html, body {
     background-color: #fff;
 
     position: relative;
-    
+
     overflow-y: auto;
 
     display: flex;
     flex-direction: column;
+}
+
+/* 로고 글꼴만 Agbalumo로 재정의 */
+.logo {
+    font-family: 'Agbalumo', sans-serif;
+    font-weight: normal;
+    font-size: 1.5em;
+    color: #000;
 }
 
 /* 로그인 페이지용 스타일 */

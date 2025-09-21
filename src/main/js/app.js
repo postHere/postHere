@@ -15,25 +15,24 @@ import {App} from '@capacitor/app';
 // --- 2. 페이지별 기능 모듈 Import ---
 // 각 페이지에서 사용할 init 함수들을 불러옵니다.
 import {initMainNav} from './modules/main-nav.js';
-import {initMain} from './pages/main.js';
+// import {initMain} from './pages/main.js';
 import {initLogin} from './pages/login.js';
-import {initSignup} from './pages/signup.js';
-import {initFriends} from './pages/friends.js';
-import {initProfile} from './pages/profile.js';
-import {initFindWrite} from './pages/find-write.js';
-import {initForumWrite} from './pages/forum-write.js';
-import {initForumAreaSearch} from './pages/forum-area-search.js';
-import {initParkWrite} from './pages/park-write.js';
-import {initNotification} from './pages/notification.js';
-import {initFindOnMap} from "./pages/find-on-map";
-import {initForumEdit} from './pages/forum-edit'
+// import {initSignup} from './pages/signup.js';
+// import {initFriends} from './pages/friends.js';
+// import {initProfile} from './pages/profile.js';
+// import {initFindWrite} from './pages/find-write.js';
+// import {initForumWrite} from './pages/forum-write.js';
+// import {initForumAreaSearch} from './pages/forum-area-search.js';
+// import {initParkWrite} from './pages/park-write.js';
+// import {initNotification} from './pages/notification.js';
+// import {initFindOnMap} from "./pages/find-on-map";
+// import {initForumEdit} from './pages/forum-edit'
+import {initBackgroundGeolocation} from './modules/location-tracker';
 
 // --- 3. 초기 경로 설정 ---
 // 앱이 처음 로드되었을 때(경로가 '/') 시작 페이지로 이동시킵니다.
 // 이 로직은 다른 어떤 코드보다 먼저 실행되는 것이 좋습니다.
 if (window.location.pathname === '/') {
-    // 🚨 '/start' 경로는 실제 프로젝트의 시작 페이지 경로(예: '/login')로 반드시 변경하세요.
-    // window.location.replace('http://1.235.197.58:8081/start');
     window.location.replace('/start');
 }
 
@@ -54,7 +53,7 @@ App.addListener('backButton', ({canGoBack}) => {
     const exitPages = ['/login', '/start', '/forumMain'];
     if (exitPages.includes(currentPage)) {
         // 해당 페이지들에서 뒤로가기를 누르면 앱을 종료합니다.
-        void App.exitApp();
+        App.exitApp();
     } else {
         // 그 외의 페이지인데 뒤로 갈 곳이 없다면(예: 푸시 알림으로 바로 진입)
         // 사용자가 앱에 갇히지 않도록 메인 페이지로 이동시킵니다.
@@ -65,48 +64,52 @@ App.addListener('backButton', ({canGoBack}) => {
 
 // --- 5. 페이지 라우터: 현재 페이지에 맞는 스크립트 실행 ---
 // HTML 문서의 로딩이 완료되면, 현재 페이지를 확인하고 그에 맞는 init 함수를 실행합니다.
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const pageId = document.body.id;
     console.log(`현재 페이지 ID: ${pageId}. 해당 스크립트를 초기화합니다.`);
 
     initMainNav();
 
+    if (pageId !== 'page-login' && pageId !== 'page-signup') {
+        await initBackgroundGeolocation();
+    }
+
     switch (pageId) {
         case 'page-main':
-            initMain();
+            //initMain();
             break;
         case 'page-login':
             initLogin();
             break;
         case 'page-signup':
-            initSignup();
+            //initSignup();
             break;
         case 'page-friends':
-            initFriends();
+            //initFriends();
             break;
         case 'page-profile':
-            initProfile();
+            //initProfile();
             break;
         case 'page-find-write':
-            initFindWrite();
+            //initFindWrite();
             break;
         case 'page-on-map' :
-            initFindOnMap();
+            //initFindOnMap();
             break
         case 'page-forum-write':
-            initForumWrite();
+            //initForumWrite();
             break;
         case 'page-forum-area-search':
-            initForumAreaSearch();
+            //initForumAreaSearch();
             break;
         case 'page-park-write':
-            initParkWrite();
+            //initParkWrite();
             break;
         case 'page-notifications':
-            initNotification();
+            //initNotification();
             break;
         case 'page-forum-edit':
-            initForumEdit();
+            //initForumEdit();
             break;
         default:
             console.log('이 페이지에 해당하는 초기화 스크립트가 없습니다.');

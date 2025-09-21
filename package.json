@@ -19,11 +19,13 @@
   },
   "homepage": "https://github.com/postHere/postHere#readme",
   "dependencies": {
-    "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/android": "^7.4.3",
     "@capacitor/app": "^7.1.0",
     "@capacitor/cli": "^7.4.3",
-    "@capacitor/core": "^7.4.3"
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/preferences": "^7.0.2",
+    "@transistorsoft/capacitor-background-fetch": "^7.1.0",
+    "@transistorsoft/capacitor-background-geolocation": "^7.2.2"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",

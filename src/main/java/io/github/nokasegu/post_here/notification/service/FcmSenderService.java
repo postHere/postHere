@@ -19,6 +19,11 @@ import java.util.Map;
  * - user_info.fcm_token 단일 컬럼 기반으로 FCM 발송 (Firebase Admin SDK 사용)
  * - Android 우선 구성 (iOS 필요 시 ApnsConfig 추가)
  * - 팔로우/댓글/좋아요 전용 헬퍼 제공
+ * <p>
+ * [변경 사항]
+ * - Push Payload v1 표준 키를 모든 발송에 공통으로 추가:
+ * version=1, type, nid(알림PK), url(/notification 기본 경로), deeplink(옵션), actorNickname/actorProfileUrl
+ * - 기존 notification 블록은 그대로 유지하여 호환성 보장
  */
 @Slf4j
 @Service
@@ -64,6 +69,7 @@ public class FcmSenderService {
                     .setAndroidConfig(AndroidConfig.builder()
                             .setTtl(Duration.ofHours(1).toMillis())
                             .setPriority(AndroidConfig.Priority.HIGH)
+                            // ✅ 기존 notification 블록은 유지 (포그라운드/백그라운드 호환)
                             .setNotification(AndroidNotification.builder()
                                     .setTitle(title)
                                     .setBody(body)
@@ -89,11 +95,19 @@ public class FcmSenderService {
         String body = (actorNickname != null ? actorNickname : "누군가") + "님이 팔로우했습니다";
 
         Map<String, String> data = new HashMap<>();
+        // ✅ 표준 키 추가 (Push Payload v1)
+        data.put("version", "1");
         data.put("type", "FOLLOW");
-        data.put("notificationId", String.valueOf(notificationId));
+        data.put("nid", String.valueOf(notificationId));
+        // ✅ url은 앱/웹 공통 기본 라우팅. deeplink가 없더라도 이 값만으로 동작 보장
+        data.put("url", "/notification?focus=" + notificationId + "&type=FOLLOW");
+
+        // 표시/메타 정보(있는 경우만)
         if (actorNickname != null) data.put("actorNickname", actorNickname);
         if (actorProfileUrl != null) data.put("actorProfileUrl", actorProfileUrl);
-        data.put("deeplink", "posthere://notification/follow"); // 앱에서 처리할 딥링크
+
+        // ✅ 기존 코드 유지: 커스텀 스킴 딥링크(선택). 나중에 Manifest 인텐트 필터 추가시 활용.
+        data.put("deeplink", "posthere://notification?focus=" + notificationId + "&type=FOLLOW"); // [변경] path 통일
 
         sendToUser(target, title, body, data);
     }
@@ -107,11 +121,17 @@ public class FcmSenderService {
                 + (commentText != null ? (": " + commentText) : "");
 
         Map<String, String> data = new HashMap<>();
+        // ✅ 표준 키 추가 (Push Payload v1)
+        data.put("version", "1");
         data.put("type", "COMMENT");
-        data.put("notificationId", String.valueOf(notificationId));
+        data.put("nid", String.valueOf(notificationId));
+        data.put("url", "/notification?focus=" + notificationId + "&type=COMMENT");
+
         if (actorNickname != null) data.put("actorNickname", actorNickname);
         if (commentText != null) data.put("commentText", commentText);
-        data.put("deeplink", "posthere://notification/comment");
+
+        // ✅ 기존 코드 유지 + path 통일
+        data.put("deeplink", "posthere://notification?focus=" + notificationId + "&type=COMMENT"); // [변경] path 통일
 
         sendToUser(target, title, body, data);
     }
@@ -124,10 +144,16 @@ public class FcmSenderService {
         String body = (actorNickname != null ? actorNickname : "누군가") + "님이 회원님의 글을 좋아합니다";
 
         Map<String, String> data = new HashMap<>();
+        // ✅ 표준 키 추가 (Push Payload v1)
+        data.put("version", "1");
         data.put("type", "LIKE");
-        data.put("notificationId", String.valueOf(notificationId));
+        data.put("nid", String.valueOf(notificationId));
+        data.put("url", "/notification?focus=" + notificationId + "&type=LIKE");
+
         if (actorNickname != null) data.put("actorNickname", actorNickname);
-        data.put("deeplink", "posthere://notification/like");
+
+        // ✅ 기존 코드 유지 + path 통일
+        data.put("deeplink", "posthere://notification?focus=" + notificationId + "&type=LIKE"); // [변경] path 통일
 
         sendToUser(target, title, body, data);
     }

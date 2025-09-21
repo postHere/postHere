@@ -9,7 +9,7 @@
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/profile.css}">
 </head>
-<body id="page-profile">
+<body id="page-profile" th:data-profile-nickname="${profileUser.nickname}">
 
 <div class="mobile-container">
     <main class="main-content">
@@ -20,14 +20,30 @@
                     <label class="profile-info__pic-label" for="profile-image-upload">
                         <img alt="Profile Picture"
                              class="profile-info__pic"
-                             src="https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=256&auto=format&fit=crop">
+                             th:src="${profileUser.profilePhotoUrl}">
                     </label>
                     <input accept="image/*" id="profile-image-upload" style="display: none;" type="file">
                     <div class="profile-info__text">
-                        <h2 class="profile-info__name">Watermelon</h2>
+                        <h2 class="profile-info__name" th:text="|${profileUser.nickname}|"></h2>
+
+                        <div class="follow-button-container" th:if="${!isMyProfile}">
+                            <button class="follow-btn follow"
+                                    th:data-userid="${profileUser.userId}"
+                                    th:if="${!profileUser.isFollowing}">Follow
+                            </button>
+                            <button class="follow-btn unfollow"
+                                    th:data-userid="${profileUser.userId}"
+                                    th:if="${profileUser.isFollowing}">Following
+                            </button>
+                        </div>
+
                         <div class="profile-stats">
-                            <a href="/followers"><span>Follower 6</span></a>
-                            <a href="/following"><span>Following 2</span></a>
+                            <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followers')}">
+                                <span th:text="|Follower ${profileUser.followerCount}|"></span>
+                            </a>
+                            <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followings')}">
+                                <span th:text="|Following ${profileUser.followingCount}|"></span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -37,7 +53,7 @@
 
         <!-- Section 2: PARK명록 -->
         <div class="guestbook-wrapper">
-            <a href="/park-guestbook-detail">
+            <a th:href="@{/park-write}">
                 <section class="guestbook">
                     <p class="guestbook__content">
                         Yoshihiro Togashi created not just an adventure, but a profound exploration of humanity, making
@@ -50,8 +66,10 @@
         <!-- Section 3: Fin'd / Forum -->
         <section class="posts-section">
             <div class="content-tabs">
-                <button class="content-tabs__button active" id="tab-find">Fin'd <span>&gt;</span></button>
-                <button class="content-tabs__button" id="tab-forum">Forum <span>&gt;</span></button>
+                <button class="content-tabs__button active" id="tab-find" th:if="${isMyProfile}">Fin'd <span>&gt;</span>
+                </button>
+                <button class="content-tabs__button" id="tab-forum" th:classappend="${!isMyProfile} ? 'active' : ''">
+                    Forum <span>&gt;</span></button>
             </div>
             <div class="content-carousel-wrapper" id="carousel-wrapper">
                 <div class="content-carousel" id="carousel"></div>

@@ -1,7 +1,7 @@
 /**
  * main-nav.js
  * - 네비 활성화 유지
- * - 미읽음 배지 갱신(엔드포인트 자동 폴백)
+ * - 미읽음 배지 갱신(단일 엔드포인트)
  * - SW NAVIGATE 메시지(있으면) 처리
  */
 import {authHeaders} from './utils.js';
@@ -36,38 +36,30 @@ export function initMainNav() {
         });
     });
 
-    // ===== 엔드포인트 폴백 유틸 =====
-    const API_BASES = ['/api/notifications', '/notification']; // 둘 중 되는 걸 자동 사용
-    async function fetchJsonFallback(path, init = {}) {
-        const headers = (typeof authHeaders === 'function')
-            ? authHeaders({Accept: 'application/json', ...(init.headers || {})})
-            : {Accept: 'application/json', ...(init.headers || {})};
-
-        for (const base of API_BASES) {
-            const res = await fetch(`${base}${path}`, {
-                credentials: 'include',
-                ...init,
-                headers
-            });
-            const ct = res.headers.get('content-type') || '';
-            if (res.ok && ct.includes('application/json')) {
-                return res.json(); // number든 object든 JSON으로 파싱
-            }
-            // 401이면 추가 시도 의미 없음
+    // ===== 미읽음 배지 갱신 (단일 호출) =====
+    async function fetchUnreadCount() {
+        const res = await fetch('/api/notifications/unread-count', {
+            method: 'POST',
+            credentials: 'include',
+            headers: authHeaders({Accept: 'application/json'})
+        });
+        const ct = res.headers.get('content-type') || '';
+        if (!res.ok || !ct.includes('application/json')) {
             if (res.status === 401) throw new Error('UNAUTHORIZED');
-            // HTML 등 응답(<!DOCTYPE …)은 다음 베이스로 폴백
+            throw new Error('Unexpected response');
         }
-        throw new Error('All endpoints failed for ' + path);
+        return res.json(); // number
     }
 
-    // ===== 미읽음 배지 갱신 =====
     async function refreshUnreadBadge() {
         try {
-            const count = await fetchJsonFallback('/unread-count', {method: 'POST'});
+            const count = await fetchUnreadCount();
             const dot = document.getElementById('nav-bell-dot');
             if (dot) dot.style.display = (Number(count) > 0) ? 'inline-block' : 'none';
         } catch (e) {
-            // HTML 응답으로 인한 JSON 파싱 에러(Unexpected token '<') 방지됨
+            // 인증 만료/오류 시 조용히 실패 + 도트 숨김
+            const dot = document.getElementById('nav-bell-dot');
+            if (dot) dot.style.display = 'none';
             console.error('Failed to update unread count:', e?.message || e);
         }
     }

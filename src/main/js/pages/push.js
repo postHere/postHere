@@ -23,6 +23,40 @@ export function initPush() {
         if (__pushInitialized) return;
         __pushInitialized = true;
 
+        // ✅ 라우팅 유틸
+        const go = (pathOrUrl) => {
+            try {
+                // 커스텀 스킴(posthere://...) → /notification 로 매핑 (Manifest 인텐트 필터 없을 때도 동작)
+                if (typeof pathOrUrl === 'string' && pathOrUrl.startsWith('posthere://')) {
+                    const u = new URL(pathOrUrl);
+                    // posthere://notification?... → /notification?... 로 변환
+                    const q = u.search || '';
+                    window.location.href = '/notification' + q;
+                    return;
+                }
+            } catch {/* noop */
+            }
+
+            // 절대/상대 모두 허용
+            if (typeof pathOrUrl === 'string' && pathOrUrl.length > 0) {
+                // http(s):// 또는 / 로 시작하면 그대로 이동
+                if (/^https?:\/\//i.test(pathOrUrl) || pathOrUrl.startsWith('/')) {
+                    window.location.href = pathOrUrl;
+                } else {
+                    // 안전 폴백
+                    window.location.href = '/notification';
+                }
+            } else {
+                window.location.href = '/notification';
+            }
+        };
+
+        // ✅ 안전 파서: data에서 deeplink/url 추출
+        const pickTargetFromData = (data = {}) => {
+            // 우선순위: deeplink(커스텀 스킴) → url(웹/앱 공통) → 폴백
+            return data.deeplink || data.url || '/notification';
+        };
+
         try {
             // 토큰 업로드
             PushNotifications.addListener('registration', async ({value: token}) => {
@@ -44,7 +78,7 @@ export function initPush() {
                 console.error('FCM registration error', err);
             });
 
-            // ★ 포어그라운드 수신 시 → 로컬 배너 띄우기
+            // ★ 포어그라운드 수신 시 → 로컬 배너 띄우기 (기존 로직 유지)
             PushNotifications.addListener('pushNotificationReceived', async (n) => {
                 try {
                     console.log('[push] foreground payload =', JSON.stringify(n));
@@ -100,7 +134,9 @@ export function initPush() {
                                 body,
                                 schedule: {at},
                                 channelId: 'default',
-                                smallIcon: 'ic_launcher', // 앱 기본 아이콘
+                                // ⚠️ 아이콘은 이슈 #3에서 일괄 정리 예정. 여기선 기존 값을 유지합니다.
+                                smallIcon: 'ic_launcher', // 앱 기본 아이콘 (기존 주석 유지)
+                                // ✅ 클릭 시 라우팅에 필요: 서버 data를 extra로 그대로 보관
                                 extra: n?.data ?? {},
                             },
                         ],
@@ -111,6 +147,35 @@ export function initPush() {
                 }
             });
 
+            // ✅ [추가] 시스템 트레이에서 "푸시 알림 클릭" 수신 → /notification 라우팅
+            // (기존에 부재했던 클릭 수신부. 이슈 #1 해결 핵심)
+            PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+                try {
+                    const data = action?.notification?.data ?? {};
+                    const target = pickTargetFromData(data);
+                    console.log('[push] actionPerformed -> target:', target);
+                    go(target);
+                } catch (e) {
+                    console.error('[push] actionPerformed handler error', e);
+                    go('/notification'); // 안전 폴백
+                }
+            });
+
+            // ✅ [추가] 포어그라운드 배너(LocalNotifications) 클릭 → /notification 라우팅
+            if (hasLocal && LocalNotifications) {
+                LocalNotifications.addListener('localNotificationActionPerformed', (evt) => {
+                    try {
+                        const extra = evt?.notification?.extra ?? {};
+                        const target = pickTargetFromData(extra);
+                        console.log('[push] localNotificationActionPerformed -> target:', target);
+                        go(target);
+                    } catch (e) {
+                        console.error('[push] local action handler error', e);
+                        go('/notification'); // 안전 폴백
+                    }
+                });
+            }
+
             // 권한/등록
             const perm = await PushNotifications.requestPermissions();
             if (!perm || perm.receive !== 'granted') {
@@ -119,7 +184,7 @@ export function initPush() {
             }
             await PushNotifications.register();
 
-            // 콘솔 테스트용 헬퍼
+            // 콘솔 테스트용 헬퍼 (기존 유지)
             if (hasLocal && LocalNotifications) {
                 window.__localTest = async () => {
                     const r = await LocalNotifications.requestPermissions();
@@ -132,6 +197,8 @@ export function initPush() {
                             id: Math.floor(Math.random() * 100000),
                             title: '로컬 테스트', body: 'LocalNotifications 테스트',
                             schedule: {at: new Date(Date.now() + 800)}, channelId: 'default',
+                            // ✅ 테스트 클릭 라우팅 확인을 위해 url 포함
+                            extra: {url: '/notification?focus=debug'}
                         }],
                     });
                     console.log('__localTest done');

@@ -14,13 +14,36 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+/**
+ * 친구(팔로우) 서비스
+ * - 컨트롤러가 요구하는 시그니처(getFollowers/getFollowings/getFollowingStatus/getUsersByNickname)에 맞춤
+ * - 기존 Repository 메서드(findFollowersByMeId / findFollowingsByMeId / findFollowedIdsByMeIn)를 그대로 사용
+ */
+/* 추가 설명)
+ * - 이 서비스는 "팔로우 생성" 같은 도메인 행위를 중심으로 여러 컴포넌트(Repository, NotificationService)를 오케스트레이션합니다.
+ * - 팔로우가 새로 만들어질 때 NotificationService를 호출하여
+ *   1) Notification 테이블에 레코드 생성
+ *   2) WebPushService를 통해 대상 사용자 브라우저로 푸시 전송
+ * - @Transactional 로직 안에서 이루어지므로, DB 쓰기와 알림 발사 트리거까지 하나의 도메인 흐름으로 묶여 있습니다.
+ */
+
+/**
+ * [Flow (A) → (B) 브리지 요약]
+ * - (A) FriendApiController.addFollowing(...) → FollowingService.follow(me, target)
+ * - follow(...)는 중복 검사 → INSERT → NotificationService.createFollowAndPush(...) 호출로 (B) 알림 생성/푸시를 트리거
+ * - 트랜잭션 고려: INSERT 성공 이후 알림 트리거가 진행되므로, 커밋 타이밍/에러 로그 전략을 서비스 정책에 맞게 선택
+ * - 멱등성·무결성: existsBy* 선검사 + (follower_id, followed_id) 유니크 제약을 권장(경합 시 예외를 멱등 처리로 흡수)
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
 public class FollowingService {
 
+    // 팔로우/팔로워 관계를 저장·조회하는 리포지토리 (following 테이블 접근)
     private final FollowingRepository followingRepository;
+
+    // 사용자(UserInfoEntity) 조회를 위한 리포지토리 (user_info 테이블 접근)
     private final UserInfoRepository userInfoRepository;
 
     // ✅ 알림은 직접 호출하지 않고, "커밋 후" 처리되도록 이벤트만 발행
@@ -30,6 +53,7 @@ public class FollowingService {
      * 팔로우 (멱등)
      */
     public boolean follow(Long followerUserId, Long followedUserId) {
+        // [검증 단계] 파라미터 유효성 및 자기 자신 팔로우 방지
         if (followerUserId == null || followedUserId == null) {
             throw new IllegalArgumentException("파라미터 누락");
         }
@@ -37,15 +61,19 @@ public class FollowingService {
             throw new IllegalArgumentException("자기 자신 팔로우 불가");
         }
 
+        // [조회 단계] 팔로우를 시도하는 사용자(Actor)와 대상 사용자(Target) 로드
         UserInfoEntity follower = userInfoRepository.findById(followerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("follower 사용자 없음: " + followerUserId));
         UserInfoEntity followed = userInfoRepository.findById(followedUserId)
                 .orElseThrow(() -> new IllegalArgumentException("followed 사용자 없음: " + followedUserId));
 
+        // [멱등 처리] 이미 존재하는 관계라면 새로 만들지 않고 true 반환
+        //  - 같은 요청이 중복으로 들어와도 사이드이펙트를 최소화합니다.
         if (followingRepository.existsByFollowerAndFollowed(follower, followed)) {
             return true; // 이미 팔로우 중이면 성공 처리(멱등)
         }
 
+        // [저장 단계] 새로운 팔로우 관계 생성
         FollowingEntity entity = FollowingEntity.builder()
                 .follower(follower)
                 .followed(followed)
@@ -63,6 +91,7 @@ public class FollowingService {
      * 언팔로우 (멱등)
      */
     public boolean unfollow(Long followerUserId, Long followedUserId) {
+        // [검증 단계]
         if (followerUserId == null || followedUserId == null) {
             throw new IllegalArgumentException("파라미터 누락");
         }
@@ -70,14 +99,21 @@ public class FollowingService {
             return false;
         }
 
+        // [조회 단계] 존재하지 않으면 예외 (입력 오류 방지)
         UserInfoEntity follower = userInfoRepository.findById(followerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("follower 사용자 없음: " + followerUserId));
         UserInfoEntity followed = userInfoRepository.findById(followedUserId)
                 .orElseThrow(() -> new IllegalArgumentException("followed 사용자 없음: " + followedUserId));
 
+        // [삭제 단계] 관계가 있으면 삭제, 없으면 조용히 통과 → 멱등 보장
         followingRepository.deleteByFollowerAndFollowed(follower, followed);
+        // (확장 포인트) 언팔로우 알림이 필요하면 여기에서 NotificationService를 호출하는 훅을 추가할 수 있습니다.
         return true;
     }
+
+    // ===========================
+    // FriendApiController에서 호출하는 메서드들
+    // ===========================
 
     /**
      * 팔로워 목록(나를 팔로우)
@@ -92,6 +128,7 @@ public class FollowingService {
      */
     @Transactional(readOnly = true)
     public Page<UserInfoEntity> getFollowings(Long meUserId, Pageable pageable) {
+        // (연결 지점) FriendApiController.followingList(...) 에서 호출
         return followingRepository.findFollowingsByMeId(meUserId, pageable);
     }
 
@@ -102,9 +139,11 @@ public class FollowingService {
     public Map<Long, Boolean> getFollowingStatus(Long meUserId, List<Long> ids) {
         if (ids == null || ids.isEmpty()) return Collections.emptyMap();
 
+        // (핵심) targetIds 중 "내가 팔로우하는" ID만 뽑아와서 Set으로 빠르게 조회
         List<Long> followedIds = followingRepository.findFollowedIdsByMeIn(meUserId, ids);
         Set<Long> set = new HashSet<>(followedIds);
 
+        // (출력 포맷) 입력한 ids 순서를 유지하기 위해 LinkedHashMap 사용
         Map<Long, Boolean> result = new LinkedHashMap<>();
         for (Long id : ids) result.put(id, set.contains(id));
         return result;
@@ -115,8 +154,37 @@ public class FollowingService {
      */
     @Transactional(readOnly = true)
     public Page<UserInfoEntity> getUsersByNickname(Long meUserId, String keyword, Pageable pageable) {
+        // (NPE 방지) 빈 문자열로 정규화
         if (keyword == null) keyword = "";
+        // (연결 지점) FriendApiController.search(...) 에서 호출
+        //  - 자신(me) 제외, 닉네임 LIKE 검색, 정렬: nickname asc, id asc
         return userInfoRepository.findByNicknameContainingAndIdNotOrderByNicknameAscIdAsc(meUserId, keyword, pageable);
+    }
+
+    /**
+     * 특정 유저의 팔로워 수를 반환합니다.
+     *
+     * @param userId 조회할 유저의 ID
+     * @return 팔로워 수
+     */
+    @Transactional(readOnly = true)
+    public long getFollowerCount(Long userId) {
+        UserInfoEntity user = userInfoRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return followingRepository.countByFollowed(user);
+    }
+
+    /**
+     * 특정 유저의 팔로잉 수를 반환합니다.
+     *
+     * @param userId 조회할 유저의 ID
+     * @return 팔로잉 수
+     */
+    @Transactional(readOnly = true)
+    public long getFollowingCount(Long userId) {
+        UserInfoEntity user = userInfoRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return followingRepository.countByFollower(user);
     }
 
     // =======================

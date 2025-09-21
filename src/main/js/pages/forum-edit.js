@@ -1,49 +1,100 @@
 export function initForumEdit() {
     const forumId = $('#forum-id').val();
     const forumForm = $('#edit-forum-form');
-    const contentTextarea = $('#forum-content');
-    const musicUrlInput = $('#music-url-input');
+    const contentTextarea = $('#content');
+    const submitButton = $('#submit-btn');
+    const imagePreviewContainer = $('#image-preview-container');
 
-    // 삭제된 이미지 ID를 담을 배열
+    const originalContent = contentTextarea.val();
+    const originalImageCount = imagePreviewContainer.find('.image-preview-wrapper').length;
+    let musicIsDeleted = false;
+    const hasOriginalMusic = $('#music-url-input').length > 0;
+
+    function showToast(message, callback) {
+        const toast = document.getElementById("toast");
+        const messageEl = toast.querySelector('.toast-message');
+        messageEl.textContent = message;
+        toast.classList.add("show");
+
+        setTimeout(() => {
+            toast.classList.remove("show");
+            if (callback) {
+                callback();
+            }
+        }, 1500);
+    }
+
     const deletedImageIds = [];
 
-    // 뒤로가기 버튼 이벤트
-    $('#back-button').on('click', function () {
-        window.location.href = '/forumMain';
+    if (originalImageCount > 0) {
+        imagePreviewContainer.addClass('has-image');
+    }
+
+    const updateSubmitButtonState = () => {
+        const contentChanged = contentTextarea.val() !== originalContent;
+        const imageCountChanged = imagePreviewContainer.find('.image-preview-wrapper').length !== originalImageCount;
+        const musicChanged = hasOriginalMusic && musicIsDeleted;
+
+        const hasChanges = contentChanged || imageCountChanged || musicChanged;
+
+        if (hasChanges) {
+            submitButton.prop('disabled', false);
+        } else {
+            submitButton.prop('disabled', true);
+        }
+    };
+
+    $('#back-btn').on('click', function () {
+        const contentChanged = contentTextarea.val() !== originalContent;
+        const imageCountChanged = imagePreviewContainer.find('.image-preview-wrapper').length !== originalImageCount;
+        const musicChanged = hasOriginalMusic && musicIsDeleted;
+        const hasChanges = contentChanged || imageCountChanged || musicChanged;
+
+        if (!hasChanges) {
+            window.location.href = '/forumMain';
+        } else {
+            history.back();
+        }
     });
 
-    // 사진/음악 삭제 버튼 이벤트
-    $('.delete-media-button').on('click', function () {
+    contentTextarea.on('input', updateSubmitButtonState);
+
+    imagePreviewContainer.on('click', '.delete-button', function () {
         const button = $(this);
         const mediaType = button.data('type');
 
         if (mediaType === 'image') {
             const imageId = button.data('image-id');
             if (imageId) {
-                // 서버에 요청을 보내지 않고 ID만 배열에 추가
                 deletedImageIds.push(imageId);
-                // UI에서만 해당 이미지 요소를 숨김
-                button.closest('.media-item').hide();
+                button.closest('.image-preview-wrapper').remove();
                 console.log(`이미지 ID ${imageId} 삭제 예정 (배열에 추가됨)`);
             }
         } else if (mediaType === 'music') {
-            button.closest('.music-item').remove();
-            musicUrlInput.val('');
+            button.closest('.music-preview-wrapper').remove();
+            musicIsDeleted = true;
             console.log('음악 삭제');
+        }
+
+        updateSubmitButtonState();
+
+        if (imagePreviewContainer.find('.image-preview-wrapper').length === 0) {
+            imagePreviewContainer.removeClass('has-image');
         }
     });
 
-    // 폼 제출 (수정 완료) 이벤트
+    updateSubmitButtonState();
+
     forumForm.on('submit', async function (e) {
         e.preventDefault();
 
         const updatedContents = contentTextarea.val().trim();
-        const updatedMusicUrl = musicUrlInput.val() || null;
+        const updatedMusicUrl = $('#music-url-input').val() || null;
 
         const requestBody = {
             content: updatedContents,
             musicApiUrl: updatedMusicUrl,
-            deletedImageIds: deletedImageIds // ★★★ 변경: 삭제할 ID 목록을 직접 전송 ★★★
+            deletedImageIds: deletedImageIds
         };
 
         try {
@@ -60,14 +111,14 @@ export function initForumEdit() {
 
             const result = await response.json();
             if (result.status === '000') {
-                alert('게시글이 성공적으로 수정되었습니다.');
-                window.location.href = result.data;
+                // 수정 성공 시, 쿼리 파라미터를 추가하여 메인 페이지로 이동
+                window.location.href = `/forumMain?message=edit-success`;
             } else {
-                alert('게시글 수정에 실패했습니다: ' + result.message);
+                showToast('게시글 수정에 실패했습니다: ' + result.message);
             }
         } catch (error) {
             console.error('게시글 수정 오류:', error);
-            alert('게시글 수정 중 오류가 발생했습니다.');
+            showToast('게시글 수정 중 오류가 발생했습니다.');
         }
     });
 }

@@ -3,43 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <title>forum-edit</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Agbalumo&family=Noto+Sans+KR:wght@400;700&display=swap"
+          rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link href="/pwa/manifest.json" rel="manifest">
+    <link rel="manifest" th:href="@{/pwa/manifest.json}">
     <script defer th:src="@{/js/bundle.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/forum-edit.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body id="page-forum-edit">
-<header class="top-bar">
-    <button id="back-button">◀</button>
-    <div class="header-title">게시글 수정</div>
-    <button form="edit-forum-form" id="save-button" type="submit">완료</button>
-</header>
-<div class="main-container">
+<div id="app-container">
     <form id="edit-forum-form" th:object="${forum}">
         <input id="forum-id" th:value="*{id}" type="hidden">
-        <div class="form-group">
-            <textarea id="forum-content" placeholder="내용을 입력하세요..." required th:text="*{contentsText}"></textarea>
-        </div>
-        <div class="media-container">
-            <div class="media-list" id="image-container">
-                <div class="media-item" th:each="image : *{images}">
-                    <img alt="게시물 사진" th:src="${image.imgUrl}"/>
-                    <button class="delete-media-button" data-type="image" th:data-image-id="${image.id}" type="button">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
+        <header class="header">
+            <button class="icon-button" id="back-btn" type="button">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="header-title">Forum</h1>
+        </header>
+        <main class="writing-area">
+            <label for="content">
+                <textarea id="content" name="content" th:text="*{contentsText}"></textarea>
+            </label>
+        </main>
+        <div class="image-preview-container" id="image-preview-container">
+            <div class="image-preview-wrapper" th:each="image : *{images}">
+                <img alt="게시물 사진" class="img-preview" th:src="${image.imgUrl}"/>
+                <button class="delete-button" data-type="image" th:data-image-id="${image.id}" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="media-list" id="music-container" th:if="*{musicApiUrl}">
-                <div class="media-item music-item">
-                    <p>현재 음악</p>
-                    <input id="music-url-input" th:value="*{musicApiUrl}" type="hidden"/>
-                    <button class="delete-media-button" data-type="music" type="button">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
+            <div class="music-preview-wrapper" th:if="!${#strings.isEmpty(musicApiUrl)}">
+                <p>현재 음악: [[*{musicApiUrl}]]</p>
+                <input id="music-url-input" th:value="*{musicApiUrl}" type="hidden"/>
+                <button class="delete-button" data-type="music" type="button">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
         </div>
+        <!-- ★★★ 수정 완료 버튼을 form 하단으로 이동 ★★★ -->
+        <button class="submit-button" disabled id="submit-btn" type="submit">
+            완료
+        </button>
     </form>
 </div>
 
+<div class="toast-container" id="toast">
+    <span class="toast-message"></span>
+</div>
 </body>
 </html>

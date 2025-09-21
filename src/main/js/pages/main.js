@@ -3,6 +3,19 @@ export function initMain() {
     const urlParams = new URLSearchParams(window.location.search);
     const areaKeyFromUrl = urlParams.get('areaKey');
 
+    // URL에서 메시지 파라미터 확인 및 알림 띄우기
+    const messageParam = urlParams.get('message');
+    if (messageParam === 'edit-success') {
+        showToast('게시글이 성공적으로 수정되었습니다.');
+        // 알림을 띄운 후, URL에서 파라미터 제거
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        history.replaceState({}, document.title, newUrl);
+    } else if (messageParam === 'write-success') {
+        showToast('게시글이 성공적으로 작성되었습니다!');
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        history.replaceState({}, document.title, newUrl);
+    }
+
     if (areaKeyFromUrl) {
         finalAreaKey = areaKeyFromUrl;
     } else {
@@ -20,46 +33,32 @@ export function initMain() {
         locationTextElement.text("지역 설정 중..");
     }
 
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        const messageEl = toast.querySelector('.toast-message');
+        messageEl.textContent = message;
+        toast.classList.add("show");
+
+        // 초 후에 사라지게
+        setTimeout(() => {
+            toast.classList.remove("show");
+        }, 1500);
+    }
+
+    // 댓글 모달을 여는 로직
     $('#post-list-container').on('click', '.comment-trigger', async function (e) {
         e.preventDefault();
         const postCard = $(this).closest('.post-card');
-        const commentSection = postCard.find('.comment-section');
-        commentSection.toggle(200);
-    });
-
-    $('#post-list-container').on('click', '.comment-delete-button', async function () {
-        const button = $(this);
-        const commentId = button.data('comment-id');
-        const postCard = button.closest('.post-card');
         const postId = postCard.data('post-id');
-        if (confirm("댓글을 삭제하시겠습니까?")) {
-            try {
-                const response = await fetch(`/api/forum/${postId}/comments/${commentId}`, {
-                    method: 'DELETE'
-                });
-                if (response.status === 204) {
-                    button.closest('.comment-item').remove();
-                    updateCommentCount(postCard);
-                    alert('댓글이 삭제되었습니다.');
-                } else if (response.status === 401) {
-                    alert('로그인이 필요합니다.');
-                    window.location.href = '/login';
-                } else if (response.status === 403) {
-                    alert('댓글 삭제 권한이 없습니다.');
-                } else {
-                    throw new Error('댓글 삭제에 실패했습니다.');
-                }
-            } catch (error) {
-                alert('삭제 중 오류가 발생했습니다.');
-            }
-        }
+        openCommentModal(postId, postCard);
     });
 
-    $('#post-list-container').on('submit', '.comment-form', async function (e) {
+    // 모달 내 댓글 입력 폼 제출 핸들러
+    $('body').on('submit', '#comment-modal .comment-form', async function (e) {
         e.preventDefault();
         const form = $(this);
-        const postCard = form.closest('.post-card');
-        const postId = postCard.data('post-id');
+        const modal = form.closest('#comment-modal');
+        const postId = modal.data('post-id');
         const input = form.find('.comment-input');
         const content = input.val().trim();
         if (!content) return;
@@ -71,15 +70,24 @@ export function initMain() {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({content})
             });
+            /** HTTP 상태 코드 200번대만 정상 처리하는 조건 */
             if (!response.ok) {
+                if (response.status === 401) {
+                    showToast('로그인이 필요합니다.');
+                    window.location.href = '/login';
+                    return;
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const newComment = await response.json();
-            addCommentToDOM(newComment, postCard);
+
+            const newComment = (await response.json()) || {};
+            addCommentToModalDOM(newComment, modal);
             input.val('');
-            updateCommentCount(postCard);
+            /* 댓글 작성 후 모달 내의 댓글 개수를 업데이트하는 함수 호출 */
+            updateCommentCountInModal(modal);
+            showToast('댓글이 작성되었습니다.');
         } catch (error) {
-            alert('댓글 작성에 실패했습니다.');
+            showToast('댓글 작성에 실패했습니다.');
         } finally {
             submitButton.prop('disabled', false);
         }
@@ -94,7 +102,7 @@ export function initMain() {
             });
             if (!response.ok) {
                 if (response.status === 401) {
-                    alert('로그인이 필요합니다.');
+                    showToast('로그인이 필요합니다.');
                     window.location.href = '/login';
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -103,14 +111,14 @@ export function initMain() {
             if (result.status === '000') {
                 updateLikeStatus(likeButton, result.data);
             } else {
-                alert('좋아요 기능에 문제가 발생했습니다.');
+                showToast('좋아요 기능에 문제가 발생했습니다.');
             }
         } catch (error) {
-            alert('좋아요 요청 중 오류가 발생했습니다.');
+            showToast('좋아요 요청 중 오류가 발생했습니다.');
         }
     });
 
-    // 변경: 모달창을 '...' 버튼 바로 아래에 생성하는 로직으로 변경
+    // 모달창을 '...' 버튼 바로 아래에 생성하는 로직으로 변경
     $('#post-list-container').on('click', '.post-options-button', function (event) {
         event.stopPropagation();
         const button = $(this);
@@ -130,35 +138,57 @@ export function initMain() {
                 }
             });
         }, 0);
-        modal.on('click', '.delete-button', function () {
-            modal.remove();
-            $('#confirm-delete-modal').data('current-post-id', postId).show();
-        });
-        modal.on('click', '.edit-button', function () {
-            modal.remove();
-            window.location.href = `/forum/${postId}/edit`;
-        });
-    });
 
-    $('#confirm-delete-yes').on('click', async function () {
-        const postId = $('#confirm-delete-modal').data('current-post-id');
-        try {
+        // 게시물 삭제 버튼 클릭 핸들러 (모달 없이 즉시 삭제)
+        modal.on('click', '.delete-button', async function () {
+            modal.remove(); // 옵션 모달만 제거
             const response = await fetch(`/forum/${postId}`, {
                 method: 'DELETE'
             });
             if (!response.ok) {
                 throw new Error('게시글 삭제에 실패했습니다.');
             }
-            alert('게시글이 성공적으로 삭제되었습니다.');
+            showToast('게시글이 성공적으로 삭제되었습니다.');
             $(`.post-card[data-post-id="${postId}"]`).remove();
-            $('#confirm-delete-modal').hide();
+        });
+
+        modal.on('click', '.edit-button', function () {
+            modal.remove();
+            window.location.href = `/forum/${postId}/edit`;
+        });
+    });
+
+    // 댓글 삭제 버튼 클릭 시 바로 삭제
+    $('body').on('click', '.comment-delete-button', async function () {
+        const button = $(this);
+        const commentId = button.data('comment-id');
+        const modal = button.closest('#comment-modal');
+        const postId = modal.data('post-id');
+
+        try {
+            const response = await fetch(`/api/forum/${postId}/comments/${commentId}`, {
+                method: 'DELETE'
+            });
+            if (response.status === 204) {
+                $(`.comment-item[data-comment-id="${commentId}"]`).remove();
+                updateCommentCountInModal(modal);
+                showToast('댓글이 삭제되었습니다.');
+            } else if (response.status === 401) {
+                showToast('로그인이 필요합니다.');
+                window.location.href = '/login';
+            } else if (response.status === 403) {
+                showToast('댓글 삭제 권한이 없습니다.');
+            } else {
+                throw new Error('댓글 삭제에 실패했습니다.');
+            }
         } catch (error) {
-            alert('삭제 중 오류가 발생했습니다.');
+            showToast('삭제 중 오류가 발생했습니다.');
         }
     });
 
-    $('.modal .close-button, #confirm-delete-no').on('click', function () {
-        $(this).closest('.modal').hide();
+    // 닫기 버튼 공통 핸들러
+    $('body').on('click', '.modal .close-button, .modal .custom-confirm-no', function () {
+        $(this).closest('.modal').fadeOut(300);
     });
 
     function createEmptyPostHtml() {
@@ -172,6 +202,7 @@ export function initMain() {
         `;
     }
 
+    // 게시글 데이터를 post-card에 저장
     function loadPosts(key) {
         $.ajax({
             url: `/forum/area/${key}`,
@@ -181,14 +212,14 @@ export function initMain() {
                 const container = $('#post-list-container');
                 container.empty();
                 if (result.status === '000' && result.data && result.data.length > 0) {
+                    result.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                     result.data.forEach(post => {
                         const postHtml = createPostHtml(post);
-                        container.append(postHtml);
-                        const newPostCard = container.find(`.post-card[data-post-id="${post.id}"]`);
-                        initCarousel(newPostCard);
+                        const newPostCard = $(postHtml);
+                        newPostCard.data('post-data', post); // 게시글 데이터 저장
 
-                        // 게시글 로드 후 댓글도 함께 불러옴
-                        loadComments(post.id, newPostCard);
+                        container.append(newPostCard);
+                        initCarousel(newPostCard);
                     });
                 } else {
                     container.html(createEmptyPostHtml());
@@ -200,24 +231,120 @@ export function initMain() {
         });
     }
 
-    // 댓글 목록을 불러와서 표시하는 함수
-    async function loadComments(postId, postCard) {
+    // 댓글 모달을 여는 함수
+    async function openCommentModal(postId, postCard) {
+        // 기존 모달이 있다면 제거
+        $('#comment-modal').remove();
+
+        const postData = postCard.data('post-data');
+
+        const modalHtml = `
+            <div id="comment-modal" class="comment-modal" data-post-id="${postId}">
+                <div class="comment-modal-content">
+                    <div class="comment-modal-top-bar">
+                        <div class="modal-header-left">
+                            <img alt="${postData.writerNickname}" src="${postData.writerProfilePhotoUrl}" class="profile-img">
+                            <div class="post-author-info">
+                                <div class="name">${postData.writerNickname}</div>
+                                <div class="time">${calculateTimeAgo(postData.createdAt)}</div>
+                            </div>
+                        </div>
+                         <button class="comment-modal-close">×</button>
+                    </div>
+                    <div class="comment-modal-body">
+                        <ul class="comment-modal-list"></ul>
+                    </div>
+                    <div class="comment-modal-footer">
+                        <div class="comment-form-inner">
+                            <img src="${postData.writerProfilePhotoUrl}" alt="내 프로필" class="profile-img">
+                            <form class="comment-form">
+                                <input class="comment-input" placeholder="댓글을 작성하세요." required type="text">
+                                <button class="comment-submit" type="submit">게시</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('body').append(modalHtml);
+
+        const modal = $('#comment-modal');
+        modal.data('post-card', postCard);
+
+        setTimeout(() => {
+            modal.addClass('show');
+        }, 10);
+
+        modal.on('click', '.comment-modal-close', function () {
+            closeCommentModal();
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.comment-modal-content, .comment-trigger').length) {
+                closeCommentModal();
+            }
+        });
+
+        await loadCommentsForModal(postId, modal);
+    }
+
+    // 모달용 댓글을 DOM에 추가하는 함수
+    function addCommentToModalDOM(comment, modal) {
+        const commentList = modal.find('.comment-modal-list');
+
+        const isMyComment = comment.isMyComment; // 백엔드 응답에 이 속성이 있다고 가정
+        const deleteButtonHtml = isMyComment ? `<button class="comment-delete-button" data-comment-id="${comment.id}">×</button>` : '';
+
+        const itemHtml = `
+            <li class="comment-item" data-comment-id="${comment.id}">
+                <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}" class="profile-img">
+                <div class="comment-detail-info">
+                    <div class="comment-header">
+                        <span class="author">${comment.authorNickname}</span>
+                        <span class="time">${calculateTimeAgo(comment.createdAt)}</span>
+                        ${deleteButtonHtml}
+                    </div>
+                    <p class="comment-content-text">${escapeHTML(comment.content)}</p>
+                </div>
+            </li>
+        `;
+        commentList.append(itemHtml);
+    }
+
+    // 댓글 모달을 닫는 함수
+    function closeCommentModal() {
+        $('#comment-modal').remove();
+        $(document).off('click', closeCommentModal); // 이벤트 핸들러 제거
+    }
+
+    /// 모달용 댓글 목록을 불러와서 표시하는 함수
+    async function loadCommentsForModal(postId, modal) {
         try {
             const response = await fetch(`/api/forum/${postId}/comments`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const comments = await response.json();
-            const commentList = postCard.find('.comment-list');
+            const commentList = modal.find('.comment-modal-list');
             commentList.empty(); // 기존 댓글 비우기
 
             // 댓글 데이터를 순회하며 DOM에 추가
             if (comments && comments.length > 0) {
-                comments.forEach(comment => addCommentToDOM(comment, postCard));
+                comments.forEach(comment => addCommentToModalDOM(comment, modal));
             }
         } catch (error) {
             console.error('Failed to load comments:', error);
-            alert('댓글을 불러오는 데 실패했습니다.');
+            showToast('댓글을 불러오는 데 실패했습니다.');
+        }
+    }
+
+    // 모달 내 댓글 수 업데이트 함수를 새로 만든다
+    function updateCommentCountInModal(modal) {
+        const commentCount = modal.find('.comment-modal-list').children().length;
+        const postCard = modal.data('post-card');
+        if (postCard) {
+            const commentCountSpan = postCard.find('.comment-count');
+            commentCountSpan.text(commentCount);
         }
     }
 
@@ -258,7 +385,7 @@ export function initMain() {
         updateCarousel();
     }
 
-    // 변경: 하트 아이콘을 유니코드 문자로 직접 사용하도록 수정
+    // 하트 아이콘을 유니코드 문자로 직접 사용
     function createPostHtml(post) {
         const imagesHtml = post.imageUrls && post.imageUrls.length > 0 ? `
             <div class="post-image-carousel">
@@ -268,8 +395,8 @@ export function initMain() {
                 <div class="carousel-indicators">
                     ${post.imageUrls.map((_, index) => `<span class="indicator ${index === 0 ? 'active' : ''}"></span>`).join('')}
                 </div>
-                ${post.imageUrls.length > 1 ? `<button class="carousel-prev-btn">&lt;</button>
-                <button class="carousel-next-btn">&gt;</button>` : ''}
+                ${post.imageUrls.length > 1 ? `<button class="carousel-prev-btn prev-icon"></button>
+                <button class="carousel-next-btn next-icon"></button>` : ''}
             </div>
         ` : '';
         const timeAgoText = calculateTimeAgo(post.createdAt);
@@ -311,18 +438,11 @@ export function initMain() {
                 <div class="liker-photos">
                     ${recentLikerPhotosHtml}
                 </div>
-                <div class="comment-section" style="display:none;">
-                    <ul class="comment-list"></ul>
-                    <form class="comment-form">
-                        <input class="comment-input" placeholder="댓글을 입력하세요..." required type="text">
-                        <button class="comment-submit" type="submit">게시</button>
-                    </form>
-                </div>
             </div>
         `;
     }
 
-    // 변경: 하트 색상을 유니코드로 변경하도록 수정
+    // 하트 색상을 유니코드로 변경
     function updateLikeStatus(likeButton, data) {
         const likeIcon = likeButton.find('.like-icon');
         const likeCount = likeButton.find('.like-count');
@@ -336,48 +456,6 @@ export function initMain() {
         if (data.recentLikerPhotos && data.recentLikerPhotos.length > 0) {
             const photosHtml = data.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('');
             likerPhotosContainer.html(photosHtml);
-        }
-    }
-
-    function addCommentToDOM(comment, postCard, prepend = true) {
-        const commentList = postCard.find('.comment-list');
-
-        // comment 객체의 'author' 필드를 사용하여 삭제 버튼 표시 여부 결정
-        const deleteButtonHtml = comment.author ?
-            `<button class="comment-delete-button" data-comment-id="${comment.id}">X</button>` : '';
-
-        const itemHtml = `
-            <img src="${comment.authorProfileImageUrl}" alt="${comment.authorNickname}" class="profile-img">
-            <div class="comment-content-wrapper">
-                <div class="comment-main">
-                    <div class="comment-bubble">
-                        <span class="author">${comment.authorNickname}</span>
-                        <span class="content">${escapeHTML(comment.content)}</span>
-                    </div>
-                    ${deleteButtonHtml}
-                </div>
-            </div>
-        `;
-
-        const item = $('<li>').addClass('comment-item').html(itemHtml);
-        if (prepend) {
-            commentList.prepend(item);
-        } else {
-            commentList.append(item);
-        }
-    }
-
-    function updateCommentCount(postCard) {
-        const commentList = postCard.find('.comment-list');
-        const count = commentList.children().length;
-        const trigger = postCard.find('.comment-trigger');
-        const commentCountSpan = postCard.find('.comment-count');
-        if (count === 0) {
-            trigger.text('댓글쓰기');
-            trigger.addClass('no-comments');
-        } else {
-            trigger.removeClass('no-comments');
-            commentCountSpan.text(`${count}`);
         }
     }
 

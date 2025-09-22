@@ -218,3 +218,87 @@
     font-size: 0.9em;
     line-height: 1.4;
 }
+
+/* 이미지 편집기 팝업 관련 CSS */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-overlay.show {
+    display: flex;
+}
+
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    width: 360px;
+    height: 780px;
+    background-color: #000;
+    color: #fff;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: flex-start;
+    padding-bottom: 15px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.editor-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* cropper.js를 위한 이미지 컨테이너 CSS */
+.image-cropper-container {
+    width: 100%;
+    padding-bottom: 133.33%;
+    position: relative;
+    overflow: hidden;
+    background-color: #111;
+}
+
+/* cropper.js가 사용하는 img 태그는 건드리지 않음 */
+.image-cropper-container img {
+    display: block;
+    max-width: 100%;
+}
+
+.popup-footer {
+    padding-top: 15px;
+    text-align: center;
+}
+
+.editor-btn {
+    background-color: #fff;
+    color: #000;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 30px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+}

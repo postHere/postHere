@@ -179,48 +179,68 @@ export function setupTextAndDrawControls() {
     return { interactionManager, imageCtx, rect };
 }
 
+// -------------------
+let backgroundImage = null;
+
+// ---
+export function processLoadedImage(image, rect) {
+    const maxWidth = rect.width;
+    const maxHeight = rect.height;
+    let { width, height } = image;
+    if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width *= ratio;
+        height *= ratio;
+    }
+    return {
+        type: 'image',
+        image: image,
+        originalWidth: width,
+        originalHeight: height,
+        translateX: rect.width / 2,
+        translateY: rect.height / 2,
+        scale: 1,
+        rotation: 0
+    };
+}
+
+// ---
+export function drawImageObject(imageCtx, rect) {
+    if (!backgroundImage) return;
+    imageCtx.clearRect(0, 0, rect.width, rect.height);
+    imageCtx.save();
+    imageCtx.translate(backgroundImage.translateX, backgroundImage.translateY);
+    imageCtx.rotate(backgroundImage.rotation);
+    imageCtx.scale(backgroundImage.scale, backgroundImage.scale);
+    imageCtx.drawImage(backgroundImage.image, -backgroundImage.originalWidth / 2, -backgroundImage.originalHeight / 2, backgroundImage.originalWidth, backgroundImage.originalHeight);
+    imageCtx.restore();
+}
+
+// ---
+export function setAndDrawBackgroundImage(image, imageCtx, rect) {
+    backgroundImage = processLoadedImage(image, rect);
+    drawImageObject(imageCtx, rect);
+}
+
 /**
  * initFindWrite로 생성된 캔버스에 이미지 추가 및 제어 기능을 설정합니다.
  * @param {{interactionManager: CanvasInteractionManager, imageCtx: CanvasRenderingContext2D, rect: DOMRect}} deps
  * - initFindWrite에서 반환된 의존성 객체.
  */
 export function setupImageControls({ interactionManager, imageCtx, rect }) {
-    let backgroundImage = null;
+
     const addImageBtn = document.getElementById("add-image-btn");
     const imageLoader = document.getElementById("image-loader");
 
-    function drawImageObject() {
-        if (!backgroundImage) return;
-        imageCtx.clearRect(0, 0, rect.width, rect.height);
-        imageCtx.save();
-        imageCtx.translate(backgroundImage.translateX, backgroundImage.translateY);
-        imageCtx.rotate(backgroundImage.rotation);
-        imageCtx.scale(backgroundImage.scale, backgroundImage.scale);
-        imageCtx.drawImage(backgroundImage.image, -backgroundImage.originalWidth / 2, -backgroundImage.originalHeight / 2, backgroundImage.originalWidth, backgroundImage.originalHeight);
-        imageCtx.restore();
-    }
 
-    function loadImage(event) {
+    function loadImageFromLocal(event) {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             const image = new Image();
             image.onload = () => {
-                const maxWidth = rect.width;
-                const maxHeight = rect.height;
-                let { width, height } = image;
-                if (width > maxWidth || height > maxHeight) {
-                    const ratio = Math.min(maxWidth / width, maxHeight / height);
-                    width *= ratio;
-                    height *= ratio;
-                }
-                backgroundImage = {
-                    type: 'image', image: image, originalWidth: width, originalHeight: height,
-                    translateX: rect.width / 2, translateY: rect.height / 2,
-                    scale: 1, rotation: 0
-                };
-                drawImageObject();
+                setAndDrawBackgroundImage(image, imageCtx, rect);
             };
             image.src = e.target.result;
         };
@@ -255,7 +275,7 @@ export function setupImageControls({ interactionManager, imageCtx, rect }) {
     interactionManager.config.onObjectMove = () => {
         const selectedObject = interactionManager.selectedObject;
         if (selectedObject && selectedObject.type === 'image') {
-            drawImageObject();
+            drawImageObject(imageCtx, rect);
         } else {
             // 이미지가 아니면 기존 이동 로직(텍스트)을 실행합니다.
             originalOnObjectMove();
@@ -263,7 +283,7 @@ export function setupImageControls({ interactionManager, imageCtx, rect }) {
     };
 
     addImageBtn.addEventListener("click", () => imageLoader.click());
-    imageLoader.addEventListener("change", loadImage);
+    imageLoader.addEventListener("change", loadImageFromLocal);
 }
 
 export function initFindWrite() {

@@ -27,6 +27,7 @@ import {initParkWrite} from './pages/park-write.js';
 import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
 import {initForumEdit} from './pages/forum-edit'
+import {initFindOverWrite} from "./pages/find-overwrite";
 
 // --- 3. 초기 경로 설정 ---
 // 앱이 처음 로드되었을 때(경로가 '/') 시작 페이지로 이동시킵니다.
@@ -89,6 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
         case 'page-find-write':
             initFindWrite();
+            break;
+        case 'page-find-overwrite':
+            initFindOverWrite();
             break;
         case 'page-on-map' :
             initFindOnMap();

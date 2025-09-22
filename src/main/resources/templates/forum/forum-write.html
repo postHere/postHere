@@ -13,6 +13,8 @@
     <link rel="stylesheet" th:href="@{/css/forum-write.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 </head>
 <body id="page-forum-write">
 <div id="app-container">
@@ -51,6 +53,22 @@
 
 <div class="toast-container" id="toast">
     <span class="toast-message"></span>
+</div>
+
+<div class="popup-overlay" id="image-editor-overlay">
+    <div class="popup-content">
+        <div class="popup-header">
+            <button class="close-btn" id="editor-close-btn">&times;</button>
+        </div>
+        <div class="editor-main">
+            <div class="image-cropper-container" id="image-cropper-container">
+                <img alt="Image to crop" id="image-to-crop">
+            </div>
+        </div>
+        <div class="popup-footer">
+            <button class="editor-btn" id="editor-done-btn">다음</button>
+        </div>
+    </div>
 </div>
 
 </body>

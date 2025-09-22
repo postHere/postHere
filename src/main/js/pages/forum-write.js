@@ -6,6 +6,20 @@ export function initForumWrite() {
     const imagePreviewContainer = document.getElementById('image-preview-container');
     const contentInput = document.getElementById('content');
 
+    // 이미지 편집기 관련 DOM 요소
+    const imageEditorOverlay = document.getElementById('image-editor-overlay');
+    const editorCloseBtn = document.getElementById('editor-close-btn');
+    const editorDoneBtn = document.getElementById('editor-done-btn');
+    const imageToCrop = document.getElementById('image-to-crop');
+    const imageCropperContainer = document.getElementById('image-cropper-container');
+
+    // 편집된 이미지 파일을 저장할 변수
+    let editedImageFile = null;
+    let originalImageFile = null;
+
+    // Cropper.js 인스턴스 저장 변수
+    let cropperInstance;
+
     function showToast(message, callback) {
         const toast = document.getElementById("toast");
         const messageEl = toast.querySelector('.toast-message');
@@ -15,7 +29,7 @@ export function initForumWrite() {
         setTimeout(() => {
             toast.classList.remove("show");
             if (callback) {
-                callback(); // 콜백 함수 실행
+                callback();
             }
         }, 1500);
     }
@@ -31,58 +45,101 @@ export function initForumWrite() {
         imageInput.click();
     });
 
-    // 파일 input의 내용이 변경(파일이 선택)되면, 미리보기만 생성합니다.
-    imageInput.addEventListener('change', () => {
-        imagePreviewContainer.innerHTML = '';
-        selectedImageFiles = [];
+    // 파일 선택 시 Cropper.js 인스턴스 생성
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            originalImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imageToCrop.src = e.target.result;
+                imageEditorOverlay.classList.add('show');
 
-        const files = imageInput.files;
-        if (files.length > 0) {
-            selectedImageFiles = Array.from(files);
+                // 기존의 cropper 인스턴스가 있으면 제거
+                if (cropperInstance) {
+                    cropperInstance.destroy();
+                }
 
-            // 이미지 아이콘 색상 변경
-            addImageButton.classList.add('active');
-
-            // 이미지가 삽입되면 배경 표시
-            imagePreviewContainer.classList.add('has-image');
-
-            selectedImageFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    // 미리보기 컨테이너와 삭제 버튼을 함께 생성
-                    const previewWrapper = document.createElement('div');
-                    previewWrapper.classList.add('image-preview-wrapper');
-
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.classList.add('img-preview');
-
-                    const deleteButton = document.createElement('div');
-                    deleteButton.classList.add('delete-button');
-                    deleteButton.innerHTML = 'X';
-                    // 삭제 버튼 클릭 시 이벤트 리스너 추가
-                    deleteButton.addEventListener('click', () => {
-                        selectedImageFiles.splice(index, 1);
-                        previewWrapper.remove();
-                        if (selectedImageFiles.length === 0) {
-                            addImageButton.classList.remove('active');
-                            imagePreviewContainer.classList.remove('has-image');
-                        }
-                    });
-
-                    previewWrapper.appendChild(img);
-                    previewWrapper.appendChild(deleteButton);
-                    imagePreviewContainer.appendChild(previewWrapper);
-                };
-                reader.readAsDataURL(file);
-            });
-        } else {
-            // 파일 선택이 취소되면 아이콘 색상 원래대로
-            addImageButton.classList.remove('active');
-            // 이미지가 없으면 배경을 숨기도록 클래스 제거
-            imagePreviewContainer.classList.remove('has-image');
+                // Cropper.js 인스턴스 생성
+                cropperInstance = new Cropper(imageToCrop, {
+                    // 3:4 비율로 고정 (세로:가로)
+                    aspectRatio: 3 / 4,
+                    viewMode: 1, // 크롭 박스가 컨테이너를 벗어나지 않도록 설정
+                    dragMode: 'move', // 마우스로 이미지를 이동시킬 수 있도록 설정
+                    autoCropArea: 1, // 전체 이미지를 초기 크롭 영역으로 설정
+                    ready() {
+                        // 이미지 로드 후 축소/이동이 가능하도록 설정
+                        this.cropper.zoomTo(1);
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
         }
     });
+
+    // '다음' 버튼 클릭 시 크롭된 이미지 가져오기
+    editorDoneBtn.addEventListener('click', () => {
+        if (!cropperInstance) return;
+
+        // 크롭된 이미지를 Blob 형태로 가져오기
+        cropperInstance.getCroppedCanvas().toBlob((blob) => {
+            editedImageFile = new File([blob], `cropped_image_${Date.now()}.png`, {type: 'image/png'});
+
+            imagePreviewContainer.innerHTML = '';
+            selectedImageFiles = [editedImageFile];
+            displayImagePreview(editedImageFile);
+
+            imageEditorOverlay.classList.remove('show');
+            imageInput.value = '';
+            cropperInstance.destroy(); // 크롭 인스턴스 제거
+            cropperInstance = null;
+        }, 'image/png', 0.9);
+    });
+
+    // 팝업 닫기 버튼에 크롭 인스턴스 제거 로직
+    editorCloseBtn.addEventListener('click', () => {
+        imageEditorOverlay.classList.remove('show');
+        imageInput.value = '';
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
+        }
+    });
+
+
+    // 미리보기 이미지를 생성하는 함수로 분리
+    function displayImagePreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewWrapper = document.createElement('div');
+            previewWrapper.classList.add('image-preview-wrapper');
+
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.classList.add('img-preview');
+
+            const deleteButton = document.createElement('div');
+            deleteButton.classList.add('delete-button');
+            deleteButton.innerHTML = 'X';
+            deleteButton.addEventListener('click', () => {
+                selectedImageFiles.splice(0, 1);
+                previewWrapper.remove();
+                if (selectedImageFiles.length === 0) {
+                    addImageButton.classList.remove('active');
+                    imagePreviewContainer.classList.remove('has-image');
+                }
+            });
+
+            previewWrapper.appendChild(img);
+            previewWrapper.appendChild(deleteButton);
+            imagePreviewContainer.appendChild(previewWrapper);
+        };
+        reader.readAsDataURL(file);
+
+        // 이미지 아이콘 색상 및 배경 표시
+        addImageButton.classList.add('active');
+        imagePreviewContainer.classList.add('has-image');
+    }
 
     // 텍스트 입력에 따라 버튼 활성화/비활성화
     contentInput.addEventListener('input', () => {

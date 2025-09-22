@@ -35,7 +35,3 @@ export function initFindOverWrite() {
     // imageCtx와 rect를 넘겨줍니다.
     setInitialBackgroundImage(dependencies);
 }
-
-// 페이지의 진입점 역할을 하는 이 함수를 호출해야 합니다.
-// 예: window.onload = initFindOverwrite; 또는 <script> 태그 마지막에서 호출
-initFindOverWrite();

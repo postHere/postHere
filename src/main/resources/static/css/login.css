@@ -1,21 +1,10 @@
-/* 전체 페이지 스타일링 */
-body {
-    background-color: #fff;
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-}
-
 .login-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 400px;
     padding: 20px;
+    box-sizing: border-box;
 }
 
 /* 로고 스타일링 */
@@ -103,7 +92,7 @@ body {
     width: 100%;
     margin-top: 0.5rem;
     gap: 0;
-    margin-right: 2.5rem;
+    margin-right: 4rem;
 }
 
 /* 구분자 스타일링 */

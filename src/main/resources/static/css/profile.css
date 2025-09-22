@@ -358,3 +358,95 @@ a {
     color: var(--secondary-text-color);
     padding-top: 2rem;
 }
+
+/* --- [추가] Fin'd / Forum 캐러셀 스타일 --- */
+
+/* 1. 캐러셀 전체를 감싸는 래퍼 */
+.content-carousel-wrapper {
+    overflow: hidden; /* 현재 보이는 페이지 외에는 모두 숨김 */
+    width: 100%;
+}
+
+/* 2. 스와이프될 캐러셀 컨테이너 */
+.content-carousel {
+    display: flex; /* 페이지들을 가로로 나란히 정렬 */
+    transition: transform 0.3s ease-in-out; /* 부드러운 스와이프 효과 */
+}
+
+/* 3. 캐러셀의 각 '페이지' (게시물 2개를 담는 단위) */
+.content-page {
+    flex-shrink: 0; /* 페이지가 찌그러지지 않도록 설정 */
+    width: 100%; /* 각 페이지는 래퍼 너비의 100%를 차지 */
+    box-sizing: border-box;
+    padding: 0 4px; /* 페이지 좌우에 미세한 여백 */
+
+    /* 2개의 게시물이 나란히 보이도록 flex 설정 */
+    display: flex;
+    gap: 8px; /* 게시물 사이의 간격 */
+}
+
+/* 4. 개별 게시물 아이템 */
+.post-item {
+    width: 50%; /* 각 게시물은 페이지 너비의 50%를 차지 */
+    aspect-ratio: 1 / 1; /* 1:1 비율의 정사각형으로 만듦 */
+    position: relative; /* 상태 아이콘(시계) 위치 기준점 */
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* 5. 게시물 아이템 내부의 이미지 */
+.post-item__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 이미지가 비율을 유지하며 꽉 차도록 설정 */
+    display: block;
+}
+
+/* 6. 게시물 위치 텍스트 */
+.post-item__location {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* 텍스트가 잘 보이도록 그림자 추가 */
+}
+
+/* 7. 만료 임박 아이콘 */
+.post-item__status-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #eee;
+}
+
+.follow-button-container {
+    margin-top: 8px;
+}
+
+.follow-btn {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.follow-btn.follow {
+    background-color: #fde047;
+    color: #422006;
+}
+
+.follow-btn.unfollow {
+    background-color: #e5e7eb;
+    color: #4b5563;
+}

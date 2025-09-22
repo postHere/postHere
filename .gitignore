@@ -48,3 +48,4 @@ node_modules/
 # Webpack build output
 /src/main/resources/static/js/bundle.js
 /src/main/resources/static/js/*.bundle.js
+/android/app/google-services.json

@@ -1,63 +1,39 @@
 <!--템플릿: 알림센터 페이지-->
-
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <!-- CSRF 메타: notification.js에서 /notification/* POST 호출 시 헤더로 첨부 -->
-    <!-- [운영 메모] CSRF 메타는 Spring Security 미사용 환경에선 비어 있을 수 있음
-         - /js/notification.js의 authHeaders()가 메타 존재 시 자동 첨부, 미존재 시 무시
-         - 다중 탭/로그인 만료 상황을 고려해 401 응답시 재로그인 유도 처리 권장 -->
+    <!-- CSRF 메타: notification.js에서 /notification POST 호출 시 헤더로 첨부 -->
     <meta name="_csrf" th:attr="content=${_csrf?.token}">
     <meta name="_csrf_header" th:attr="content=${_csrf?.headerName}">
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>Notification</title>
+
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <link rel="stylesheet" th:href="@{/css/main-nav.css}">
+    <link rel="stylesheet" th:href="@{/css/notification.css}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
-    <!--
-      역할(정확한 명칭)
-      - 본 템플릿은 알림센터 UI의 컨테이너이며, 실제 데이터 로딩/읽음/뱃지 갱신은 /js/notification.js가 담당
-        · 알림 목록 로딩:        POST /notification/list
-        · 선택 알림 읽음 처리:   POST /notification/read (멱등)
-        · 미읽음 카운트 갱신:    POST /notification/unread-count (배지/빨간점)
-        · 알림 행 클릭 이동:     GET  /profile/:userId
-      - 서비스워커와의 연계(클릭 라우팅)
-        · service-worker.js의 'notificationclick'에서 postMessage({type:'NAVIGATE', url})를 보내면
-          페이지 측에서 라우팅을 수행(알림 클릭 → 본 페이지로 진입하는 시나리오 포함)
-
-      [SW 연계 주의]
-      - 동일 URL 재방문 시 중복 이동 방지: 현재 location.pathname과 동등하면 스크롤/포커스만 조정.
-    -->
-
-    <!-- PWA: 앱 메타(아이콘/이름 등). SW 등록은 main-nav.js에서 수행 -->
-    <!-- [PWA 메모] manifest.json의 scope/start_url이 service-worker.js 스코프(/)와 정합해야
-         알림 아이콘/이름/스플래시가 일관되게 동작함. 아이콘 경로는 /icons/* 로 맞춤 권장 -->
+    <!-- PWA -->
     <link rel="manifest" th:href="@{/pwa/manifest.json}">
-
     <!-- 페이지 스크립트: 목록 로딩/읽음 처리/뱃지 갱신 수행 -->
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
 <body id="page-notifications">
-<!-- 페이지 타이틀(정적) -->
-<h2>Notification</h2>
+
+<!-- 상단바: 좌측 뒤로가기 + 가운데 타이틀 -->
+<header class="noti-topbar">
+    <button aria-label="뒤로가기" class="noti-back-btn" id="noti-back" type="button">
+        <i aria-hidden="true" class="fas fa-chevron-left"></i>
+    </button>
+    <h2 class="noti-title">Notification</h2>
+</header>
 
 <!-- 알림 목록 컨테이너: notification.js가 innerHTML로 카드 목록 렌더링 -->
-<!-- [렌더/보안 메모]
-     - /js/notification.js는 서버 응답 텍스트를 innerHTML로 삽입하지 말고
-       textContent 또는 속성 세팅으로 XSS 방지(특히 actor.nickname, text).
-     - 비동기 로딩 상태: skeleton(회색 블록) 또는 '로딩 중…' 플레이스홀더 권장.
-     - 빈 목록: '새 알림이 없습니다' 빈 상태(aria-live=polite와 중복 알림 방지) 표시 권장. -->
 <div aria-live="polite" class="list" id="list"></div>
 
 <!-- 페이지 이동(이전/다음): notification.js가 상태(page/last) 갱신 -->
-<!-- [페이징 UX 메모]
-     - 첫 페이지(page===0)에서는 #prev.disabled 처리 및 aria-disabled="true" 부여.
-     - 마지막 페이지(last===true)에서는 #next.disabled 처리 및 aria-disabled="true".
-     - 현재 페이지 번호는 #page.textContent로만 표시(스크린리더를 위해 '현재 페이지 n' 라벨링 권장).
-     - 키보드 접근성: 좌/우 화살표 또는 PageUp/Down을 버튼 클릭과 동일하게 위임 가능. -->
 <div class="pager">
     <button id="prev">이전</button>
     <span id="page"></span>

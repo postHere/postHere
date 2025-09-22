@@ -17,6 +17,7 @@ public class ForumPostListResponseDto {
     private String location;
     private String contentsText;
     private String writerNickname;
+    private Long writerId;
     private List<String> imageUrls;
     private String musicApiUrl;
     private String writerProfilePhotoUrl;
@@ -44,6 +45,7 @@ public class ForumPostListResponseDto {
         this.location = forumEntity.getLocation().getAddress();
         this.contentsText = forumEntity.getContentsText();
         this.writerNickname = forumEntity.getWriter().getNickname();
+        this.writerId = forumEntity.getWriter().getId();
         this.imageUrls = forumEntity.getImages().stream()
                 .map(ForumImageEntity::getImgUrl)
                 .collect(Collectors.toList());

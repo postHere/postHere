@@ -4,116 +4,140 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
     <title>Profile - PostHere</title>
-    <link href="/pwa/manifest.json" rel="manifest">
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="manifest" th:href="@{/pwa/manifest.json}">
     <script defer th:src="@{/js/bundle.js}"></script>
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/profile.css}">
+    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
 </head>
-<body id="page-profile">
+<body id="page-profile" th:data-profile-nickname="${profileUser.nickname}">
+<div id="app-container">
+    <div class="mobile-container">
+        <main class="main-content">
+            <!-- Section 1: 회원 정보 -->
+            <div class="profile-header-wrapper">
+                <section class="profile-header">
+                    <div class="profile-info">
+                        <label class="profile-info__pic-label" th:for="${isMyProfile} ? 'profile-image-upload' : ''">
+                            <img alt="Profile Picture"
+                                 class="profile-info__pic"
+                                 th:src="${profileUser.profilePhotoUrl}">
+                        </label>
+                        <input accept="image/*" id="profile-image-upload" style="display: none;" th:if="${isMyProfile}"
+                               type="file">
+                        <div class="profile-info__text">
+                            <h2 class="profile-info__name" th:text="|${profileUser.nickname}|"></h2>
 
-<div class="mobile-container">
-    <main class="main-content">
-        <!-- Section 1: 회원 정보 -->
-        <div class="profile-header-wrapper">
-            <section class="profile-header">
-                <div class="profile-info">
-                    <label class="profile-info__pic-label" for="profile-image-upload">
-                        <img alt="Profile Picture"
-                             class="profile-info__pic"
-                             src="https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=256&auto=format&fit=crop">
-                    </label>
-                    <input accept="image/*" id="profile-image-upload" style="display: none;" type="file">
-                    <div class="profile-info__text">
-                        <h2 class="profile-info__name">Watermelon</h2>
-                        <div class="profile-stats">
-                            <a href="/followers"><span>Follower 6</span></a>
-                            <a href="/following"><span>Following 2</span></a>
+                            <div class="follow-button-container" th:if="${!isMyProfile}">
+                                <button class="follow-btn follow"
+                                        th:data-userid="${profileUser.userId}"
+                                        th:if="${!profileUser.isFollowing}">Follow
+                                </button>
+                                <button class="follow-btn unfollow"
+                                        th:data-userid="${profileUser.userId}"
+                                        th:if="${profileUser.isFollowing}">Following
+                                </button>
+                            </div>
+
+                            <div class="profile-stats">
+                                <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followers')}">
+                                    <span th:text="|Follower ${profileUser.followerCount}|"></span>
+                                </a>
+                                <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followings')}">
+                                    <span th:text="|Following ${profileUser.followingCount}|"></span>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <button class="profile-action-btn" id="open-edit-modal-btn">&gt;&gt;</button>
-            </section>
-        </div>
-
-        <!-- Section 2: PARK명록 -->
-        <div class="guestbook-wrapper">
-            <a href="/park-guestbook-detail">
-                <section class="guestbook">
-                    <p class="guestbook__content">
-                        Yoshihiro Togashi created not just an adventure, but a profound exploration of humanity, making
-                        Hunter × Hunter one of the greatest works in manga and anime history.
-                    </p>
+                    <button class="profile-action-btn" id="open-edit-modal-btn">&gt;&gt;</button>
                 </section>
-            </a>
-        </div>
-
-        <!-- Section 3: Fin'd / Forum -->
-        <section class="posts-section">
-            <div class="content-tabs">
-                <button class="content-tabs__button active" id="tab-find">Fin'd <span>&gt;</span></button>
-                <button class="content-tabs__button" id="tab-forum">Forum <span>&gt;</span></button>
             </div>
-            <div class="content-carousel-wrapper" id="carousel-wrapper">
-                <div class="content-carousel" id="carousel"></div>
+
+            <!-- Section 2: PARK명록 -->
+            <div class="guestbook-wrapper">
+                <a th:href="@{/park-write}">
+                    <section class="guestbook">
+                        <p class="guestbook__content">
+                            Yoshihiro Togashi created not just an adventure, but a profound exploration of humanity,
+                            making
+                            Hunter × Hunter one of the greatest works in manga and anime history.
+                        </p>
+                    </section>
+                </a>
             </div>
-        </section>
-    </main>
 
-    <footer class="bottom-nav">
-        <nav><a href="#">🏠</a> <a href="#">✉️</a> <a href="#">✏️</a> <a href="#">🔔</a> <a class="active" href="#">👤</a>
-        </nav>
-    </footer>
-</div>
-
-<!-- Edit Profile Modal -->
-<div class="modal-overlay" id="edit-profile-modal">
-    <div class="modal-content">
-        <h1 class="modal-logo">PostHere</h1>
-        <p class="modal-title">Edit your profile</p>
-        <form id="edit-profile-form">
-            <div class="input-group">
-                <label for="nickname">Nickname</label>
-                <div class="input-group-row">
-                    <input id="nickname" name="nickname" placeholder="Enter new nickname" required type="text">
-                    <button class="modal-button btn-secondary" id="check-nickname-btn" type="button">Check</button>
+            <!-- Section 3: Fin'd / Forum -->
+            <section class="posts-section">
+                <div class="content-tabs">
+                    <button class="content-tabs__button active" id="tab-find" th:if="${isMyProfile}">Fin'd
+                        <span>&gt;</span>
+                    </button>
+                    <button class="content-tabs__button" id="tab-forum"
+                            th:classappend="${!isMyProfile} ? 'active' : ''">
+                        Forum <span>&gt;</span></button>
                 </div>
-                <p class="feedback-message" id="nickname-feedback"></p>
-            </div>
-            <div class="input-group">
-                <label>Password</label>
-                <button class="modal-button btn-secondary" id="open-password-modal-btn" type="button">Change Password
-                </button>
-            </div>
-            <div class="button-group">
-                <button class="modal-button btn-secondary" id="cancel-edit-btn" type="button">Cancel</button>
-                <button class="modal-button btn-primary" id="update-profile-btn" type="submit">Update</button>
-            </div>
-        </form>
+                <div class="content-carousel-wrapper" id="carousel-wrapper">
+                    <div class="content-carousel" id="carousel"></div>
+                </div>
+            </section>
+        </main>
+        <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
     </div>
-</div>
 
-<!-- Change Password Modal -->
-<div class="modal-overlay" id="change-password-modal">
-    <div class="modal-content">
-        <h1 class="modal-logo">PostHere</h1>
-        <p class="modal-title">Change your password</p>
-        <form id="change-password-form">
-            <div class="input-group">
-                <label for="new-password">New Password</label>
-                <input id="new-password" name="new-password" required type="password">
-            </div>
-            <div class="input-group">
-                <label for="confirm-password">Confirm Password</label>
-                <input id="confirm-password" name="confirm-password" required type="password">
-                <p class="feedback-message" id="password-feedback"></p>
-            </div>
-            <div class="button-group">
-                <button class="modal-button btn-secondary" id="cancel-password-btn" type="button">Cancel</button>
-                <button class="modal-button btn-primary" disabled id="update-password-btn" type="submit">Update
-                    Password
-                </button>
-            </div>
-        </form>
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-profile-modal">
+        <div class="modal-content">
+            <h1 class="modal-logo">PostHere</h1>
+            <p class="modal-title">Edit your profile</p>
+            <form id="edit-profile-form">
+                <div class="input-group">
+                    <label for="nickname">Nickname</label>
+                    <div class="input-group-row">
+                        <input id="nickname" name="nickname" placeholder="Enter new nickname" required type="text">
+                        <button class="modal-button btn-secondary" id="check-nickname-btn" type="button">Check</button>
+                    </div>
+                    <p class="feedback-message" id="nickname-feedback"></p>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <button class="modal-button btn-secondary" id="open-password-modal-btn" type="button">Change
+                        Password
+                    </button>
+                </div>
+                <div class="button-group">
+                    <button class="modal-button btn-secondary" id="cancel-edit-btn" type="button">Cancel</button>
+                    <button class="modal-button btn-primary" id="update-profile-btn" type="submit">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" id="change-password-modal">
+        <div class="modal-content">
+            <h1 class="modal-logo">PostHere</h1>
+            <p class="modal-title">Change your password</p>
+            <form id="change-password-form">
+                <div class="input-group">
+                    <label for="new-password">New Password</label>
+                    <input id="new-password" name="new-password" required type="password">
+                </div>
+                <div class="input-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input id="confirm-password" name="confirm-password" required type="password">
+                    <p class="feedback-message" id="password-feedback"></p>
+                </div>
+                <div class="button-group">
+                    <button class="modal-button btn-secondary" id="cancel-password-btn" type="button">Cancel</button>
+                    <button class="modal-button btn-primary" disabled id="update-password-btn" type="submit">Update
+                        Password
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 </body>

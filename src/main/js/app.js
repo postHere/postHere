@@ -29,7 +29,7 @@ import {initFindOnMap} from "./pages/find-on-map";
 import {initForumEdit} from './pages/forum-edit';
 // ✅ [PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
 import {initPush} from './pages/push.js';
-
+import {initFindOverWrite} from "./pages/find-overwrite";
 
 // --- 3. 초기 경로 설정 ---
 // 앱이 처음 로드되었을 때(경로가 '/') 시작 페이지로 이동시킵니다.
@@ -105,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
         case 'page-find-write':
             initFindWrite();
+            break;
+        case 'page-find-overwrite':
+            initFindOverWrite();
             break;
         case 'page-on-map' :
             initFindOnMap();

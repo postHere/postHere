@@ -44,6 +44,9 @@ export class CanvasInteractionManager {
     }
 
     handleStart(event) {
+
+        if (this.config.isInteractionDisabled && this.config.isInteractionDisabled()) return;
+
         // 두 손가락 터치 (핀치 줌/회전)
         if (event.touches && event.touches.length === 2) {
             const touch1 = event.touches[0];

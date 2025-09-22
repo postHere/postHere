@@ -2,21 +2,17 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Fin'd</title>
-    <link rel="stylesheet" th:href="@{/css/find-write.css}">
+    <title>Fin'd Overwrite</title>
+    <link rel="stylesheet" th:href="@{/css/find-overwrite.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
-<body id="page-find-write">
+<body id="page-find-overwrite" data-find-url="${find_url}">
 <div id="canvas-container">
     <canvas id="image-canvas"></canvas>
     <canvas id="paint-canvas"></canvas>
     <canvas id="object-canvas"></canvas>
 </div>
 <div id="toolbar">
-    <div id="container-image">
-        <button id="add-image-btn">사진 추가</button>
-        <input accept="image/*" id="image-loader" style="display: none;" type="file">
-    </div>
     <div id="container-color">
         <div id="red"></div>
         <div id="green"></div>

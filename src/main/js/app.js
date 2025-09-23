@@ -15,18 +15,18 @@ import {App} from '@capacitor/app';
 // --- 2. 페이지별 기능 모듈 Import ---
 // 각 페이지에서 사용할 init 함수들을 불러옵니다.
 import {initMainNav} from './modules/main-nav.js';
-// import {initMain} from './pages/main.js';
+import {initMain} from './pages/main.js';
 import {initLogin} from './pages/login.js';
-// import {initSignup} from './pages/signup.js';
-// import {initFriends} from './pages/friends.js';
-// import {initProfile} from './pages/profile.js';
-// import {initFindWrite} from './pages/find-write.js';
-// import {initForumWrite} from './pages/forum-write.js';
-// import {initForumAreaSearch} from './pages/forum-area-search.js';
-// import {initParkWrite} from './pages/park-write.js';
-// import {initNotification} from './pages/notification.js';
-// import {initFindOnMap} from "./pages/find-on-map";
-// import {initForumEdit} from './pages/forum-edit'
+import {initSignup} from './pages/signup.js';
+import {initFriends} from './pages/friends.js';
+import {initProfile} from './pages/profile.js';
+import {initFindWrite} from './pages/find-write.js';
+import {initForumWrite} from './pages/forum-write.js';
+import {initForumAreaSearch} from './pages/forum-area-search.js';
+import {initParkWrite} from './pages/park-write.js';
+import {initNotification} from './pages/notification.js';
+import {initFindOnMap} from "./pages/find-on-map";
+import {initForumEdit} from './pages/forum-edit'
 import {initBackgroundGeolocation} from './modules/location-tracker';
 
 // --- 3. 초기 경로 설정 ---
@@ -76,40 +76,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     switch (pageId) {
         case 'page-main':
-            //initMain();
+            initMain();
             break;
         case 'page-login':
             initLogin();
             break;
         case 'page-signup':
-            //initSignup();
+            initSignup();
             break;
         case 'page-friends':
-            //initFriends();
+            initFriends();
             break;
         case 'page-profile':
-            //initProfile();
+            initProfile();
             break;
         case 'page-find-write':
-            //initFindWrite();
+            initFindWrite();
             break;
         case 'page-on-map' :
-            //initFindOnMap();
+            initFindOnMap();
             break
         case 'page-forum-write':
-            //initForumWrite();
+            initForumWrite();
             break;
         case 'page-forum-area-search':
-            //initForumAreaSearch();
+            initForumAreaSearch();
             break;
         case 'page-park-write':
-            //initParkWrite();
+            initParkWrite();
             break;
         case 'page-notifications':
-            //initNotification();
+            initNotification();
             break;
         case 'page-forum-edit':
-            //initForumEdit();
+            initForumEdit();
             break;
         default:
             console.log('이 페이지에 해당하는 초기화 스크립트가 없습니다.');

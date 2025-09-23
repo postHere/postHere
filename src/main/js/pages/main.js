@@ -3,6 +3,18 @@ export function initMain() {
     const urlParams = new URLSearchParams(window.location.search);
     const areaKeyFromUrl = urlParams.get('areaKey');
 
+    // 로고 클릭 이벤트 리스너
+    $('.logo a').on('click', function (e) {
+        e.preventDefault(); // 기본 링크 동작을 막음
+        // 현재 위치 키를 다시 불러와서 게시글을 로드
+        if (finalAreaKey) {
+            loadPosts(finalAreaKey);
+        } else {
+            // 위치가 설정되지 않았다면 기본 동작 (전체 새로고침)
+            window.location.reload();
+        }
+    });
+
     // URL에서 메시지 파라미터 확인 및 알림 띄우기
     const messageParam = urlParams.get('message');
     if (messageParam === 'edit-success') {
@@ -192,10 +204,18 @@ export function initMain() {
     });
 
     function createEmptyPostHtml() {
-        const imagePath = '../images/map-icon.png';
+        const mapIconSvg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                <line x1="16" y1="6" x2="16" y2="22"></line>
+                <line x1="8" y1="2" x2="8" y2="18"></line>
+            </svg>
+        `;
         return `
             <div class="empty-forum-container">
-                <img src="${imagePath}" alt="Map icon" class="empty-icon">
+                <div class="empty-icon-wrapper">
+                    ${mapIconSvg}
+                </div>
                 <p class="empty-text">해당 지역에는 작성된 Forum이 없어요.</p>
                 <p class="empty-subtext">다른 이야기를 만나고 싶다면,<br>발걸음을 옮기거나 상단 아이콘을 눌러 함께해요.</p>
             </div>

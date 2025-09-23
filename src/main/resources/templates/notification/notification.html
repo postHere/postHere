@@ -21,25 +21,17 @@
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
 <body id="page-notifications">
+<div id="app-container">
 
-<!-- 상단바: 좌측 뒤로가기 + 가운데 타이틀 -->
-<header class="noti-topbar">
-    <button aria-label="뒤로가기" class="noti-back-btn" id="noti-back" type="button">
-        <i aria-hidden="true" class="fas fa-chevron-left"></i>
-    </button>
-    <h2 class="noti-title">Notification</h2>
-</header>
+    <!-- 상단바: 좌측 뒤로가기 + 가운데 타이틀 -->
+    <header class="noti-topbar">
+        <h2 class="noti-title">알림</h2>
+    </header>
 
-<!-- 알림 목록 컨테이너: notification.js가 innerHTML로 카드 목록 렌더링 -->
-<div aria-live="polite" class="list" id="list"></div>
+    <!-- 알림 목록 컨테이너: notification.js가 innerHTML로 카드 목록 렌더링 -->
+    <div aria-live="polite" class="list" id="list"></div>
 
-<!-- 페이지 이동(이전/다음): notification.js가 상태(page/last) 갱신 -->
-<div class="pager">
-    <button id="prev">이전</button>
-    <span id="page"></span>
-    <button id="next">다음</button>
+    <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
 </div>
-
-<div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
 </body>
 </html>

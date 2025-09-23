@@ -106,7 +106,6 @@ export function initForumWrite() {
         }
     });
 
-
     // 미리보기 이미지를 생성하는 함수로 분리
     function displayImagePreview(file) {
         const reader = new FileReader();
@@ -208,7 +207,6 @@ export function initForumWrite() {
             content: document.getElementById("content").value,
             location: currentAreaKey,
             imageUrls: imageUrls,
-            spotifyTrackId: document.getElementById("spotifyTrackId").value,
             userEmail: "test@gmail.com",
         };
 
@@ -233,15 +231,6 @@ export function initForumWrite() {
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = '공유';
-        }
-    });
-
-    // 음악 추가 버튼 클릭 시 동작
-    document.getElementById('add-music-btn').addEventListener('click', () => {
-        const trackId = prompt("Spotify 트랙 ID를 입력하세요:", "4uPiFjZpAfggB4aW2v2p4M");
-        if (trackId) {
-            document.getElementById('spotifyTrackId').value = trackId;
-            showToast(`음악이 추가되었습니다: ${trackId}`);
         }
     });
 }

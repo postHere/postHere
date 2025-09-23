@@ -9,6 +9,5 @@ import java.util.List;
 @Setter
 public class ForumUpdateRequestDto {
     private String content;
-    private String musicApiUrl;
     private List<Long> deletedImageIds; // 제할 이미지 ID 목록
 }

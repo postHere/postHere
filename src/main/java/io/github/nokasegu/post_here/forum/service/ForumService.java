@@ -47,12 +47,11 @@ public class ForumService {
                 .writer(writer)
                 .location(area)
                 .contentsText(requestDto.getContent())
-                .musicApiUrl(requestDto.getSpotifyTrackId())
                 .createdAt(LocalDateTime.now())
                 .build();
         ForumEntity savedForum = forumRepository.save(forum);
 
-        // 2. ★★★ 변경: 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결합니다. ★★★
+        // 2. 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결
         if (requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty()) {
             for (String imageUrl : requestDto.getImageUrls()) {
                 forumImageService.saveImage(imageUrl, savedForum);
@@ -73,7 +72,6 @@ public class ForumService {
         ForumEntity forum = getForumEntityAndCheckPermission(forumId, userId);
 
         forum.setContentsText(requestDto.getContent());
-        forum.setMusicApiUrl(requestDto.getMusicApiUrl());
         forum.setUpdatedAt(LocalDateTime.now());
 
         // deletedImageIds 목록을 기반으로 삭제 로직을 ForumImageService에 위임

@@ -5,6 +5,8 @@
     --footer-height: 120px; /* JS가 실측으로 덮어씀 */
     --pager-gap: 16px; /* 마지막 카드↔페이저 간격 = 페이저 상단 간격 */
 
+    --pager-height: 40px; /* 페이저의 높이를 변수로 정의 */
+
     /* 빨간 점 위치/크기/간격(프로필과 1글자 정도 떨어지도록) */
     --dot-left: 8px; /* 카드 왼쪽에서 점까지 */
     --dot-size: 8px; /* 점 지름 */
@@ -13,24 +15,32 @@
 
 /* 이 페이지에서 전역 flex 영향 제거 + 가로 스크롤 방지 + 배경 흰색(양옆 띠 제거) */
 #page-notifications {
-    display: block;
+    display: flex;
+    justify-content: center;
+    background-color: #f0f2f5;
+    height: 100%;
+    margin: 0;
+    padding: 0;
     width: 100%;
     min-height: 100%;
     overflow-x: hidden;
-    background: #fff; /* ← 전체 배경 흰색으로 통일 */
+    overflow-y: hidden;
 }
+
 
 /* ===== 상단바 ===== */
 .noti-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    height: 48px;
     display: flex;
+    justify-content: center; /* 가운데 타이틀을 위한 중앙 정렬 */
     align-items: center;
-    justify-content: center; /* 가운데 타이틀 */
+    height: 35px;
     background: #fff;
     border-bottom: 1px solid #e9e9e9;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    padding: 10px 0;
 }
 
 .noti-title {
@@ -64,9 +74,15 @@
     padding: 8px 12px 0; /* ← 하단 패딩 제거: 마지막 카드와 페이저 간격은 pager의 margin-top으로만 제어 */
     box-sizing: border-box;
     background: #fff;
-    /* 좌우 연한 보더 제거(배경과 완전 동일하게) */
     border-left: 0;
     border-right: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100% - 48px - var(--footer-height));
+    overflow-y: auto;
+    flex-grow: 1;
 }
 
 /* 비었을 때 */
@@ -166,31 +182,4 @@ a.noti-card:active {
     color: #555;
     line-height: 1.3;
     word-break: break-word;
-}
-
-/* ===== 페이저 ===== */
-.pager {
-    width: 100%;
-    max-width: 360px;
-    margin: var(--pager-gap) auto calc(var(--footer-height) + var(--pager-gap));
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-}
-
-.pager button {
-    padding: 6px 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #fff;
-    color: #444;
-    font-size: 14px;
-}
-
-.pager button[aria-disabled="true"],
-.pager button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }

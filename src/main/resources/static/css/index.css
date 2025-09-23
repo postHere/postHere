@@ -30,14 +30,6 @@ html, body {
     flex-direction: column;
 }
 
-/* 로고 글꼴만 Agbalumo로 재정의 */
-.logo {
-    font-family: 'Agbalumo', sans-serif;
-    font-weight: normal;
-    font-size: 1.5em;
-    color: #000;
-}
-
 /* 로그인 페이지용 스타일 */
 #page-login #app-container,
 #page-signup #app-container {

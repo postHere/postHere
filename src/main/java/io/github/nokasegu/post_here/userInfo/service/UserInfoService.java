@@ -47,11 +47,13 @@ public class UserInfoService {
 
         // 비밀번호 암호화
         // String encodedPassword = passwordEncoder.encode(password);
+        String defaultProfileImageUrl = s3UploaderService.getDefaultProfileImage();
 
         UserInfoEntity user = UserInfoEntity.builder()
                 .email(email)
                 .loginPw(passwordEncoder.encode(password)) // 암호화된 비밀번호를 저장해야 합니다.
                 .nickname(nickname)
+                .profilePhotoUrl(defaultProfileImageUrl)
                 .build();
 
         userInfoRepository.save(user);
@@ -89,13 +91,15 @@ public class UserInfoService {
         long followerCount = followingService.getFollowerCount(user.getId());
         long followingCount = followingService.getFollowingCount(user.getId());
 
+        String defaultProfileImageUrl = s3UploaderService.getDefaultProfileImage();
+
         return UserInfoDto.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .profilePhotoUrl(user.getProfilePhotoUrl() != null
                         ? user.getProfilePhotoUrl()
-                        : "https://placehold.co/112x112/E2E8F0/4A5568?text=User")
+                        : defaultProfileImageUrl)
                 .followerCount(followerCount)   // 카운트 추가
                 .followingCount(followingCount) // 카운트 추가
                 .build();
@@ -165,6 +169,8 @@ public class UserInfoService {
             }
         }
 
+        String defaultProfileImageUrl = s3UploaderService.getDefaultProfileImage();
+
         // DTO를 빌더 패턴으로 생성하여 반환
         return UserInfoDto.builder()
                 .userId(user.getId())
@@ -172,7 +178,7 @@ public class UserInfoService {
                 .nickname(user.getNickname())
                 .profilePhotoUrl(user.getProfilePhotoUrl() != null
                         ? user.getProfilePhotoUrl()
-                        : "https://placehold.co/112x112/E2E8F0/4A5568?text=User")
+                        : defaultProfileImageUrl)
                 .followerCount(followerCount)
                 .followingCount(followingCount)
                 .isFollowing(isFollowing)

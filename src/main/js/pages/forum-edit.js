@@ -7,8 +7,6 @@ export function initForumEdit() {
 
     const originalContent = contentTextarea.val();
     const originalImageCount = imagePreviewContainer.find('.image-preview-wrapper').length;
-    let musicIsDeleted = false;
-    const hasOriginalMusic = $('#music-url-input').length > 0;
 
     function showToast(message, callback) {
         const toast = document.getElementById("toast");
@@ -33,9 +31,8 @@ export function initForumEdit() {
     const updateSubmitButtonState = () => {
         const contentChanged = contentTextarea.val() !== originalContent;
         const imageCountChanged = imagePreviewContainer.find('.image-preview-wrapper').length !== originalImageCount;
-        const musicChanged = hasOriginalMusic && musicIsDeleted;
 
-        const hasChanges = contentChanged || imageCountChanged || musicChanged;
+        const hasChanges = contentChanged || imageCountChanged;
 
         if (hasChanges) {
             submitButton.prop('disabled', false);
@@ -47,8 +44,7 @@ export function initForumEdit() {
     $('#back-btn').on('click', function () {
         const contentChanged = contentTextarea.val() !== originalContent;
         const imageCountChanged = imagePreviewContainer.find('.image-preview-wrapper').length !== originalImageCount;
-        const musicChanged = hasOriginalMusic && musicIsDeleted;
-        const hasChanges = contentChanged || imageCountChanged || musicChanged;
+        const hasChanges = contentChanged || imageCountChanged;
 
         if (!hasChanges) {
             window.location.href = '/forumMain';
@@ -70,10 +66,6 @@ export function initForumEdit() {
                 button.closest('.image-preview-wrapper').remove();
                 console.log(`이미지 ID ${imageId} 삭제 예정 (배열에 추가됨)`);
             }
-        } else if (mediaType === 'music') {
-            button.closest('.music-preview-wrapper').remove();
-            musicIsDeleted = true;
-            console.log('음악 삭제');
         }
 
         updateSubmitButtonState();
@@ -89,11 +81,9 @@ export function initForumEdit() {
         e.preventDefault();
 
         const updatedContents = contentTextarea.val().trim();
-        const updatedMusicUrl = $('#music-url-input').val() || null;
 
         const requestBody = {
             content: updatedContents,
-            musicApiUrl: updatedMusicUrl,
             deletedImageIds: deletedImageIds
         };
 

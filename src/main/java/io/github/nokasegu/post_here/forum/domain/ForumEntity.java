@@ -41,10 +41,6 @@ public class ForumEntity {
     @Column(name = "contents_text", columnDefinition = "text")
     private String contentsText;
 
-
-    @Column(name = "music_api_url", length = 500)
-    private String musicApiUrl;
-
     @CreatedDate                   // 생성 시 자동 저장
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

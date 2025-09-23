@@ -1,9 +1,5 @@
 .signup-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     width: 100%;
-    padding: 20px;
     background-color: #fff;
     box-sizing: border-box;
 }
@@ -11,31 +7,34 @@
 /* 헤더 스타일링 */
 .header {
     width: 100%;
+    max-width: 300px;
     text-align: center;
-    margin-bottom: 0.1rem;
-    padding: 0 1rem;
+    margin: 0 auto 0.1rem auto;
+    padding: 0;
 }
 
 /* 로고 스타일링 */
 .logo {
-    font-family: 'Agbalumo', sans-serif;
-    font-size: 2.5rem;
-    color: #000;
-    font-weight: normal;
     margin-bottom: 0.5rem;
+}
+
+.logo img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
 }
 
 .subtitle {
     font-size: 1.25rem;
     font-weight: bold;
     color: #333;
-    margin-bottom: 0.25rem;
+    margin: 10px 0 0 0;
 }
 
 .description {
     font-size: 0.9rem;
     color: #666;
-    margin-bottom: 2rem;
+    margin: 5px 0 20px 0;
 }
 
 /* 숨겨진 요소 스타일 */
@@ -46,7 +45,9 @@
 /* 폼 스타일링 */
 #signupForm {
     width: 100%;
-    padding: 0 1rem;
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -66,7 +67,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    gap: 1rem;
+    gap: 16px;
 }
 
 /* 입력 그룹 컨테이너 스타일링 (가는 사각형) */
@@ -74,11 +75,13 @@
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 1.5rem 1rem;
+    padding: 25px 32px 30px 32px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
     position: relative;
+    width: 300px;
+    box-sizing: border-box;
 }
 
 /* label 스타일 */
@@ -86,27 +89,28 @@ label {
     font-weight: bold;
     color: #333;
     display: block;
-    margin-bottom: 0.2rem;
+    margin: 0 0 15px 0;
 }
 
 /* 비밀번호 확인 라벨의 윗 여백 추가 */
 label[for="passwordCheck"] {
-    margin-top: 0.7rem; /* 원하는 만큼의 여백을 rem 단위로 설정 */
+    margin-top: 0.7rem;
 }
 
 /* 입력 필드 스타일링 */
 .form-input {
     flex-grow: 1;
-    padding: 0.75rem 1rem;
+    padding: 12px 16px;
     border: 1px solid #ddd;
     border-radius: 8px;
     box-sizing: border-box;
     outline: none;
+    width: 100%;
 }
 
 /* 버튼 기본 스타일 */
 .btn {
-    padding: 0.75rem 1rem;
+    padding: 12px 16px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
@@ -136,7 +140,7 @@ label[for="passwordCheck"] {
 /* 전체 너비 버튼 스타일 */
 .btn-full-width {
     width: 100%;
-    padding: 0.5rem;
+    padding: 8px;
 }
 
 /* 중복 확인 버튼 활성화 상태 */
@@ -147,14 +151,14 @@ label[for="passwordCheck"] {
 
 .btn-container.flex-gap {
     display: flex;
-    gap: 1rem;
+    gap: 16px;
 }
 
 /* 피드백 메시지 스타일링 */
 .feedback-message {
     font-size: 0.8rem;
     margin-top: 0.15rem;
-    opacity: 0; /* opacity로 보이고 숨기는 방식을 유지 */
+    opacity: 0;
     overflow: hidden;
     transition: all 0.3s ease;
 }

@@ -36,15 +36,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="music-preview-wrapper" th:if="!${#strings.isEmpty(musicApiUrl)}">
-                <p>현재 음악: [[*{musicApiUrl}]]</p>
-                <input id="music-url-input" th:value="*{musicApiUrl}" type="hidden"/>
-                <button class="delete-button" data-type="music" type="button">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
         </div>
-        <!-- ★★★ 수정 완료 버튼을 form 하단으로 이동 ★★★ -->
         <button class="submit-button" disabled id="submit-btn" type="submit">
             완료
         </button>

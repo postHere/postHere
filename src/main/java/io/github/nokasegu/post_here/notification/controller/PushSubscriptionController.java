@@ -1,4 +1,3 @@
-// src/main/java/io/github/nokasegu/post_here/notification/controller/PushSubscriptionController.java
 package io.github.nokasegu.post_here.notification.controller;
 
 import io.github.nokasegu.post_here.notification.domain.PushSubscriptionEntity;
@@ -16,24 +15,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 
-/**
- * [역할]
- * - 브라우저에서 생성한 PushSubscription 객체를 서버에 저장하는 컨트롤러.
- * - 구독 정보는 endpoint를 고유키로 하여 upsert 방식으로 관리한다.
- * <p>
- * [엔드포인트]
- * - POST /push/subscribe
- * → body: { endpoint, keys:{ p256dh, auth } }
- * <p>
- * [동작 흐름]
- * 1) Principal에서 사용자 식별(email 기반)
- * 2) endpoint 기준으로 기존 구독 검색
- * 3) 없으면 새로운 PushSubscriptionEntity 생성 후 저장
- * <p>
- * [보안 메모]
- * - principal이 null이거나 사용자 조회 실패 시 401/404 반환
- * - 구독 저장 시 endpoint는 고유키로 중복 방지
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/push")
@@ -52,14 +33,22 @@ public class PushSubscriptionController {
     @PostMapping("/subscribe")
     public void subscribe(Principal principal, @RequestBody PushSubscribeRequestDto body) {
         UserInfoEntity me = resolveUser(principal);
-        pushRepo.findByEndpoint(body.getEndpoint())
-                .orElseGet(() -> pushRepo.save(
-                        PushSubscriptionEntity.builder()
-                                .user(me)
-                                .endpoint(body.getEndpoint())
-                                .p256dh(body.getKeys().getP256dh())
-                                .auth(body.getKeys().getAuth())
-                                .build()
-                ));
+
+        pushRepo.findByEndpoint(body.getEndpoint()).ifPresentOrElse(existing -> {
+            // [수정] setter 없으면 엔티티에 @Setter 추가 필요
+            existing.setUser(me);
+            existing.setP256dh(body.getKeys().getP256dh());
+            existing.setAuth(body.getKeys().getAuth());
+            pushRepo.save(existing);
+        }, () -> {
+            pushRepo.save(
+                    PushSubscriptionEntity.builder()
+                            .user(me)
+                            .endpoint(body.getEndpoint())
+                            .p256dh(body.getKeys().getP256dh())
+                            .auth(body.getKeys().getAuth())
+                            .build()
+            );
+        });
     }
 }

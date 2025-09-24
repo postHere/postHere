@@ -137,5 +137,9 @@ export function initPushSubscribe() {
         } else {
             console.log('[push] no existing subscription.');
         }
+
     };
+
+    fetchVapidKeyAndStart();
+    
 }

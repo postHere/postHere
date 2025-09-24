@@ -34,13 +34,14 @@ public class PushSubscriptionController {
     public void subscribe(Principal principal, @RequestBody PushSubscribeRequestDto body) {
         UserInfoEntity me = resolveUser(principal);
 
-        pushRepo.findByEndpoint(body.getEndpoint()).ifPresentOrElse(existing -> {
-            // [수정] setter 없으면 엔티티에 @Setter 추가 필요
-            existing.setUser(me);
+        // [변경] user + endpoint 기준으로 조회/업서트
+        pushRepo.findByUserAndEndpoint(me, body.getEndpoint()).ifPresentOrElse(existing -> {
+            // 이미 해당 user+endpoint 구독 있으면 갱신
             existing.setP256dh(body.getKeys().getP256dh());
             existing.setAuth(body.getKeys().getAuth());
             pushRepo.save(existing);
         }, () -> {
+            // 없으면 새로 저장
             pushRepo.save(
                     PushSubscriptionEntity.builder()
                             .user(me)

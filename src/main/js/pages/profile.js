@@ -61,11 +61,12 @@ export function initProfile() {
             tabState.totalPages = data.totalPages;
             tabState.page = page; // 현재 로드된 백엔드 페이지 번호 저장
 
-            renderCarousel();
+
         } catch (error) {
             console.error(`Error loading ${tab} posts:`, error);
         } finally {
             tabState.isLoading = false;
+            renderCarousel();
         }
     }
 
@@ -173,6 +174,10 @@ export function initProfile() {
         if (currentTab === tab) return;
         currentTab = tab;
 
+        if (carousel) {
+            carousel.innerHTML = `<div style="text-align:center;width:100%;color:grey;">로딩 중...</div>`;
+        }
+
         if (tabFind) {
             tabFind.classList.toggle('active', tab === 'find');
         }
@@ -180,10 +185,19 @@ export function initProfile() {
 
         currentPageIndex = 0; // 탭 전환 시 첫 페이지로
 
-        if (state[tab].content.length === 0) {
-            loadPosts(tab, 0); // 데이터가 없으면 첫 페이지 로드
+        const tabState = state[tab];
+        
+        // 이미 비어있는 탭이라고 확인된 경우(totalPages가 0),
+        // 불필요한 API 호출 없이 즉시 '게시물이 없습니다'를 렌더링합니다.
+        if (tabState.totalPages === 0) {
+            renderCarousel();
+            return;
+        }
+
+        if (tabState.content.length === 0) {
+            loadPosts(tab, 0);
         } else {
-            renderCarousel(); // 데이터가 있으면 바로 렌더링
+            renderCarousel();
         }
     }
 

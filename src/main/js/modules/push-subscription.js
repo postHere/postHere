@@ -1,6 +1,10 @@
+// src/main/js/push-subscription.js
 import {authHeaders, urlBase64ToUint8Array} from "./utils";
 
+window.__pushSubModuleLoaded = true; // [추가] 모듈 로드 확인용 전역 플래그
+
 export function initPushSubscribe() {
+    console.log('[push] initPushSubscribe START'); // [추가] 함수 진입 확인용 로그
 
     // 권한 확보
     async function ensurePermission() {
@@ -17,19 +21,20 @@ export function initPushSubscribe() {
         return p === 'granted';
     }
 
-// 구독을 서버에 저장 (서버 DTO: { endpoint, keys:{p256dh, auth} } 형식과 일치하도록 toJSON 그대로 전송)
+    // 구독을 서버에 저장
     async function saveSubscription(sub) {
         const body = sub.toJSON(); // {endpoint, keys:{p256dh, auth}}
         const res = await fetch('/push/subscribe', {
             method: 'POST',
             headers: authHeaders({'Content-Type': 'application/json', Accept: 'application/json'}),
             body: JSON.stringify(body),
+            credentials: 'include', // [추가] 세션 쿠키 포함 (401 방지)
         });
         if (!res.ok) throw new Error('/push/subscribe HTTP ' + res.status);
         console.log('[push] subscription saved to server (200)');
     }
 
-// 실제 구독 시퀀스 (브라우저 제스처 이후 실행)
+    // 실제 구독 시퀀스
     async function ensurePushSubscriptionWithGesture(vapidPublicKey) {
         if (!('serviceWorker' in navigator)) {
             console.warn('[push] serviceWorker 미지원');
@@ -44,8 +49,7 @@ export function initPushSubscribe() {
             return;
         }
 
-        // 기존 코드와 동일하게 루트(/) scope로 등록된 SW 사용
-        const reg = await navigator.serviceWorker.ready; // register 이후 ready 대기
+        const reg = await navigator.serviceWorker.ready;
         console.log('[push] SW ready. scope=', reg.scope);
 
         let sub = await reg.pushManager.getSubscription();
@@ -60,19 +64,9 @@ export function initPushSubscribe() {
             console.log('[push] existing subscription found');
         }
 
-        // 서버에 저장(신규/기존 모두 upsert용으로 전송)
         await saveSubscription(sub);
 
-        // SW → 페이지 네비 메시지(푸시 클릭 시 이동)
-        // [SW 메시지 수신부]
-        // navigator.serviceWorker.addEventListener('message', (e) => {
-        //   const { type, url } = e.data || {};
-        //   if (type === 'NAVIGATE' && url) {
-        //     // SPA 라우팅 예: router.push(url) 또는 history.pushState(...)
-        //     // 단순 이동 예: location.assign(url)
-        //   }
-        // });
-
+        // SW → 페이지 네비 메시지
         navigator.serviceWorker.addEventListener('message', (e) => {
             if (e.data?.type === 'NAVIGATE') {
                 const url = new URL(e.data.url, location.origin).toString();
@@ -81,10 +75,9 @@ export function initPushSubscribe() {
         });
     }
 
-// 최초 1회 사용자 제스처(클릭)에만 권한/구독 시도
+    // 최초 1회 사용자 제스처(클릭)에만 권한/구독 시도
     function attachOnceForGesture(vapidPublicKey) {
         if (Notification.permission === 'granted') {
-            // 이미 허용이면 즉시 진행
             ensurePushSubscriptionWithGesture(vapidPublicKey).catch(console.error);
             return;
         }
@@ -97,7 +90,7 @@ export function initPushSubscribe() {
         console.log('[push] waiting first user click to request permission…');
     }
 
-// 공개키 받아오고 클릭 훅 장착
+    // 공개키 받아오고 클릭 훅 장착
     async function fetchVapidKeyAndStart() {
         try {
             const res = await fetch('/push/vapid-public-key', {headers: authHeaders({Accept: 'application/json'})});
@@ -111,13 +104,18 @@ export function initPushSubscribe() {
                 return;
             }
             console.log('[push] VAPID key loaded');
-            attachOnceForGesture(publicKey);
+
+            if (Notification.permission === 'granted') {
+                ensurePushSubscriptionWithGesture(publicKey).catch(console.error);
+            } else {
+                attachOnceForGesture(publicKey);
+            }
         } catch (e) {
             console.error('[push] cannot load VAPID public key:', e);
         }
     }
 
-// 디버그용 전역 함수(콘솔 수동 트리거)
+    // 디버그용 전역 함수
     window.__forceSubscribe = async () => {
         try {
             const res = await fetch('/push/vapid-public-key', {headers: authHeaders({Accept: 'application/json'})});
@@ -137,9 +135,8 @@ export function initPushSubscribe() {
         } else {
             console.log('[push] no existing subscription.');
         }
-
     };
 
+    // [추가] init 시도 시작
     fetchVapidKeyAndStart();
-    
 }

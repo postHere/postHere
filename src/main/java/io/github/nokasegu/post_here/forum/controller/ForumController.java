@@ -194,8 +194,9 @@ public class ForumController {
     /**
      * [추가] 현재 로그인된 사용자의 Forum 게시물 목록을 반환하는 API
      */
+    // 미사용으로 추정
     @ResponseBody
-    @GetMapping("/api/v1/forums/my-posts")
+    @GetMapping("/forums/my-posts")
     public ResponseEntity<Page<ForumPostSummaryDto>> getMyForums(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 4) Pageable pageable) {
@@ -207,7 +208,7 @@ public class ForumController {
     }
 
     @ResponseBody
-    @GetMapping("/api/v1/users/{nickname}/forums")
+    @GetMapping("/profile/forumlist/{nickname}")
     public ResponseEntity<Page<ForumPostSummaryDto>> getForumsForUser(
             @PathVariable String nickname,
             @PageableDefault(size = 4) Pageable pageable) {

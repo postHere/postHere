@@ -192,7 +192,7 @@ public class UserInfoController {
      * @return 성공 시 새로운 이미지 URL을 담은 응답
      * @throws IOException 파일 처리 중 예외 발생 가능
      */
-    @PostMapping("/api/profile/image")
+    @PostMapping("/profile/image")
     @ResponseBody
     public ResponseEntity<Map<String, String>> updateProfileImage(Principal principal, @RequestParam("profileImage") MultipartFile imageFile) throws IOException {
         if (principal == null) {

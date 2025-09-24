@@ -13,7 +13,7 @@
     <link rel="stylesheet" th:href="@{/css/profile.css}">
     <link rel="stylesheet" th:href="@{/css/main-nav.css}">
 </head>
-<body id="page-profile" th:data-profile-nickname="${profileUser.nickname}">
+<body id="page-profile" th:data-is-my-profile="${isMyProfile}" th:data-profile-nickname="${profileUser.nickname}">
 <div id="app-container">
     <div class="mobile-container">
         <main class="main-content">

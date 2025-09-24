@@ -74,7 +74,7 @@ public class ParkAPIController {
      * @param userDetails Spring Security가 제공하는 현재 사용자 정보
      * @return Park 정보 DTO 또는 404 응답
      */
-    @GetMapping("/api/v1/users/me/park")
+    @GetMapping("/users/me/park")
     public ResponseEntity<ParkResponseDto> getMyParkData(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
             // 로그인되지 않은 경우 401 Unauthorized 응답
@@ -89,14 +89,5 @@ public class ParkAPIController {
             return ResponseEntity.notFound().build();
         }
     }
-
-    @GetMapping("/api/v1/users/{nickname}/park")
-    public ResponseEntity<ParkResponseDto> getParkDataForUser(@PathVariable String nickname) {
-        try {
-            ParkResponseDto parkDto = parkService.findParkByOwnerNickname(nickname);
-            return ResponseEntity.ok(parkDto);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
+    
 }

@@ -19,7 +19,8 @@ public class FindAPIController {
 
     private final FindService findService;
 
-    @GetMapping("/api/v1/finds/my-posts")
+    // 미사용으로 추정
+    @GetMapping("/finds/my-posts")
     public ResponseEntity<Page<FindPostSummaryDto>> getMyFinds(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 4) Pageable pageable) {
@@ -30,7 +31,7 @@ public class FindAPIController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/api/v1/users/{nickname}/finds")
+    @GetMapping("/profile/findlist/{nickname}")
     public ResponseEntity<Page<FindPostSummaryDto>> getFindsForUser(
             @PathVariable String nickname,
             @PageableDefault(size = 4) Pageable pageable) {

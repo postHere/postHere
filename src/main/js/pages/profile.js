@@ -27,6 +27,7 @@ export function initProfile() {
     const profileImage = document.querySelector('.profile-info__pic');
     const isMyProfile = profileBody.dataset.isMyProfile === 'true';
 
+    console.log("Is this my profile?", isMyProfile)
     // 상태 관리 변수
     const initialTab = tabFind ? 'find' : 'forum';
     let currentTab = initialTab;
@@ -49,8 +50,8 @@ export function initProfile() {
         tabState.isLoading = true;
         try {
             const endpoint = tab === 'find'
-                ? `/api/v1/users/${profileNickname}/finds?page=${page}&size=4`
-                : `/api/v1/users/${profileNickname}/forums?page=${page}&size=4`;
+                ? `/profile/findlist/${profileNickname}?page=${page}&size=4`
+                : `/profile/forumlist/${profileNickname}?page=${page}&size=4`;
 
 
             const response = await fetch(endpoint);
@@ -76,7 +77,7 @@ export function initProfile() {
         const guestbookContent = guestbookWrapper.querySelector('.guestbook__content');
 
         try {
-            const response = await fetch(`/api/v1/users/${profileNickname}/park`);
+            const response = await fetch(`/profile/park/${profileNickname}`);
             if (response.ok) {
                 const parkData = await response.json();
                 const guestbookSection = guestbookWrapper.querySelector('.guestbook');
@@ -186,7 +187,7 @@ export function initProfile() {
         currentPageIndex = 0; // 탭 전환 시 첫 페이지로
 
         const tabState = state[tab];
-        
+
         // 이미 비어있는 탭이라고 확인된 경우(totalPages가 0),
         // 불필요한 API 호출 없이 즉시 '게시물이 없습니다'를 렌더링합니다.
         if (tabState.totalPages === 0) {
@@ -385,6 +386,7 @@ export function initProfile() {
     }
 
     if (isMyProfile && profileImageInput) {
+        console.log("Attaching image upload event listener.");
         profileImageInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) {
@@ -405,7 +407,7 @@ export function initProfile() {
 
             try {
                 // 2. FormData를 body에 담아 /api/profile/image로 POST 요청을 보냅니다.
-                const response = await fetch('/api/profile/image', {
+                const response = await fetch('/profile/image', {
                     method: 'POST',
                     headers: headers, // FormData 전송 시 Content-Type은 브라우저가 자동으로 설정하므로 넣지 않습니다.
                     body: formData

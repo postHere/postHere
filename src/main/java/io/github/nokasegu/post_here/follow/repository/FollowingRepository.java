@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FollowingRepository extends JpaRepository<FollowingEntity, Long> {
@@ -44,4 +45,17 @@ public interface FollowingRepository extends JpaRepository<FollowingEntity, Long
 
     // 특정 사용자가 팔로우하는 사람의 수 (팔로잉 수)
     long countByFollower(UserInfoEntity follower);
+
+    // ===================== [추가] REQUIRES_NEW 안전 재조회용 fetch-join 메서드 =====================
+    // - NotificationService.createFollowAndPush(...)가 REQUIRES_NEW 트랜잭션에서 호출될 때
+    //   전달받은 FollowingEntity는 기존 영속성 컨텍스트 밖(detached)이므로,
+    //   지연 로딩 필드(follower, followed)에 접근 시 LazyInitializationException이 발생할 수 있습니다.
+    // - 이를 방지하기 위해, REQUIRES_NEW 경계 내부에서 "ID로 다시 조회"하면서
+    //   follower와 followed를 join fetch로 미리 로딩해 사용합니다.
+    @Query("select f " +
+            "from FollowingEntity f " +
+            "join fetch f.follower " +
+            "join fetch f.followed " +
+            "where f.id = :id")
+    Optional<FollowingEntity> findByIdWithBothUsers(@Param("id") Long id);
 }

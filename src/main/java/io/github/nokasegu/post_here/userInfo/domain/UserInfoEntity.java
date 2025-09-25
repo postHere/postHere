@@ -18,18 +18,21 @@ import java.time.LocalDateTime;
  * · loginPw: 로그인 비밀번호(저장 시 해시 전제)
  * · nickname: 서비스 내 표시명
  * · profilePhotoUrl: 프로필 이미지 경로/URL
+ * · fcmToken: 네이티브 앱 푸시 알림 수신용 토큰
  * · createdAt/updatedAt: 생성/수정 시각(JPA Auditing)
  * <p>
  * 사용처(정확 명칭)
  * - 팔로우 관계: FollowingEntity.follower / FollowingEntity.followed 에서 참조
  * - 알림 수신자: NotificationEntity.targetUser 에서 참조
  * - Web Push 구독 주체: PushSubscriptionEntity.user (구독 목록 조회/전송 대상 식별)
+ * - FCM 알림 수신자: FcmSenderService에서 토큰 조회 및 전송에 사용
  * <p>
  * 보안/설계 메모
  * - loginPw: 반드시 해시(예: BCrypt)로 저장하고 평문/가역암호 금지.
  * - email: 로그인/중복 체크에 사용하면 DB 유니크 제약 권장.
  * - nickname: 검색/정렬에 자주 쓰이면 인덱스 고려.
  * - profilePhotoUrl: 외부 URL 저장 시 길이/검증 정책 필요(현재 length=500).
+ * - fcmToken: 기기당 1개 토큰만 저장. 다중 기기 지원이 필요하면 별도 테이블 분리 권장.
  * - Auditing 사용: @EnableJpaAuditing 활성화 전제, createdAt은 updatable=false.
  */
 @Entity
@@ -70,6 +73,14 @@ public class UserInfoEntity {
      */
     @Column(name = "profile_photo_url", length = 500)
     private String profilePhotoUrl;
+
+    /**
+     * 네이티브 앱 FCM 푸시 토큰
+     * - PushTokenController.saveToken()에서 업데이트
+     * - FcmSenderService.resolveFcmTokens()에서 조회
+     */
+    @Column(name = "fcm_token", length = 512)
+    private String fcmToken;
 
     /**
      * 생성 시각(Auditing) — 수정 불가

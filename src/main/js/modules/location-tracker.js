@@ -25,19 +25,27 @@ export async function initBackgroundGeolocation() {
 
 
     //네이티브 HTTP 요청이 성공/실패할 때마다 호출됩니다.
-    BackgroundGeolocation.onHttp((response) => {
+    BackgroundGeolocation.onHttp(async (response) => {
 
         console.log('[http] success: ', response);
 
         // 서버 응답을 Preferences에 저장
         try {
-            const result = JSON.parse(response.responseText);
-            if (result.status === '000' && result.data) {
-                Preferences.set({
-                    key: 'currentForumData',
-                    value: JSON.stringify(result.data)
-                });
-                console.log('[http] 새로운 포럼 정보 저장 완료:', result.data);
+            const wrapper = JSON.parse(response.responseText);
+            const data = wrapper.data;
+
+            if (wrapper.status === '000' && data.forumKey && data.forumName) {
+                await Preferences.set(
+                    {
+                        key: 'currentAreaKey',
+                        value: data.forumKey
+                    });
+                await Preferences.set(
+                    {
+                        key: 'currentAreaName',
+                        value: data.forumName
+                    });
+                console.log('[http] 새로운 포럼 정보 저장 완료:', data.forumKey, data.forumName);
             }
         } catch (e) {
             console.error("서버 응답 파싱 실패", e);
@@ -68,7 +76,7 @@ export async function initBackgroundGeolocation() {
 
             // 알림 설정
             notification: {
-                title: "Fin'd 실행 중",
+                title: "postHere 실행 중",
                 text: "위치 정보를 사용하여 주변 게시물을 확인하고 있습니다."
             },
 

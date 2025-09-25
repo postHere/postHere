@@ -1,28 +1,33 @@
-export function initMain() {
+import {Preferences} from '@capacitor/preferences';
+
+export async function initMain() {
     let finalAreaKey = null;
+    let finalAreaName = null;
 
     // 쿼리 파라미터에서 key 추출
     const urlParams = new URLSearchParams(window.location.search);
     const areaKeyFromUrl = urlParams.get('areaKey');
+    const areaNameFromUrl = urlParams.get('areaName');
 
-    if (areaKeyFromUrl) {
+    if (areaKeyFromUrl && areaNameFromUrl) {
         console.log('URL 파라미터에서 key 발견:', areaKeyFromUrl);
         finalAreaKey = areaKeyFromUrl;
+        finalAreaName = areaNameFromUrl;
     } else {
-        // 쿼리 파라미터가 없으면 localStorage 값 참조
-        const areaKeyFromStorage = localStorage.getItem('currentAreaKey');
-        if (areaKeyFromStorage) {
-            console.log('localStorage에서 key 발견:', areaKeyFromStorage);
-            finalAreaKey = areaKeyFromStorage;
+        // 쿼리 파라미터가 없으면 Preferences 값 참조
+        const {value: areaKeyFromPreferences} = await Preferences.get({key: 'currentAreaKey'});
+        const {value: areaNameFromPreferences} = await Preferences.get({key: 'currentAreaName'});
+        console.log('preferences에서 지역 정보 발견: ', areaKeyFromPreferences, areaNameFromPreferences);
+        if (areaKeyFromPreferences && areaNameFromPreferences) {
+            finalAreaKey = areaKeyFromPreferences;
+            finalAreaName = areaNameFromPreferences;
         }
     }
 
     const locationTextElement = $('#current-location-text');
-
-    if (finalAreaKey) {
-        // 상단바 위치 정보 표시
-        // 주소지가 출력되야 해서 위치 전송 기능 개발되면 그에 맞게 변경되야 함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        locationTextElement.text(finalAreaKey);
+    console.log("key : ", finalAreaKey, finalAreaName);
+    if (finalAreaKey && finalAreaName) {
+        locationTextElement.text(finalAreaName);
 
         // finalAreaKey를 사용해 바로 게시물을 로드
         loadPosts(finalAreaKey);

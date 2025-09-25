@@ -1,3 +1,9 @@
+/**
+ * friends.js
+ * - 팔로워/팔로잉/검색 탭
+ * - 팔로우/언팔로우 트리거
+ * - 프로필 이동
+ */
 export function initFriends() {
 
     const tabs = document.querySelectorAll('.tab');
@@ -13,7 +19,7 @@ export function initFriends() {
     const pageFollowingsEl = document.getElementById('page-followings');
     const pageSearchEl = document.getElementById('page-search');
 
-// Enter 검색(Form submit) + IME 안전
+    // Enter 검색(Form submit) + IME 안전
     const searchForm = document.getElementById('searchForm');
     const searchInput = document.getElementById('searchInput');
     let isComposing = false;
@@ -30,7 +36,7 @@ export function initFriends() {
         loadSearch();
     });
 
-// 페이지네이션
+    // 페이지네이션
     document.getElementById('prev-followers').addEventListener('click', () => {
         if (state.page.followers > 0) {
             state.page.followers--;
@@ -62,28 +68,29 @@ export function initFriends() {
         loadSearch();
     });
 
-// 상태
+    // 상태
     let state = {
         active: 'followers',
         page: {followers: 0, followings: 0, search: 0},
         followingSet: new Set()
     };
 
-// 아이콘
+    // 아이콘
     const personAddSvg = `
 <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
-  <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M19 8v6M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-</svg>`;
-    const personRemoveSvg = `
-<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
-  <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M16 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="2"/>
+    <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M19 8v6m-3-3h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
 </svg>`;
 
-// 헬퍼
+    const personRemoveSvg = `
+<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M15 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="2"/>
+    <path d="M3.5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="m17 10 4 4m0-4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>`;
+
+    // 헬퍼
     function authHeaders(base = {}) {
         const headers = {...base};
         const token = document.querySelector('meta[name="_csrf"]')?.content || '';
@@ -102,6 +109,7 @@ export function initFriends() {
         if (!ids || !ids.length) return {};
         const res = await fetch('/friend/status', {
             method: 'POST',
+            credentials: 'include',
             headers: authHeaders({'Content-Type': 'application/json', 'Accept': 'application/json'}),
             body: JSON.stringify({ids})
         });
@@ -113,6 +121,7 @@ export function initFriends() {
     async function apiFollow(userId) {
         const res = await fetch('/friend/addfollowing', {
             method: 'POST',
+            credentials: 'include',
             headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
             body: JSON.stringify({userId})
         });
@@ -123,6 +132,7 @@ export function initFriends() {
     async function apiUnfollow(userId) {
         const res = await fetch('/friend/unfollowing', {
             method: 'DELETE',
+            credentials: 'include',
             headers: authHeaders({'Accept': 'application/json', 'Content-Type': 'application/json'}),
             body: JSON.stringify({userId})
         });
@@ -132,8 +142,7 @@ export function initFriends() {
 
     /**
      * ✅ 유저 행 전체 클릭 → 프로필 이동
-     *  - .row에 tabindex="0" + keydown(Enter/Space) 지원
-     *  - 팔로우/언팔 버튼 클릭은 event.stopPropagation()으로 전파 차단
+     * - 팔로우/언팔 버튼 클릭은 stopPropagation()으로 차단
      */
     function rowEl(user, mode, statusMap) {
         const row = document.createElement('div');
@@ -141,7 +150,11 @@ export function initFriends() {
         row.setAttribute('tabindex', '0');
 
         function goProfile() {
-            window.location.href = `/profile/${user.id}`;
+            if (user?.nickname) {
+                window.location.href = `/profile/${encodeURIComponent(user.nickname)}`;
+            } else {
+                window.location.href = '/profile';
+            }
         }
 
         row.addEventListener('click', goProfile);
@@ -169,7 +182,7 @@ export function initFriends() {
         spacer.className = 'spacer';
         let btn = null;
 
-        // 버튼 maker (전파 차단 포함)
+        // 버튼 maker
         const makeBtn = (title, svg, onClick) => {
             const b = document.createElement('button');
             b.className = 'icon-btn';
@@ -177,10 +190,7 @@ export function initFriends() {
             b.innerHTML = svg;
             b.addEventListener('click', (e) => {
                 e.stopPropagation();
-                onClick();
-            });
-            b.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+                onClick(b);
             });
             return b;
         };
@@ -188,12 +198,16 @@ export function initFriends() {
         if (mode === 'followers' || mode === 'search') {
             const already = statusMap ? !!statusMap[user.id] : state.followingSet.has(user.id);
             if (!already) {
-                btn = makeBtn('친구 추가', personAddSvg, async () => {
+                btn = makeBtn('친구 추가', personAddSvg, async (buttonEl) => {
                     try {
+                        buttonEl.disabled = true;
                         await apiFollow(user.id);
                         state.followingSet.add(user.id);
-                        row.remove();
+
+                        // ✅ 버튼만 숨김 처리 (내부 비우지 않음)
+                        buttonEl.classList.add('vanish');
                     } catch (e) {
+                        buttonEl.disabled = false;
                         alert('팔로우 실패: ' + (e.message || ''));
                     }
                 });
@@ -230,6 +244,7 @@ export function initFriends() {
     async function loadFollowers() {
         listFollowers.innerHTML = '<div class="empty">로딩 중...</div>';
         const res = await fetch(`/friend/followlist?page=${state.page.followers}&size=20`, {
+            credentials: 'include',
             headers: authHeaders({Accept: 'application/json'})
         });
         if (!res.ok) return (listFollowers.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`);
@@ -243,6 +258,7 @@ export function initFriends() {
     async function loadFollowings() {
         listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
         const res = await fetch(`/friend/followinglist?page=${state.page.followings}&size=20`, {
+            credentials: 'include',
             headers: authHeaders({Accept: 'application/json'})
         });
         if (!res.ok) return (listFollowings.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`);
@@ -266,7 +282,10 @@ export function initFriends() {
 
         listSearch.innerHTML = '<div class="empty">검색 중...</div>';
         const url = `/friend/search?q=${encodeURIComponent(q)}&page=${page}&size=${size}`;
-        const res = await fetch(url, {headers: authHeaders({Accept: 'application/json'})});
+        const res = await fetch(url, {
+            credentials: 'include',
+            headers: authHeaders({Accept: 'application/json'})
+        });
         if (!res.ok) {
             listSearch.innerHTML = `<div class="empty" style="color:#dc2626;">HTTP ${res.status}</div>`;
             return;
@@ -278,9 +297,7 @@ export function initFriends() {
         applyPager(pageSearchEl, d, 'search');
     }
 
-// 탭 전환
-
-
+    // 탭 전환
     tabs.forEach(t =>
         t.addEventListener('click', () => {
             const tab = t.dataset.tab;
@@ -294,20 +311,24 @@ export function initFriends() {
             } else if (tab === 'followings') {
                 loadFollowings();
             } else {
-                // Search 탭 전환 시 포커스
                 searchInput.focus();
-                // 기존 검색어로 즉시 갱신(선택 사항)
                 loadSearch();
             }
         })
     );
 
-// 초기 로딩
+    // 초기 로딩
     async function init() {
         listFollowers.innerHTML = listFollowings.innerHTML = '<div class="empty">로딩 중...</div>';
         const [fRes, gRes] = await Promise.all([
-            fetch('/friend/followlist?page=0&size=20', {headers: authHeaders({Accept: 'application/json'})}),
-            fetch('/friend/followinglist?page=0&size=20', {headers: authHeaders({Accept: 'application/json'})})
+            fetch('/friend/followlist?page=0&size=20', {
+                credentials: 'include',
+                headers: authHeaders({Accept: 'application/json'})
+            }),
+            fetch('/friend/followinglist?page=0&size=20', {
+                credentials: 'include',
+                headers: authHeaders({Accept: 'application/json'})
+            })
         ]);
         if (!fRes.ok || !gRes.ok) {
             const msg = `초기 로딩 실패: followers=${fRes.status}, followings=${gRes.status}`;
@@ -328,6 +349,5 @@ export function initFriends() {
 
     init().catch(error => {
         console.error("초기화 중 오류 발생:", error);
-        // 사용자에게 에러 메시지를 보여주는 UI 처리 필요할 수도?
     });
 }

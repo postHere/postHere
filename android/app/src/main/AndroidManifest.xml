@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- ✅ 인터넷 통신 -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- ✅ Android 13+ (API 33) 알림 권한 — 반드시 선언 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <!-- 백그라운드에서 위치에 접근하기 위해 요청할 권한을 명시 -->
     <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
@@ -19,13 +24,24 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
 
+        <!-- (선택) 시스템이 표시하는 기본 알림 아이콘/색상 지정 -->
+        <meta-data
+                android:name="com.google.firebase.messaging.default_notification_icon"
+                android:resource="@mipmap/ic_launcher"/>
+        <meta-data
+                android:name="com.google.firebase.messaging.default_notification_color"
+                android:resource="@color/green_500"/>
+
+        <!-- capacitor-background-geolocation licence key debug 모드에선 주석-->
+        <!--        <meta-data android:name="com.transistorsoft.locationmanager.license" android:value=""/>-->
+
         <activity
-                android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
                 android:name=".MainActivity"
                 android:label="@string/title_activity_main"
-                android:theme="@style/AppTheme.NoActionBarLaunch"
+                android:exported="true"
                 android:launchMode="singleTask"
-                android:exported="true">
+                android:theme="@style/AppTheme.NoActionBarLaunch"
+                android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -42,8 +58,5 @@
                     android:name="android.support.FILE_PROVIDER_PATHS"
                     android:resource="@xml/file_paths"/>
         </provider>
-
-        <!-- capacitor-background-geolocation licence key debug 모드에선 주석-->
-        <!--        <meta-data android:name="com.transistorsoft.locationmanager.license" android:value=""/>-->
     </application>
 </manifest>

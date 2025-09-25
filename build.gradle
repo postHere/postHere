@@ -47,19 +47,22 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // === Geo/Spatial ===
-    implementation 'org.locationtech.jts:jts-core:1.19.0'   // JTS 기하 라이브러리
-    implementation 'org.hibernate:hibernate-spatial:6.6.1.Final' // Hibernate Spatial 확장
+    implementation 'org.locationtech.jts:jts-core:1.19.0'            // JTS 기하 라이브러리
+    implementation 'org.hibernate:hibernate-spatial:6.6.1.Final'     // Hibernate Spatial 확장
 
     // === Mail / AWS S3 ===
-    implementation 'org.springframework.boot:spring-boot-starter-mail'           // SMTP 메일 송신
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.1'         // AWS S3 연동
+    implementation 'org.springframework.boot:spring-boot-starter-mail'       // SMTP 메일 송신
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.1'     // AWS S3 연동
 
     // === Web Push (VAPID) / Crypto / JSON ===
-    implementation 'nl.martijndwars:web-push:5.1.1'                    // Web Push(JAVA) — VAPID 서명/전송
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'            // BouncyCastle(기본 프로바이더)
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'            // PKIX 유틸(키/인증서 처리)
+    implementation 'nl.martijndwars:web-push:5.1.1'                 // Web Push(JAVA) — VAPID 서명/전송
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'         // BouncyCastle(기본 프로바이더)
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'         // PKIX 유틸(키/인증서 처리)
     // bcprov만으로도 돌아가긴 하지만, 키 처리 과정에서 bcpkix가 있으면 더 안전함
-    implementation 'com.google.code.gson:gson:2.11.0'                  // JSON 직렬화(푸시 payload 등)
+    implementation 'com.google.code.gson:gson:2.11.0'               // JSON 직렬화(푸시 payload 등)
+
+    // === Firebase Admin ===
+    implementation 'com.google.firebase:firebase-admin:9.4.2'       // Firebase Admin SDK (FCM HTTP v1)
 }
 
 tasks.named('test') {

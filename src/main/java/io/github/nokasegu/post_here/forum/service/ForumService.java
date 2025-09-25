@@ -11,6 +11,8 @@ import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,12 +46,11 @@ public class ForumService {
                 .writer(writer)
                 .location(area)
                 .contentsText(requestDto.getContent())
-                .musicApiUrl(requestDto.getSpotifyTrackId())
                 .createdAt(LocalDateTime.now())
                 .build();
         ForumEntity savedForum = forumRepository.save(forum);
 
-        // 2. ★★★ 변경: 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결합니다. ★★★
+        // 2. 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결
         if (requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty()) {
             for (String imageUrl : requestDto.getImageUrls()) {
                 forumImageService.saveImage(imageUrl, savedForum);
@@ -70,7 +71,6 @@ public class ForumService {
         ForumEntity forum = getForumEntityAndCheckPermission(forumId, userId);
 
         forum.setContentsText(requestDto.getContent());
-        forum.setMusicApiUrl(requestDto.getMusicApiUrl());
         forum.setUpdatedAt(LocalDateTime.now());
 
         // deletedImageIds 목록을 기반으로 삭제 로직을 ForumImageService에 위임
@@ -206,5 +206,48 @@ public class ForumService {
                     );
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 특정 사용자가 작성한 Forum 게시물 목록을 페이지 단위로 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<ForumPostSummaryDto> getMyForums(String userEmail, Pageable pageable) {
+        UserInfoEntity user = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Page<ForumEntity> forumsPage = forumRepository.findByWriterOrderByIdDesc(user, pageable);
+
+        return forumsPage.map(forum -> {
+            String imageUrl = forum.getImages().isEmpty()
+                    ? "https://placehold.co/400x400/E2E8F0/4A5568?text=No+Image" // 이미지가 없을 경우 기본 이미지
+                    : forum.getImages().get(0).getImgUrl(); // 첫 번째 이미지를 대표 이미지로 사용
+
+            return ForumPostSummaryDto.builder()
+                    .id(forum.getId())
+                    .imageUrl(imageUrl)
+                    .location(forum.getLocation().getAddress())
+                    .build();
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ForumPostSummaryDto> getForumsByNickname(String nickname, Pageable pageable) {
+        UserInfoEntity user = userInfoRepository.findByNickname(nickname)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Page<ForumEntity> forumsPage = forumRepository.findByWriterOrderByIdDesc(user, pageable);
+
+        return forumsPage.map(forum -> {
+            String imageUrl = forum.getImages().isEmpty()
+                    ? "https://placehold.co/400x400/E2E8F0/4A5568?text=No+Image" // 이미지가 없을 경우 기본 이미지
+                    : forum.getImages().get(0).getImgUrl(); // 첫 번째 이미지를 대표 이미지로 사용
+
+            return ForumPostSummaryDto.builder()
+                    .id(forum.getId())
+                    .imageUrl(imageUrl)
+                    .location(forum.getLocation().getAddress())
+                    .build();
+        });
     }
 }

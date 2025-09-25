@@ -1,191 +1,452 @@
 :root {
-    --bg-light: #f3f4f6;
-    --bg-dark: #111827;
-    --card-bg-light: #ffffff;
-    --card-bg-dark: #1f2937;
-    --text-light: #111827;
-    --text-dark: #f9fafb;
-    --text-secondary-light: #6b7280;
-    --text-secondary-dark: #9ca3af;
-    --border-light: #e5e7eb;
-    --border-dark: #4b5563;
-    --accent-color: #4f46e5;
-    --accent-hover: #4338ca;
+    --background-color: #ffffff;
+    --container-color: #ffffff;
+    --primary-text-color: #000000;
+    --secondary-text-color: #8E8E93;
+    --border-color: #E5E5EA;
+    --my-gradient-start: #D8EAD2;
+    --my-gradient-end: #A2C49A;
+    --my-button-bg: #89B380;
+    --other-gradient-start: #E9D5FF;
+    --other-gradient-end: #C8B6E2;
+    --other-button-bg: #A38BC2;
+    --tab-inactive-bg: #f0f0f0;
+    --tab-active-bg: #333333;
+    --guestbook-bg: #f7f7f7;
+    --input-bg: #F7F7F7;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
 }
 
 body {
-    font-family: 'Inter', sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: var(--bg-light);
-    color: var(--text-light);
     display: flex;
-    align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    margin: 0;
 }
 
-/* 다크 모드 지원 */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: var(--bg-dark);
-        color: var(--text-dark);
-    }
+a {
+    text-decoration: none;
+    color: inherit;
 }
 
-/* --- 컴포넌트 스타일 --- */
-
-/* 전체 프로필 카드를 감싸는 컨테이너 */
-.profile-card {
+.mobile-container {
     width: 100%;
-    max-width: 384px; /* max-w-sm */
-    background-color: var(--card-bg-light);
-    border-radius: 1rem; /* rounded-2xl */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
-    padding: 24px; /* p-6 */
-}
-
-@media (prefers-color-scheme: dark) {
-    .profile-card {
-        background-color: var(--card-bg-dark);
-    }
-}
-
-.profile-content {
+    max-width: 450px;
+    height: 100%;
+    background-color: var(--background-color);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    align-items: center;
+    overflow: hidden;
 }
 
-/* 프로필 이미지 */
-.profile-image-wrapper {
-    position: relative;
+.main-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* --- 회원 정보 영역 --- */
+.profile-header-wrapper {
+    padding: 1.5rem 1rem;
+}
+
+.profile-header {
+    padding: 1rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    background: radial-gradient(circle at top right, var(--my-gradient-start), var(--my-gradient-end));
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.profile-info__pic-label {
     cursor: pointer;
 }
 
-#profileImage {
-    width: 7rem; /* w-28 */
-    height: 7rem; /* h-28 */
-    border-radius: 9999px; /* rounded-full */
+.profile-info__pic {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     object-fit: cover;
-    border: 4px solid var(--border-light);
+    border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
-@media (prefers-color-scheme: dark) {
-    #profileImage {
-        border-color: var(--border-dark);
-    }
+.profile-info__text {
+    flex-grow: 1;
 }
 
-.image-overlay {
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 9999px;
+.profile-info__name {
+    margin: 0 0 0.25rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.profile-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.profile-action-btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-}
-
-.profile-image-wrapper:hover .image-overlay {
-    opacity: 1;
-}
-
-.image-overlay .icon {
-    color: white;
-    font-size: 1.5rem; /* text-2xl */
-}
-
-/* 사용자 정보 */
-.user-info .nickname {
-    font-size: 1.5rem; /* text-2xl */
-    font-weight: 700;
-    margin-top: 1rem; /* mt-4 */
-}
-
-.user-info .email {
-    color: var(--text-secondary-light);
-}
-
-@media (prefers-color-scheme: dark) {
-    .user-info .email {
-        color: var(--text-secondary-dark);
-    }
-}
-
-.user-stats {
-    display: flex;
-    gap: 1.5rem; /* space-x-6 */
-    margin-top: 1rem; /* mt-4 */
-    text-align: center;
-}
-
-.user-stats .stat-value {
-    font-weight: 700;
-    font-size: 1.125rem; /* text-lg */
-}
-
-.user-stats .stat-label {
-    font-size: 0.875rem; /* text-sm */
-    color: var(--text-secondary-light);
-}
-
-@media (prefers-color-scheme: dark) {
-    .user-stats .stat-label {
-        color: var(--text-secondary-dark);
-    }
-}
-
-/* 자기소개 */
-.bio {
-    margin-top: 1.5rem; /* mt-6 */
-    text-align: center;
-    color: var(--text-secondary-light);
-}
-
-@media (prefers-color-scheme: dark) {
-    .bio {
-        color: var(--text-secondary-dark);
-    }
-}
-
-/* 버튼 */
-.btn-save {
-    display: none; /* 기본적으로 숨김 */
-    margin-top: 1.5rem; /* mt-6 */
-    width: 100%;
-    background-color: var(--accent-color);
-    color: white;
-    font-weight: 700;
-    padding: 0.5rem 1rem; /* py-2 px-4 */
-    border-radius: 0.5rem; /* rounded-lg */
-    border: none;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
-    transition: background-color 0.3s;
+    border: none;
+    color: white;
+    background-color: var(--my-button-bg);
 }
 
-.btn-save:hover {
-    background-color: var(--accent-hover);
+.guestbook-wrapper {
+    padding: 0 1rem 1.5rem 1rem;
 }
 
-.btn-save:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
+.guestbook {
+    background-color: var(--guestbook-bg);
+    padding: 1rem;
+    border-radius: 16px;
 }
 
-.btn-save.visible {
+.guestbook__content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+}
+
+.posts-section {
+    padding: 0 1rem 1.5rem 1rem;
+}
+
+.content-tabs {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.content-tabs__button {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--secondary-text-color);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border: none;
+    background: var(--tab-inactive-bg);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.content-tabs__button.active {
+    color: white;
+    background: var(--tab-active-bg);
+}
+
+.content-carousel-wrapper {
+    overflow: hidden;
+}
+
+.content-carousel {
+    display: flex;
+    transition: transform 0.3s ease-in-out;
+}
+
+.content-page {
+    width: 100%;
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.post-item {
+    position: relative;
+}
+
+.post-item__image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
     display: block;
 }
 
-/* 상태 메시지 */
-.status-message {
-    margin-top: 1rem; /* mt-4 */
-    font-size: 0.875rem; /* text-sm */
-    height: 1.25rem; /* h-5 */
+.post-item__status-icon {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-text-color);
+    font-size: 0.8rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* 유틸리티 */
-#profileImageInput {
+.post-item__location {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.bottom-nav {
+    flex-shrink: 0;
+    background-color: var(--background-color);
+    border-top: 1px solid var(--border-color);
+}
+
+.bottom-nav nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 4.5rem;
+    padding-bottom: 1rem;
+}
+
+.bottom-nav a {
+    color: var(--secondary-text-color);
+    font-size: 1.75rem;
+}
+
+.bottom-nav a.active {
+    color: var(--primary-text-color);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
     display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.modal-logo {
+    font-family: 'Times New Roman', Times, serif;
+    font-weight: bold;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-text-color);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.input-group .feedback-message {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    height: 1em;
+}
+
+.input-group-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.input-group-row input {
+    flex-grow: 1;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.modal-button {
+    flex: 1;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background-color: #EFEFF4;
+    color: var(--primary-text-color);
+}
+
+.btn-primary {
+    background-color: var(--my-button-bg);
+    color: white;
+}
+
+.btn-primary:disabled {
+    background-color: #ccc;
+}
+
+.message-container {
+    width: 100%;
+    text-align: center;
+    color: var(--secondary-text-color);
+    padding-top: 2rem;
+}
+
+/* --- [추가] Fin'd / Forum 캐러셀 스타일 --- */
+
+/* 1. 캐러셀 전체를 감싸는 래퍼 */
+.content-carousel-wrapper {
+    overflow: hidden; /* 현재 보이는 페이지 외에는 모두 숨김 */
+    width: 100%;
+}
+
+/* 2. 스와이프될 캐러셀 컨테이너 */
+.content-carousel {
+    display: flex; /* 페이지들을 가로로 나란히 정렬 */
+    transition: transform 0.3s ease-in-out; /* 부드러운 스와이프 효과 */
+}
+
+/* 3. 캐러셀의 각 '페이지' (게시물 2개를 담는 단위) */
+.content-page {
+    flex-shrink: 0; /* 페이지가 찌그러지지 않도록 설정 */
+    width: 100%; /* 각 페이지는 래퍼 너비의 100%를 차지 */
+    box-sizing: border-box;
+    padding: 0 4px; /* 페이지 좌우에 미세한 여백 */
+
+    /* 2개의 게시물이 나란히 보이도록 flex 설정 */
+    display: flex;
+    gap: 8px; /* 게시물 사이의 간격 */
+}
+
+/* 4. 개별 게시물 아이템 */
+.post-item {
+    width: 50%; /* 각 게시물은 페이지 너비의 50%를 차지 */
+    aspect-ratio: 1 / 1; /* 1:1 비율의 정사각형으로 만듦 */
+    position: relative; /* 상태 아이콘(시계) 위치 기준점 */
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* 5. 게시물 아이템 내부의 이미지 */
+.post-item__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 이미지가 비율을 유지하며 꽉 차도록 설정 */
+    display: block;
+}
+
+/* 6. 게시물 위치 텍스트 */
+.post-item__location {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* 텍스트가 잘 보이도록 그림자 추가 */
+}
+
+/* 7. 만료 임박 아이콘 */
+.post-item__status-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #eee;
+}
+
+.follow-button-container {
+    margin-top: 8px;
+}
+
+.follow-btn {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.follow-btn.follow {
+    background-color: #fde047;
+    color: #422006;
+}
+
+.follow-btn.unfollow {
+    background-color: #e5e7eb;
+    color: #4b5563;
 }

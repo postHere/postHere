@@ -5,25 +5,29 @@
     <title>Title</title>
     <link href="/pwa/manifest.json" rel="manifest">
     <script defer th:src="@{/js/bundle.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
 </head>
 <body id="page-main-nav">
 <div class="main-nav-bar" th:fragment="mainNavFragment">
-    <nav>
-        <footer class="footer-nav">
-            <!-- 기존 아이콘 그대로 유지 -->
-            <a href="/">🏠</a>
-            <a href="/messages">✉️</a>
-            <a href="/forum">📝</a>
-
-            <!-- 🔔 종 아이콘에 빨간 점 추가 (링크 경로는 /notification) -->
-            <!-- [역할] 네비게이션의 알림 상태 표시. 서버의 /notification/unread-count 결과에 따라 표시/숨김 -->
-            <a href="/notification" id="nav-bell-link">
-                🔔
-                <span id="nav-bell-dot"></span>
-            </a>
-
-            <a href="/profile">👤</a>
-        </footer>
+    <nav class="footer-nav">
+        <a href="/forumMain">
+            <i class="fas fa-solid fa-home"></i> </a>
+        <a href="/find">
+            <i class="fas fa-solid fa-envelope"></i>
+        </a>
+        <a href="/forum">
+            <i class="fas fa-solid fa-plus"></i>
+        </a>
+        <a href="/notification">
+            <i class="fas fa-solid fa-bell"></i>
+            <!-- ▼ 전역 빨간점: JS에서 display 토글 (위치 CSS는 나중에 추가) -->
+            <span aria-hidden="true" class="nav-dot" id="nav-bell-dot"></span>
+        </a>
+        <a href="/profile">
+            <i class="fas fa-solid fa-user"></i>
+        </a>
+        <a href="/find-write">Fin'd 작성</a>
+        <a href="/park-write">Park 작성</a>
     </nav>
 
     <!-- 기존 main-nav.js 그대로 로드 (여기에 authHeaders 등 유틸 있음)

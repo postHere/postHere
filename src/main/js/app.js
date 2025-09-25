@@ -27,6 +27,9 @@ import {initParkWrite} from './pages/park-write.js';
 import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
 import {initForumEdit} from './pages/forum-edit'
+// ✅ [PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
+import {initPush} from './pages/push.js';
+import {initFindOverWrite} from "./pages/find-overwrite";
 import {initBackgroundGeolocation} from './modules/location-tracker';
 
 // --- 3. 초기 경로 설정 ---
@@ -61,6 +64,18 @@ App.addListener('backButton', ({canGoBack}) => {
     }
 });
 
+// ✅ [PUSH] 네이티브 푸시(FCM)는 로그인/회원가입 페이지가 아닐 때만 초기화
+(async () => {
+    try {
+        const path = window.location.pathname;
+        const isAuthPage = path === '/login' || path === '/signup';
+        if (!isAuthPage) {
+            initPush(); // 네이티브 푸시 초기화
+        }
+    } catch (e) {
+        console.error('push init failed', e);
+    }
+})();
 
 // --- 5. 페이지 라우터: 현재 페이지에 맞는 스크립트 실행 ---
 // HTML 문서의 로딩이 완료되면, 현재 페이지를 확인하고 그에 맞는 init 함수를 실행합니다.
@@ -93,9 +108,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         case 'page-find-write':
             initFindWrite();
             break;
+        case 'page-find-overwrite':
+            initFindOverWrite();
+            break;
         case 'page-on-map' :
             initFindOnMap();
-            break
+            break;
         case 'page-forum-write':
             initForumWrite();
             break;

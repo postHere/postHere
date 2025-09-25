@@ -7,18 +7,22 @@ import io.github.nokasegu.post_here.find.service.FindService;
 import io.github.nokasegu.post_here.location.dto.LocationRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/test")
 public class FindController {
 
     private final FindService findService;
+
+    @GetMapping("/find-write")
+    public String findController(Model model) {
+        return "/find/find-write";
+    }
 
     @GetMapping("/around-finds")
     public WrapperDTO<List<FindNearbyResponseDto>> whereAmI(@RequestBody LocationRequestDto location) {
@@ -31,6 +35,4 @@ public class FindController {
                 .data(findList)
                 .build();
     }
-
-
 }

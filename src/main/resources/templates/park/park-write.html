@@ -2,34 +2,41 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
     <title>Park</title>
+    <link rel="manifest" th:href="@{/pwa/manifest.json}">
     <link rel="stylesheet" th:href="@{/css/park-write.css}">
+    <link rel="stylesheet" th:href="@{/css/index.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
-<body id="page-park-write">
-<h1>Park</h1>
-<div id="canvas-container">
-    <canvas id="object-canvas"></canvas>
-</div>
-<div id="toolbar">
-    <div id="container-color">
-        <div id="red"></div>
-        <div id="green"></div>
-        <div id="blue"></div>
-        <div id="black"></div>
-    </div>
-    <div id="container-text">
-        <label for="text-input">Text: </label>
-        <input id="text-input" name="" type="text">
-        <input id="add-text-btn" type="button" value="삽입">
-    </div>
-    <div id="container-font-size">
-        <label for="font-size-slider">글자 크기: </label>
-        <input id="font-size-slider" max="72" min="8" name="" type="range" value="20">
-        <span id="font-size-value">20</span>px
-    </div>
-    <div id="container-save">
-        <button id="save-btn">저장</button>
+<body id="page-park-write" th:data-nickname="${nickname}">
+<div id="app-container">
+    <main class="main-content">
+        <h1>Park</h1>
+        <div id="canvas-container">
+            <canvas id="object-canvas"></canvas>
+        </div>
+    </main>
+    <div id="toolbar">
+        <div id="container-color">
+            <div id="red"></div>
+            <div id="green"></div>
+            <div id="blue"></div>
+            <div id="black"></div>
+        </div>
+        <div id="container-text">
+            <label for="text-input">Text: </label>
+            <input id="text-input" name="" type="text">
+            <input id="add-text-btn" type="button" value="삽입">
+        </div>
+        <div id="container-font-size">
+            <label for="font-size-slider">글자 크기: </label>
+            <input id="font-size-slider" max="72" min="8" name="" type="range" value="20">
+            <span id="font-size-value">20</span>px
+        </div>
+        <div id="container-save">
+            <button id="save-btn">Save</button>
+        </div>
     </div>
 </div>
 </body>

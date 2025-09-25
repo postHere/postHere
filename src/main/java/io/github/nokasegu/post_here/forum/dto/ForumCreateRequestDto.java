@@ -19,8 +19,6 @@ public class ForumCreateRequestDto {
     private Long location;
 
     private List<String> imageUrls;
-    
-    private String spotifyTrackId;
 
     private String userEmail;
 }

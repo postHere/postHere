@@ -3,34 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <title>forum-write</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Agbalumo&family=Noto+Sans+KR:wght@400;700&display=swap"
+          rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link rel="manifest" th:href="@{/pwa/manifest.json}">
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/forum-write.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 </head>
 <body id="page-forum-write">
-<form id="forum-form" style="display: contents;">
-    <input id="writerId" name="writerId" type="hidden">
-    <input id="location" name="location" type="hidden">
-    <input id="spotifyTrackId" name="spotifyTrackId" type="hidden">
+<div id="app-container">
+    <form id="forum-form">
+        <header class="header">
+            <button class="icon-button" id="back-btn" onclick="history.back()" type="button">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="header-title">Forum</h1>
+        </header>
 
-    <input accept="image/*" id="images" multiple name="images" style="display: none;" type="file">
+        <div class="toolbar-top">
+            <button class="icon-button" id="add-image-btn" type="button">
+                <i class="fas fa-image"></i>
+            </button>
+            <input accept="image/*" id="images" multiple style="display: none;" type="file">
+        </div>
 
-    <header class="header">
-        <h1>Writing</h1>
-        <button id="submit-btn" type="submit">공유</button>
-    </header>
+        <main class="writing-area">
+            <label for="content">
+                <textarea id="content" name="content" placeholder="당신의 이야기를 공유해 주세요."></textarea>
+            </label>
+        </main>
 
-    <main class="writing-area">
-        <label for="content">
-            <textarea id="content" name="content" placeholder="무슨 일이 있었나요?"></textarea>
-        </label>
-    </main>
+        <div class="image-preview-container" id="image-preview-container"></div>
+        <button class="submit-button" disabled id="submit-btn">
+            공유
+        </button>
+    </form>
+</div>
 
-    <div id="image-preview-container"></div>
+<div class="toast-container" id="toast">
+    <span class="toast-message"></span>
+</div>
 
-    <footer class="toolbar">
-        <button id="add-image-btn" type="button">🖼️</button>
-        <button id="add-music-btn" type="button">🎵</button>
-    </footer>
-</form>
+<div class="popup-overlay" id="image-editor-overlay">
+    <div class="popup-content">
+        <div class="popup-header">
+            <button class="close-btn" id="editor-close-btn">&times;</button>
+        </div>
+        <div class="editor-main">
+            <div class="image-cropper-container" id="image-cropper-container">
+                <img alt="Image to crop" id="image-to-crop">
+            </div>
+        </div>
+        <div class="popup-footer">
+            <button class="editor-btn" id="editor-done-btn">다음</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

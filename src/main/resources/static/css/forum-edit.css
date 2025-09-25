@@ -1,0 +1,196 @@
+/* 전체 페이지 레이아웃 설정 */
+#app-container {
+    font-size: 0.9rem;
+    background-color: #E0E0E0;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 폼 스타일링: header와 main, footer를 수직으로 배치 */
+#edit-forum-form {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: #E0E0E0;
+}
+
+.header-title {
+    font-size: 1rem;
+    font-weight: 900;
+    color: #333;
+    flex-grow: 1; /* 제목이 남은 공간을 차지하여 중앙에 배치 */
+    text-align: left;
+    margin-left: 20px;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 5px;
+    color: #333;
+}
+
+/* 텍스트 작성 영역 스타일링 */
+.writing-area {
+    flex-grow: 1;
+    padding: 40px 20px 0 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.writing-area label {
+    display: block;
+    flex-grow: 1;
+    background-color: #fff;
+    border-radius: 9px 9px 0 0;
+    box-shadow: none;
+    padding: 15px;
+}
+
+.writing-area #content {
+    width: 100%;
+    height: 100%;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    resize: none;
+    outline: none;
+    background-color: transparent;
+}
+
+.writing-area #content::placeholder {
+    color: #b0b0b0;
+}
+
+/* 하단 공유 버튼 스타일링 (forum-write.css 스타일 적용) */
+.submit-button {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    max-width: none;
+    padding: 8px 20px;
+    border-radius: 5px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-align: center;
+    cursor: not-allowed;
+    align-self: center;
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+.submit-button:disabled {
+    background-color: #ddd;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.submit-button:not(:disabled) {
+    background-color: #72966a;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+/* 이미지 아이콘이 활성화되었을 때의 색상 */
+.icon-button.active {
+    background-color: #72966a;
+    color: #fff;
+}
+
+/* 이미지 미리보기 컨테이너 및 삭제 버튼 스타일 */
+.image-preview-container {
+    position: absolute;
+    bottom: 80px; /* 공유 버튼과의 간격 조정 */
+    left: 0;
+    right: 0;
+    width: auto;
+    background-color: transparent;
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+}
+
+/* 스크롤바를 숨기기 위한 코드 (웹킷 브라우저용) */
+.image-preview-container::-webkit-scrollbar {
+    display: none;
+}
+
+.image-preview-container.has-image {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.image-preview-wrapper {
+    position: relative;
+}
+
+.img-preview {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.delete-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+
+/* Toast 알림창 */
+.toast-container {
+    visibility: hidden; /* 초기엔 숨김 */
+    min-width: 250px;
+    background-color: #fff;
+    color: #333;
+    text-align: center;
+    border-radius: 8px;
+    padding: 12px;
+    position: fixed;
+    top: 50px; /* 변경: 화면 상단에 위치 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.toast-container.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+.toast-message {
+    font-size: 0.9em;
+    line-height: 1.4;
+}

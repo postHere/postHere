@@ -1,0 +1,43 @@
+/* 전체 페이지 레이아웃을 모바일 앱 비율로 고정 */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    background-color: #f0f2f5;
+    overflow: hidden; /* 스크롤바를 제거하여 앱처럼 보이게 함 */
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 앱 화면 컨테이너 */
+#app-container {
+    height: 100%;
+    width: 100%;
+    max-width: 360px;
+    max-height: 780px;
+    min-width: 360px;
+    min-height: 780px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+
+    position: relative;
+
+    overflow-y: auto;
+
+    display: flex;
+    flex-direction: column;
+}
+
+/* 로그인 페이지용 스타일 */
+#page-login #app-container,
+#page-signup #app-container {
+    justify-content: center;
+    align-items: center;
+}
+
+/* 메인 페이지용 스타일 */
+#page-main #app-container {
+    justify-content: flex-start;
+    align-items: stretch;
+}

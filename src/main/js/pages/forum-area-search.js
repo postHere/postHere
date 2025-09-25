@@ -2,6 +2,8 @@
 export function initForumAreaSearch() {
     const searchInput = $('#location-search');
     const resultsList = $('#search-results');
+    const backButton = $('.back-button'); // 뒤로가기 버튼 요소
+
     let availableLocations = []; // 지역 목록을 저장할 빈 배열
 
     // 1. 페이지 로드 시 백엔드에서 지역 목록을 가져오는 함수
@@ -98,5 +100,10 @@ export function initForumAreaSearch() {
                 alert('네트워크 오류가 발생했습니다.');
             }
         });
+    });
+
+    // 뒤로가기 버튼 클릭 시 이전 페이지로 이동
+    backButton.on('click', function () {
+        window.history.back();
     });
 }

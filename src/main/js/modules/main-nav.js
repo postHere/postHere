@@ -1,67 +1,86 @@
 /**
  * main-nav.js
- *
- * 역할(정확한 명칭)
- * - Service Worker 등록 및 SW → 페이지 'NAVIGATE' 메시지 처리(알림 클릭 라우팅)
- * - VAPID 공개키(/push/vapid-public-key) 로드, 최초 사용자 제스처 시 권한 요청, Push 구독 생성
- * - 구독 정보 서버 저장(/push/subscribe, body: subscription.toJSON())
- *
- * 시퀀스(정확한 명칭)
- * 1) window.load → service-worker.js 등록
- * 2) /push/vapid-public-key 호출로 VAPID 공개키 로드
- * 3) (첫 사용자 클릭 시) Notification 권한 요청 → PushManager.subscribe() → /push/subscribe 저장
- * 4) SW 'notificationclick' → postMessage({type:'NAVIGATE', url}) 수신 → 실제 라우팅 수행
- *
- * 보안/운영 메모
- * - HTTPS 필수(로컬 localhost 예외), CSRF 메타태그 있으면 헤더 자동 첨부(authHeaders)
- * - 구독 저장은 서버에서 upsert(중복 허용) 형태 권장
- * - 메시지 수신 시 잘못된/외부 URL 방지(새 URL을 origin 기준으로 정규화)
+ * - 네비 활성화 유지
+ * - 미읽음 배지 갱신(단일 엔드포인트)
+ * - SW NAVIGATE 메시지(있으면) 처리
  */
-
-// === /static/js/main-nav.js ===
-// 기존 "load 시 service-worker.js 등록" 흐름을 유지하면서,
-// 공개키 fetch → (첫 사용자 클릭 시) 권한요청 → 구독 생성 → 서버 저장을 추가했습니다.
-
-/**
- * [SW → Page 'NAVIGATE' 메시지 처리 책임]
- * - SW(notificationclick)가 보낸 postMessage({ type: 'NAVIGATE', url })를 수신해
- *   실제 화면 전환을 수행한다.
- * - 라우팅 방식 선택:
- *   A) SPA 라우터: router.push(url) 또는 history.pushState 후 렌더
- *   B) 단순 이동: location.assign(url) (새로고침 발생)
- * - 안정성:
- *   - 잘못된 url/null 방어
- *   - 필요 시 event.origin 검증
- */
-
-/*
-    여기있던 코드 modules 디렉토리로 분배됨
- */
-
 import {authHeaders} from './utils.js';
 
 export function initMainNav() {
+    const navLinks = document.querySelectorAll('.footer-nav a');
+    const currentPath = window.location.pathname;
 
-    // <!-- 진입 시 미읽음 개수 반영: >0 이면 빨간 점 표시
-    //  - 이후 주기 폴링(15s)은 /js/notification.js에서만 수행(중복 폴링 방지) -->
-    async function updateUnreadCount() {
+    // ===== 기존 활성화 로직 유지 =====
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        link.classList.remove('active');
+
+        if (href === '/forumMain' && currentPath === '/forumMain') {
+            link.classList.add('active');
+        } else if (href === '/forum' && currentPath.startsWith('/forum') && currentPath !== '/forumMain') {
+            link.classList.add('active');
+        } else if (href !== '/forumMain' && href !== '/forum' && currentPath.startsWith(href)) {
+            link.classList.add('active');
+        }
+    });
+
+    if (!document.querySelector('.footer-nav a.active')) {
+        const homeLink = document.querySelector('.footer-nav a[href="/forumMain"]');
+        if (homeLink) homeLink.classList.add('active');
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            navLinks.forEach(item => item.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+        });
+    });
+
+    // ===== 미읽음 배지 갱신 (단일 호출) =====
+    async function fetchUnreadCount() {
+        const res = await fetch('/api/notifications/unread-count', {
+            method: 'POST',
+            credentials: 'include',
+            headers: authHeaders({Accept: 'application/json'})
+        });
+        const ct = res.headers.get('content-type') || '';
+        if (!res.ok || !ct.includes('application/json')) {
+            if (res.status === 401) throw new Error('UNAUTHORIZED');
+            throw new Error('Unexpected response');
+        }
+        return res.json(); // number
+    }
+
+    async function refreshUnreadBadge() {
         try {
-            const res = await fetch('/notification/unread-count', {
-                method: 'POST',
-                // main-nav.js의 authHeaders가 있으면 CSRF 자동 첨부, 없으면 무시
-                headers: (typeof authHeaders === 'function')
-                    ? authHeaders({Accept: 'application/json'})
-                    : {Accept: 'application/json'}
-            });
-            if (!res.ok) return;
-            const n = await res.json(); // 서버가 숫자(long)로 응답
+            const count = await fetchUnreadCount();
             const dot = document.getElementById('nav-bell-dot');
-            if (dot) dot.style.display = (n > 0) ? 'inline-block' : 'none';
+            if (dot) dot.style.display = (Number(count) > 0) ? 'inline-block' : 'none';
         } catch (e) {
-            // 네트워크 실패 시 조용히 패스(네비 사용성 유지)
-            console.error('Failed to update unread notification count:', e);
+            // 인증 만료/오류 시 조용히 실패 + 도트 숨김
+            const dot = document.getElementById('nav-bell-dot');
+            if (dot) dot.style.display = 'none';
+            console.error('Failed to update unread count:', e?.message || e);
         }
     }
 
-    updateUnreadCount();
+    refreshUnreadBadge();
+    window.addEventListener('focus', refreshUnreadBadge);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshUnreadBadge();
+    });
+
+    // ===== (옵션) SW → NAVIGATE 처리 =====
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (evt) => {
+            const msg = evt.data;
+            if (!msg || msg.type !== 'NAVIGATE' || !msg.url) return;
+            try {
+                const url = new URL(msg.url, location.origin);
+                if (url.origin === location.origin) location.assign(url.href);
+            } catch {
+                // ignore
+            }
+        });
+    }
 }

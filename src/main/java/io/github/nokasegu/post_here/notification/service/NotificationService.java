@@ -1,4 +1,3 @@
-// src/main/java/io/github/nokasegu/post_here/notification/service/NotificationService.java
 package io.github.nokasegu.post_here.notification.service;
 
 import io.github.nokasegu.post_here.follow.domain.FollowingEntity;
@@ -53,17 +52,27 @@ public class NotificationService {
 
         // Web Push
         log.info("[NOTI] webPush send start");
-        webPushService.sendToUser(following.getFollowed(), buildFollowPayload(saved, following));
+        try {
+            webPushService.sendToUser(following.getFollowed(), buildFollowPayload(saved, following));
+        } catch (Exception e) {
+            // [핵심 수정] 외부 알림 실패가 DB 트랜잭션을 망치지 않도록 예외 삼킴
+            log.warn("[NOTI] webPush send failed id={}, err={}", saved.getId(), e.toString());
+        }
         log.info("[NOTI] webPush send end");
 
         // FCM
         log.info("[NOTI] fcm send start");
-        fcmSenderService.sendFollow(
-                following.getFollowed(),
-                following.getFollower().getNickname(),
-                following.getFollower().getProfilePhotoUrl(),
-                saved.getId()
-        );
+        try {
+            fcmSenderService.sendFollow(
+                    following.getFollowed(),
+                    following.getFollower().getNickname(),
+                    following.getFollower().getProfilePhotoUrl(),
+                    saved.getId()
+            );
+        } catch (Exception e) {
+            // [핵심 수정] FCM 실패도 트랜잭션 롤백시키지 않음
+            log.warn("[NOTI] fcm send failed id={}, err={}", saved.getId(), e.toString());
+        }
         log.info("[NOTI] fcm send end");
 
         log.info("[NOTI] createFollowAndPush END id={}", saved.getId());

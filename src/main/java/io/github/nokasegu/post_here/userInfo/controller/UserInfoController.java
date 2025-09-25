@@ -71,7 +71,7 @@ public class UserInfoController {
      * @param email 확인할 이메일
      * @return 사용 가능 여부를 담은 Map 객체 (JSON)
      */
-    @GetMapping("/api/check-email")
+    @GetMapping("/check-email")
     @ResponseBody // HTML 뷰가 아닌 데이터(JSON)를 반환
     public Map<String, Boolean> checkEmail(@RequestParam String email) {
         boolean isAvailable = userInfoService.isEmailAvailable(email);
@@ -84,7 +84,7 @@ public class UserInfoController {
      * @param nickname 확인할 닉네임
      * @return 사용 가능 여부를 담은 Map 객체 (JSON)
      */
-    @GetMapping("/api/check-nickname")
+    @GetMapping("/check-nickname")
     @ResponseBody
     public Map<String, Boolean> checkNickname(@RequestParam String nickname) {
         boolean isAvailable = userInfoService.isNicknameAvailable(nickname);
@@ -98,7 +98,7 @@ public class UserInfoController {
      * @param session 인증 코드를 임시 저장할 세션
      * @return 성공 메시지를 담은 Map 객체
      */
-    @PostMapping("/api/send-verification")
+    @PostMapping("/send-verification")
     @ResponseBody
     public Map<String, Boolean> sendVerificationCode(@RequestParam String email, HttpSession session) {
         try {
@@ -130,7 +130,7 @@ public class UserInfoController {
      * @param session 세션에 저장된 코드와 비교
      * @return 코드 유효 여부를 담은 Map 객체
      */
-    @PostMapping("/api/verify-code")
+    @PostMapping("/verify-code")
     @ResponseBody
     public Map<String, Boolean> verifyCode(@RequestParam String code, HttpSession session) {
         String sessionCode = (String) session.getAttribute("verificationCode");

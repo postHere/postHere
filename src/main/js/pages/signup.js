@@ -137,7 +137,7 @@ export function initSignup() {
         }
 
         try {
-            const response = await fetch(`/api/check-email?email=${encodeURIComponent(email)}`);
+            const response = await fetch(`/check-email?email=${encodeURIComponent(email)}`);
             if (!response.ok) throw new Error('Server error');
             const data = await response.json();
 
@@ -174,7 +174,7 @@ export function initSignup() {
         emailInput.readOnly = true;
 
         try {
-            const response = await fetch('/api/send-verification', {
+            const response = await fetch('/send-verification', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: `email=${encodeURIComponent(emailInput.value)}`
@@ -209,7 +209,7 @@ export function initSignup() {
         }
 
         try {
-            const response = await fetch('/api/verify-code', {
+            const response = await fetch('/verify-code', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: `code=${encodeURIComponent(code)}`
@@ -302,7 +302,7 @@ export function initSignup() {
         nicknameFeedback.textContent = '';
 
         try {
-            const response = await fetch(`/api/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+            const response = await fetch(`/check-nickname?nickname=${encodeURIComponent(nickname)}`);
             if (!response.ok) throw new Error('Server error');
             const data = await response.json();
 

@@ -77,7 +77,7 @@ export function initMain() {
         const submitButton = form.find('.comment-submit');
         submitButton.prop('disabled', true);
         try {
-            const response = await fetch(`/api/forum/${postId}/comments`, {
+            const response = await fetch(`/forum/${postId}/comments`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({content})
@@ -178,7 +178,7 @@ export function initMain() {
         const postId = modal.data('post-id');
 
         try {
-            const response = await fetch(`/api/forum/${postId}/comments/${commentId}`, {
+            const response = await fetch(`/forum/${postId}/comments/${commentId}`, {
                 method: 'DELETE'
             });
             if (response.status === 204) {
@@ -340,7 +340,7 @@ export function initMain() {
     /// 모달용 댓글 목록을 불러와서 표시하는 함수
     async function loadCommentsForModal(postId, modal) {
         try {
-            const response = await fetch(`/api/forum/${postId}/comments`);
+            const response = await fetch(`/forum/${postId}/comments`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

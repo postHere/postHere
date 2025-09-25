@@ -152,7 +152,7 @@ public class ForumController {
     @PostMapping("/forum/searchArea")
     public WrapperDTO<String> setForumArea(
             @RequestBody ForumAreaRequestDto requestDto) {
-        ForumAreaEntity area = forumService.setForumArea(requestDto);
+        ForumAreaEntity area = forumService.getAreaByAddress(requestDto.getLocation());
         String redirectUrl = "/forumMain?areaKey=" + area.getId() + "&areaName=" + area.getAddress();
         return WrapperDTO.<String>builder()
                 .status(Code.OK.getCode())

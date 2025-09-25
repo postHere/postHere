@@ -1,6 +1,7 @@
 package io.github.nokasegu.post_here.find.service;
 
 import io.github.nokasegu.post_here.find.dto.FindNearbyDto;
+import io.github.nokasegu.post_here.find.dto.FindNearbyReadableOnlyDto;
 import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
 import io.github.nokasegu.post_here.find.repository.FindRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,12 @@ public class FindService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    public void checkFindReadable(double lng, double lat) {
+
+        List<FindNearbyReadableOnlyDto> result = findRepository.findNearbyReadableOnly(lng, lat);
+        int amount = result.size();
+        //메세지 양식 : {nickname}님 외 {amount}명의 fin'd가 존재합니다
     }
 }

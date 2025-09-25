@@ -183,3 +183,15 @@ a.noti-card:active {
     line-height: 1.3;
     word-break: break-word;
 }
+
+.noti-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 2줄 클램프 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    margin-top: 2px;
+    font-size: 0.94rem; /* 본문보다 살짝 작게 */
+    line-height: 1.32;
+    opacity: 0.9;
+}

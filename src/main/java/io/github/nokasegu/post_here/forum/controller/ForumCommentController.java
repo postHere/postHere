@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/forum/{forumId}/comments")
+@RequestMapping("forum/{forumId}/comments")
 public class ForumCommentController {
 
     private final ForumCommentService forumCommentService;

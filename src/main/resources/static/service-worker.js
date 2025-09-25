@@ -20,105 +20,95 @@
  * - 보안/안정성: push payload 파싱 try/catch, 데이터 검증, 실패 핸들링
  */
 
-/**
- * [알림 클릭 → 앱 포커스 + 특정 URL로 이동]
- * - 이 SW의 'notificationclick'에서:
- *   1) 이미 열린 창이 있으면 focus()
- *   2) 해당 창으로 postMessage({ type: 'NAVIGATE', url }) 전송
- *   3) 열린 창이 없으면 clients.openWindow(url)
- * - 페이지 측(main-nav.js)은 위 메시지를 수신해 실제 라우팅을 수행한다.
- *
- * [알림센터(웹 UI) 미읽음 처리 개요]
- * - /notification 페이지 진입 시:
- *   1) /notification/list 로 목록 로딩
- *   2) 방금 본 ID들을 /notification/read 로 즉시 읽음 처리
- *   3) 하단 네비 종 아이콘의 빨간점은 /notification/unread-count 로 갱신
- *
- * 주: 이 파일은 SW 측 동작만 담당하며, 실제 리스트 로딩/읽음 처리/뱃지 갱신은
- *     페이지 JS(notification.js)가 수행한다.
- */
-
-
 const CACHE_NAME = 'postHere-v2';
 const FILES_TO_CACHE = ['/css/main.css', '/js/main.js'];
 
 self.addEventListener('install', (event) => {
-    // 설치 단계: 앱 구동에 필요한 정적 리소스를 선 캐싱
-    // - 오프라인/재방문 속도 개선
-    // - 캐시에 추가 실패 시 install이 실패할 수 있으므로 event.waitUntil로 보장
-    event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(FILES_TO_CACHE)));
-    self.skipWaiting(); // 대기 상태 생략 → 즉시 이 SW 버전을 활성화 후보로 승격
+    // [수정] addAll이 하나라도 404면 install 자체가 실패 → 일부 실패는 로깅만 하고 계속 진행
+    event.waitUntil((async () => {
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            const tasks = FILES_TO_CACHE.map(url =>
+                cache.add(url).catch(err => {
+                    // 해당 리소스만 건너뛰고 나머지는 계속 캐싱
+                    console.warn('[SW] cache.add failed:', url, err && err.message);
+                })
+            );
+            await Promise.allSettled(tasks);
+        } catch (e) {
+            // install 전체가 막히지 않도록 마지막 방어
+            console.warn('[SW] install cache phase skipped:', e && e.message);
+        }
+    })());
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    // 활성화 단계: 이 SW가 모든 클라이언트를 즉시 제어
-    // [확장 포인트] 구버전 캐시 삭제 로직 추가 가능: caches.keys → CACHE_NAME 필터링
     event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
-    // 네트워크 요청 가로채기: Cache-First
-    // - 정적 파일에 적합. 동적 API에는 stale-while-revalidate 등 분기 가능
     event.respondWith(caches.match(event.request).then((r) => r || fetch(event.request)));
 });
 
+// [수정] 안전 파서: async/await으로 event.data.text() 처리 → DevTools "Push" 빈 페이로드 시 에러 방지
+async function safeParse(event) {
+    try {
+        if (!event.data) return {};
+        const txt = await event.data.text();
+        try {
+            return JSON.parse(txt);
+        } catch {
+            return {body: txt};
+        }
+    } catch {
+        return {};
+    }
+}
+
 // Push
 self.addEventListener('push', (event) => {
-    // 서버에서 Web Push로 전달된 메시지 수신
-    // 기대 payload 형식(예시): {type, notificationId, actor{nickname,profilePhotoUrl}, text}
-    // - title: actor.nickname이 있으면 사용, 없으면 기본값 'PostHere'
-    // - body/icon: 텍스트/프로필 이미지 기반
-    if (!event.data) return;
-    const payload = event.data.json(); // {type, notificationId, actor{nickname,profilePhotoUrl}, text}
-    const title = payload.actor?.nickname || 'PostHere';
-    const body = payload.text || '';
-    const icon = payload.actor?.profilePhotoUrl || '/icons/icon-192.png';
+    // [수정] safeParse를 async로 처리 → 반드시 event.waitUntil 안에서 await
+    event.waitUntil((async () => {
+        const payload = await safeParse(event);
 
-    // [확장 포인트]
-    // - actions: [{action:'open', title:'열기'}] 등 버튼 추가 가능
-    // - tag/renotify: 동일 알림 묶기/재알림 제어
-    // - requireInteraction: 사용자가 닫기 전까지 유지(데스크톱 친화)
-    // - data: 라우팅/추적 정보 확장
-    event.waitUntil(
-        self.registration.showNotification(title, {
-            body, icon, badge: icon,
-            data: {url: '/notification?focus=' + (payload.notificationId || '')}
-        })
-    );
+        // 기대 payload(예): {type, notificationId, actor{nickname,profilePhotoUrl}, text}
+        // [수정] 기본값 보강 → 항상 OS 알림이 뜨도록 함
+        const title = (payload.actor && payload.actor.nickname) || payload.title || 'PostHere';
+        const body = payload.text || payload.body || '새 알림이 도착했습니다.';
+        const icon = (payload.actor && payload.actor.profilePhotoUrl) || payload.icon || '/icons/icon-192.png';
+        const badge = payload.badge || '/icons/badge-72.png';
+        const url = payload.url || ('/notification?focus=' + (payload.notificationId || ''));
+
+        await self.registration.showNotification(title, {
+            body,
+            icon,
+            badge,
+            tag: 'posthere-noti',
+            renotify: true,
+            data: {url, ...(payload.data || {})}
+        });
+
+        // (선택) 열린 탭에 브로드캐스트 → 뱃지/목록 갱신은 페이지 스크립트가 처리
+        const clientsList = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+        for (const client of clientsList) client.postMessage({type: 'NOTIFICATION_NEW', payload});
+    })());
 });
 
 // 클릭 → 앱 포커스 + 라우팅
-// [알림 클릭 시 이동 처리 요약]
-// - 여기서 postMessage({ type: 'NAVIGATE', url })를 창으로 보냄
-// - 페이지(main-nav.js)는 'NAVIGATE' 메시지를 받아 라우팅(SPA/router 또는 location.*)을 수행
 self.addEventListener('notificationclick', (event) => {
-    // 알림 클릭 시:
-    // 1) 알림 닫기
-    // 2) 이미 열린 창이 있으면 focus + postMessage로 라우팅 지시
-    // 3) 없으면 해당 URL로 새 창 오픈
     event.notification.close();
     const url = event.notification.data?.url || '/notification';
     event.waitUntil((async () => {
         const all = await clients.matchAll({type: 'window', includeUncontrolled: true});
         for (const c of all) {
-            c.focus();
-            // 프런트에서 'message' 이벤트(or navigator.serviceWorker.onmessage)로 수신하여
-            // 클라이언트 라우터(NAVIGATE) 처리하면 됨
+            try {
+                await c.focus();
+            } catch {
+            }
             c.postMessage({type: 'NAVIGATE', url});
             return;
         }
         await clients.openWindow(url);
     })());
 });
-
-/**
- * [참고/제안 - 변경 아님]
- * 1) 캐시 정리(activate):
- *    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
- * 2) 동적 컨텐츠 캐시:
- *    fetch 핸들러에서 URL/메서드/헤더에 따라 전략 분기(예: API는 네트워크 우선)
- * 3) push payload 안전성:
- *    try/catch로 JSON 파싱 및 필수 필드 검증, 이상 데이터 무시
- * 4) 알림 액션:
- *    actions를 추가하고 notificationclick에서 event.action 분기
- */

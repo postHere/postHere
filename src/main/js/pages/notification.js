@@ -97,10 +97,15 @@ export function initNotification() {
             const createdAt = it.createdAt ?? it.created_at ?? null;
             const read = (typeof it.read === 'boolean') ? it.read : (typeof it.checkStatus === 'boolean') ? it.checkStatus : (typeof it.checked === 'boolean') ? it.checked : false;
 
+            // ===================== [변경] 링크 우선순위 =====================
+            // - 댓글 알림(COMMENT)에는 백엔드가 내려준 link(/forum/{id})가 존재
+            // - FOLLOW 등 기존 규칙은 프로필로 이동
+            const link = it.link || (actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#');
+
             const row = document.createElement('a');
             row.className = 'noti-card';
             if (id != null) row.dataset.id = String(id);
-            row.href = actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#';
+            row.href = link; // [변경] it.link 우선
             row.setAttribute('aria-label', actorNick ? `${actorNick} ${text}` : text);
             row.dataset.unread = String(!read);
 
@@ -130,6 +135,16 @@ export function initNotification() {
             textEl.textContent = String(text);
             main.appendChild(head);
             main.appendChild(textEl);
+
+            // ===================== [신규] 댓글 미리보기(2줄 클램프) =====================
+            if (it.commentPreview) {
+                const pv = document.createElement('div');
+                pv.className = 'noti-preview'; // CSS에서 2줄 line-clamp
+                pv.textContent = String(it.commentPreview);
+                main.appendChild(pv);
+            }
+            // ========================================================================
+
             row.appendChild(main);
             frag.appendChild(row);
         });

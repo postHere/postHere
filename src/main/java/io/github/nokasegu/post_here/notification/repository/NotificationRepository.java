@@ -1,3 +1,4 @@
+// src/main/java/io/github/nokasegu/post_here/notification/repository/NotificationRepository.java
 package io.github.nokasegu.post_here.notification.repository;
 
 import io.github.nokasegu.post_here.notification.domain.NotificationEntity;
@@ -18,7 +19,7 @@ import java.util.List;
  * - 알림(NotificationEntity)의 목록 조회, 미읽음 개수 조회, 읽음 처리(batch update)를 담당하는 JPA Repository.
  * <p>
  * [사용 위치]
- * - NotificationService.list(...) : findListByTarget(...) + countByTargetUserAndCheckStatusIsFalse(...)
+ * - NotificationService.list(...) : (기존) findListByTarget(...) + countByTargetUserAndCheckStatusIsFalse(...)
  * - NotificationService.markRead(...) : markReadByIds(...)
  * - NotificationService.markAllRead(...) : markAllRead(...)
  * <p>
@@ -28,10 +29,9 @@ import java.util.List;
  * - 목록 조회 정렬: createdAt DESC, id DESC (동시 타임스탬프 시 안정적 순서 보장).
  * <p>
  * [확장/제약 메모]
- * - 현재 findListByTarget 쿼리는 following 연관을 INNER JOIN FETCH 하므로
- * "팔로우 알림"에 한정된 결과를 조회한다(FOLLOW 전용). 댓글/기타 알림을 포함하려면 쿼리 분기/동적 쿼리 고려.
- * - Pageable 사용 시 Hibernate는 FETCH JOIN과 함께 페이징을 지원하지만(버전에 따라 경고 가능),
- * 다대일/일대일 관계라면 중복 행 위험은 낮다. 필요 시 DISTINCT 추가를 검토.
+ * - (기존) findListByTarget 쿼리는 following 연관을 INNER JOIN FETCH 하므로 FOLLOW 전용.
+ * - (신규) findUnifiedListByTarget 쿼리는 FOLLOW/COMMENT 등 다양한 타입을 한 번에 조회하도록
+ * LEFT JOIN 기반으로 확장. Service.list(...)에서 이 메서드를 사용하도록 변경했다.
  */
 @Repository
 public interface NotificationRepository extends JpaRepository<NotificationEntity, Long> {
@@ -44,7 +44,7 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
      * 제약/주의:
      * - INNER JOIN FETCH n.following 으로 인해 "following 연관이 있는 알림"만 반환됨.
      * (즉, FOLLOW 알림 전용 쿼리)
-     * - 다른 유형(COMMENT/등)을 함께 보여주려면 별도 쿼리 또는 UNION 전략 필요.
+     * - 유지 목적으로 남겨둠(호환성). 실제 리스트 화면은 아래 통합 쿼리를 사용한다.
      */
     @Query("""
             select n
@@ -55,6 +55,22 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
              order by n.createdAt desc, n.id desc
             """)
     List<NotificationEntity> findListByTarget(@Param("target") UserInfoEntity target, Pageable pageable);
+
+    // ===================== [신규] 통합 목록 조회 =====================
+    // - FOLLOW/COMMENT(및 향후 타입) 공통으로 하나의 리스트에 섞어서 내려주기 위한 LEFT JOIN FETCH 쿼리
+    // - following/follower, comment/writer 를 미리 로딩하여 N+1 방지
+    // - ManyToOne/OneToOne만 fetch하므로 Pageable 사용 가능(중복 행 위험 낮음)
+    @Query("""
+            select n
+              from NotificationEntity n
+              left join fetch n.following f
+              left join fetch f.follower ff
+              left join fetch n.comment c
+              left join fetch c.writer cw
+             where n.targetUser = :target
+             order by n.createdAt desc, n.id desc
+            """)
+    List<NotificationEntity> findUnifiedListByTarget(@Param("target") UserInfoEntity target, Pageable pageable);
 
     /**
      * [미읽음 개수 조회]

@@ -3,9 +3,9 @@ package io.github.nokasegu.post_here.forum.controller;
 import io.github.nokasegu.post_here.common.dto.WrapperDTO;
 import io.github.nokasegu.post_here.common.exception.Code;
 import io.github.nokasegu.post_here.common.security.CustomUserDetails;
+import io.github.nokasegu.post_here.forum.domain.ForumAreaEntity;
 import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.service.ForumService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -151,10 +151,9 @@ public class ForumController {
     @ResponseBody
     @PostMapping("/forum/searchArea")
     public WrapperDTO<String> setForumArea(
-            @RequestBody ForumAreaRequestDto requestDto,
-            HttpSession session) {
-        Long areaKey = forumService.setForumArea(requestDto, session);
-        String redirectUrl = "/forumMain?areaKey=" + areaKey;
+            @RequestBody ForumAreaRequestDto requestDto) {
+        ForumAreaEntity area = forumService.setForumArea(requestDto);
+        String redirectUrl = "/forumMain?areaKey=" + area.getId() + "&areaName=" + area.getAddress();
         return WrapperDTO.<String>builder()
                 .status(Code.OK.getCode())
                 .message("지역 설정이 성공적으로 변경되었습니다.")
@@ -171,18 +170,6 @@ public class ForumController {
                 .status(Code.OK.getCode())
                 .message("지역 목록을 성공적으로 불러왔습니다.")
                 .data(areas)
-                .build();
-    }
-
-    // 현재 위치 정보를 받아 해당 지역의 PK를 반환하는 API
-    @ResponseBody
-    @PostMapping("/location")
-    public WrapperDTO<Long> updateCurrentLocation(@RequestBody ForumAreaRequestDto requestDto) {
-        Long areaKey = forumService.getAreaKeyByAddress(requestDto.getLocation());
-        return WrapperDTO.<Long>builder()
-                .status(Code.OK.getCode())
-                .message(Code.OK.getValue())
-                .data(areaKey)
                 .build();
     }
 }

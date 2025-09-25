@@ -19,7 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final String[] WHITELIST_URL = {
-            "/signup/**", "/login", "/api/**",
+            "/signup/**", "/login", "/api/**", "/location",
 
             // ✅ [추가] 푸시 VAPID 공개키는 비로그인 접근 허용이 필요
             //  - 프론트가 앱 시작 시 fetch로 키를 받아야 serviceWorker 구독 진행 가능

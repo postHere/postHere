@@ -36,6 +36,51 @@ export function initMainNav() {
         });
     });
 
+    // ===== 1. 사각형 토글 기능 =====
+    const toggleButton = document.getElementById('toggle-button');
+    const squareToggle = document.getElementById('square-toggle');
+
+    // 토글 열기/닫기 함수
+    function toggleSquare(open) {
+        if (!squareToggle) return; // ▼▼▼ [수정됨] null 체크
+
+        if (open) {
+            squareToggle.classList.add('active');
+        } else {
+            squareToggle.classList.remove('active');
+        }
+    }
+
+    // 플러스 버튼 클릭 시 토글
+    if (toggleButton) {
+        toggleButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!squareToggle) {
+                return;
+            }
+
+            const isOpen = squareToggle.classList.contains('active');
+            toggleSquare(!isOpen);
+        });
+    }
+
+    // 토글 항목 클릭 시 해당 경로로 이동 (클릭 이벤트 추가)
+    const toggleItems = document.querySelectorAll('.toggle-item'); // ▼▼▼ [수정됨] toggle-item 참조
+    toggleItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            // 클릭한 항목의 href를 가져와 페이지 이동
+            const href = item.getAttribute('href');
+            if (href) {
+                location.href = href;
+                // 토글 닫기
+                toggleSquare(false);
+            }
+        });
+    });
+
+
     // ===== 미읽음 배지 갱신 (단일 호출) =====
     async function fetchUnreadCount() {
         const res = await fetch('/api/notifications/unread-count', {

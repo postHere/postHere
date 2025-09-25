@@ -2,6 +2,7 @@ package io.github.nokasegu.post_here.find.repository;
 
 import io.github.nokasegu.post_here.find.domain.FindEntity;
 import io.github.nokasegu.post_here.find.dto.FindNearbyDto;
+import io.github.nokasegu.post_here.find.dto.FindNearbyReadableOnlyDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,4 +31,21 @@ public interface FindRepository extends JpaRepository<FindEntity, Long> {
                     ORDER BY distanceInMeters ASC;
                     """, nativeQuery = true)
     List<FindNearbyDto> findNearby(@Param("lng") double lng, @Param("lat") double lat);
+    
+    @Query(
+            value = """
+                    SELECT
+                    	f.find_pk AS find_pk,
+                    	u.nickname AS nickname,
+                        u.profile_photo_url AS profile_image_url,
+                    	ST_Distance_Sphere(f.coordinates, ST_SRID(POINT(:lon, :lat), 4326)) AS distanceInMeters
+                    FROM
+                    	find f
+                    JOIN user_info u ON f.writer_id = u.user_info_pk
+                    HAVING
+                    	distanceInMeters <= 50
+                    ORDER BY distanceInMeters ASC;
+                    """, nativeQuery = true)
+    List<FindNearbyReadableOnlyDto> findNearbyReadableOnly(@Param("lon") double lon, @Param("lat") double lat);
+
 }

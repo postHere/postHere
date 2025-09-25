@@ -21,10 +21,11 @@ export function initSignup() {
     const signupBtn = document.getElementById('signupBtn');
     const signupForm = document.getElementById('signupForm');
 
-// 새로 추가된 요소 변수에 할당
+    // 새로 추가된 요소 변수에 할당
     const verificationInputs = document.getElementById('verificationSection');
+    const sendCodeBtnContent = document.getElementById('sendCodeBtnContent');
 
-// --- 회원가입 단계별 성공 여부를 저장하는 변수 ---
+    // --- 회원가입 단계별 성공 여부를 저장하는 변수 ---
     let isEmailValid = false;
     let isEmailVerified = false;
     let isPasswordValid = false;
@@ -49,6 +50,28 @@ export function initSignup() {
         } else {
             // 유효성 조건이 하나라도 불충분하면 비활성화
             signupBtn.disabled = true;
+        }
+    }
+
+    // 로딩 상태를 시작하는 함수
+    function startLoadingState(button) {
+        button.disabled = true;
+        button.classList.add('btn-loading'); // 비활성화 색상 클래스 추가
+        if (button.id === 'resendCodeBtn') {
+            button.querySelector('#resendCodeBtnContent').innerHTML = '<span class="loading-spinner"></span> 인증 코드 재전송 중...';
+        } else {
+            button.querySelector('#sendCodeBtnContent').innerHTML = '<span class="loading-spinner"></span> 인증 코드 전송 중...';
+        }
+    }
+
+// 로딩 상태를 복구하는 함수
+    function endLoadingState(button) {
+        button.disabled = false;
+        button.classList.remove('btn-loading'); // 비활성화 색상 클래스 제거
+        if (button.id === 'resendCodeBtn') {
+            button.querySelector('#resendCodeBtnContent').textContent = '인증 코드 재전송';
+        } else {
+            button.querySelector('#sendCodeBtnContent').textContent = '인증 코드 전송';
         }
     }
 
@@ -166,12 +189,15 @@ export function initSignup() {
 
 // 2. 인증 코드 전송 (서버 API 호출)
     sendCodeBtn.addEventListener('click', async () => {
-        // --- 이메일 피드백 메시지 초기화 추가 ---
-        emailFeedback.classList.remove('active', 'feedback-success', 'feedback-error');
-        emailFeedback.textContent = '';
+        // 로딩 상태 시작
+        startLoadingState(sendCodeBtn);
 
         // 이메일 입력란을 읽기 전용으로 변경
         emailInput.readOnly = true;
+
+        // --- 이메일 피드백 메시지 초기화 추가 ---
+        emailFeedback.classList.remove('active', 'feedback-success', 'feedback-error');
+        emailFeedback.textContent = '';
 
         try {
             const response = await fetch('/api/send-verification', {
@@ -180,6 +206,7 @@ export function initSignup() {
                 body: `email=${encodeURIComponent(emailInput.value)}`
             });
             if (!response.ok) throw new Error('Server error');
+
             const data = await response.json();
 
             if (data.success) {
@@ -194,10 +221,44 @@ export function initSignup() {
         } catch (error) {
             setFeedback(emailFeedback, '인증 코드를 전송하는 중 오류가 발생했습니다.', 'error');
             emailInput.readOnly = false;
+        } finally {
+            // 로딩 상태 복구
+            endLoadingState(sendCodeBtn);
         }
     });
 
-    resendCodeBtn.addEventListener('click', () => sendCodeBtn.click());
+    // 재전송 버튼 로직을 수정
+    resendCodeBtn.addEventListener('click', async () => {
+        // 로딩 상태 시작
+        startLoadingState(resendCodeBtn);
+
+        // 타이머를 멈추고 피드백 메시지 초기화
+        clearInterval(timer);
+        setFeedback(codeFeedback, '', 'success');
+
+        try {
+            const response = await fetch('/api/send-verification', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `email=${encodeURIComponent(emailInput.value)}`
+            });
+            if (!response.ok) throw new Error('Server error');
+
+            const data = await response.json();
+
+            if (data.success) {
+                startTimer();
+                setFeedback(codeFeedback, '인증 코드를 다시 보냈습니다.', 'success');
+            } else {
+                setFeedback(codeFeedback, '인증 코드 재전송에 실패했습니다. 다시 시도해 주세요.', 'error');
+            }
+        } catch (error) {
+            setFeedback(codeFeedback, '인증 코드를 재전송하는 중 오류가 발생했습니다.', 'error');
+        } finally {
+            // 로딩 상태 복구
+            endLoadingState(resendCodeBtn);
+        }
+    });
 
 // 3. 인증 코드 확인 (서버 API 호출)
     verifyCodeBtn.addEventListener('click', async () => {

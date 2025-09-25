@@ -8,31 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
-/**
- * FirebaseApp/FirebaseMessaging을 정적 호출(getInstance)로 직접 잡지 않고
- * Spring 빈 주입으로만 사용해 초기화 순서 문제를 제거합니다.
- * <p>
- * - 단건 전송: sendToToken(...)
- * - 다건 전송: sendToTokens(...)
- * - 도메인별 헬퍼: sendFollowing/sendComment/sendLike (필요 시 사용)
- * <p>
- * 주의:
- * 1) 반드시 FirebaseConfig에서 FirebaseMessaging 빈이 등록되어 있어야 합니다.
- * 2) title/body는 notification 페이로드로 포함되고, data는 앱에서 onMessageReceived로 처리할 수 있습니다.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FcmSenderService {
 
-    private final FirebaseMessaging firebaseMessaging; // ✅ 주입 방식
-
-    // ===== Public API =====
+    private final FirebaseMessaging firebaseMessaging;
 
     private static String tail(String token) {
         if (token == null) return "null";
@@ -40,84 +23,104 @@ public class FcmSenderService {
         return n <= 6 ? token : token.substring(n - 6);
     }
 
-    /**
-     * 단일 토큰으로 알림 전송
-     */
-    // [선택-경고억제] 일부 Firebase API에서 deprecated 경고가 뜰 수 있어 경고만 억제합니다. 기능 변화는 없습니다.
-    @SuppressWarnings("deprecation")
+    // ===== Public API =====
     public String sendToToken(String token, String title, String body) {
         return sendToToken(token, title, body, Map.of());
     }
 
-    /**
-     * 단일 토큰 + data 전송
-     */
-    // [선택-경고억제] 위와 동일한 이유로 경고 억제
-    @SuppressWarnings("deprecation")
     public String sendToToken(String token, String title, String body, Map<String, String> data) {
         Objects.requireNonNull(token, "token must not be null");
         try {
             Message message = buildMessage(token, title, body, data);
             String messageId = firebaseMessaging.send(message);
-            log.info("[FCM] Sent to one token: messageId={}, tokenTail={}", messageId, tail(token));
+            log.info("[FCM] Sent(one) id={}, tokenTail={}", messageId, tail(token));
             return messageId;
         } catch (Exception e) {
-            log.error("[FCM] Failed to send to tokenTail={} : {}", tail(token), e.toString(), e);
+            log.error("[FCM] Failed(one) tokenTail={} err={}", tail(token), e.toString(), e);
             throw new RuntimeException("FCM send failed", e);
         }
     }
 
     /**
-     * 여러 토큰으로 알림 전송 (최대 500개/회)
+     * 멀티캐스트. 실패 시(per 404 batch) 개별 전송으로 폴백
      */
-    // [선택-경고억제] 위와 동일한 이유로 경고 억제
-    @SuppressWarnings("deprecation")
     public FcmBatchResult sendToTokens(Collection<String> tokens, String title, String body) {
         return sendToTokens(tokens, title, body, Map.of());
     }
 
-    // ===== Domain helpers (선택 사용) =====
-
-    /**
-     * 여러 토큰 + data 전송
-     */
-    // [선택-경고억제] 위와 동일한 이유로 경고 억제 (sendMulticast 사용부)
-    @SuppressWarnings("deprecation")
     public FcmBatchResult sendToTokens(Collection<String> tokens, String title, String body, Map<String, String> data) {
-        if (tokens == null || tokens.isEmpty()) {
+        if (tokens == null) tokens = List.of();
+        List<String> list = tokens.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
+
+        if (list.isEmpty()) {
             log.info("[FCM] No tokens to send.");
             return FcmBatchResult.empty();
         }
+
+        // 1) 우선 멀티캐스트 시도
         try {
-            MulticastMessage message = buildMulticastMessage(tokens, title, body, data);
-            var br = firebaseMessaging.sendMulticast(message);
+            MulticastMessage message = buildMulticastMessage(list, title, body, data);
+            BatchResponse br = firebaseMessaging.sendMulticast(message);
 
             int success = br.getSuccessCount();
             int failure = br.getFailureCount();
-            log.info("[FCM] Multicast sent: total={}, success={}, failure={}", tokens.size(), success, failure);
+            log.info("[FCM] Multicast sent: total={}, success={}, failure={}", list.size(), success, failure);
 
-            // 실패 토큰 수집(로깅/정리용)
-            var failedTokens = new java.util.ArrayList<String>();
-            List<SendResponse> responses = br.getResponses();
-            int idx = 0;
-            for (SendResponse r : responses) {
+            List<String> failedTokens = new ArrayList<>();
+            for (int i = 0; i < br.getResponses().size(); i++) {
+                SendResponse r = br.getResponses().get(i);
                 if (!r.isSuccessful()) {
-                    failedTokens.add(((List<String>) tokens).get(idx));
-                    log.warn("[FCM] failed tokenTail={}, err={}", tail(((List<String>) tokens).get(idx)),
-                            r.getException() != null ? r.getException().getMessage() : "unknown");
+                    String tok = list.get(i);
+                    failedTokens.add(tok);
+                    String msg = r.getException() != null ? r.getException().getMessage() : "unknown";
+                    log.warn("[FCM] failed tokenTail={} err={}", tail(tok), msg);
+
+                    // [선택] 무효 토큰 정리 예시
+                    // if (msg != null && (msg.contains("NotRegistered") || msg.contains("InvalidRegistration"))) {
+                    //     // userRepo나 별도 토큰 저장소에서 제거/NULL 업데이트
+                    // }
                 }
-                idx++;
             }
-            return new FcmBatchResult(tokens.size(), success, failure, failedTokens);
+            return new FcmBatchResult(list.size(), success, failure, failedTokens);
+        } catch (FirebaseMessagingException e) {
+            // 2) 배치 404면 개별 전송 폴백
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("/batch") && msg.contains("404")) {
+                log.warn("[FCM] batch 404 detected. Fallback to per-token send...");
+                return fallbackSendIndividually(list, title, body, data);
+            }
+            log.error("[FCM] Multicast send failed: {}", e.toString(), e);
+            throw new RuntimeException("FCM multicast send failed", e);
         } catch (Exception e) {
             log.error("[FCM] Multicast send failed: {}", e.toString(), e);
             throw new RuntimeException("FCM multicast send failed", e);
         }
     }
 
-    /**
-     * 팔로우 알림 도메인 헬퍼 (필요하면 호출부에서 토큰 조회 후 넘겨 사용)
-     */
+    private FcmBatchResult fallbackSendIndividually(List<String> tokens, String title, String body, Map<String, String> data) {
+        int success = 0;
+        List<String> failed = new ArrayList<>();
+        for (String t : tokens) {
+            try {
+                sendToToken(t, title, body, data);
+                success++;
+            } catch (RuntimeException ex) {
+                failed.add(t);
+                // [선택] NotRegistered/InvalidRegistration 시 정리
+            }
+        }
+        int total = tokens.size();
+        int failure = total - success;
+        log.info("[FCM] Fallback send(one-by-one) total={}, success={}, failure={}", total, success, failure);
+        return new FcmBatchResult(total, success, failure, failed);
+    }
+
+    // ===== 도메인 헬퍼 =====
     public FcmBatchResult sendFollowing(Collection<String> targetTokens, String followerNickname, Long followerId) {
         String title = "새 팔로워";
         String body = followerNickname + " 님이 당신을 팔로우했습니다.";
@@ -129,43 +132,24 @@ public class FcmSenderService {
         return sendToTokens(targetTokens, title, body, data);
     }
 
-    // [추가] NotificationService에서 사용하는 시그니처를 그대로 지원하는 오버로드 메서드
-    // - 호출부(NotificationService#createFollowAndPush)와 시그니처를 맞춰 "cannot find symbol" 컴파일 에러를 제거합니다.
-    // - targetUser로부터 FCM 토큰들을 조회하여 기존 멀티캐스트 전송 로직(sendToTokens)으로 위임합니다.
-    public void sendFollow(UserInfoEntity targetUser,
-                           String followerNickname,
-                           String followerProfilePhotoUrl,
-                           Long notificationId) {
-
+    public void sendFollow(UserInfoEntity targetUser, String followerNickname, String followerProfilePhotoUrl, Long notificationId) {
         String title = "새 팔로워";
         String body = followerNickname + " 님이 당신을 팔로우했습니다.";
-
         Map<String, String> data = Map.of(
                 "type", "FOLLOW",
                 "notificationId", String.valueOf(notificationId),
                 "actorNickname", followerNickname,
                 "actorProfilePhotoUrl", followerProfilePhotoUrl != null ? followerProfilePhotoUrl : ""
         );
-
-        // [중요] 실제 구현에서는 targetUser에 연동된 "네이티브 앱 FCM 토큰"을 조회해야 합니다.
-        //       현재는 빌드가 깨지지 않도록 기본 구현(빈 리스트/스킵)을 제공하며,
-        //       아래 resolveFcmTokens(...) 안에 프로젝트의 실제 토큰 저장소 접근 로직을 작성하세요.
         List<String> tokens = resolveFcmTokens(targetUser);
-
-        if (tokens == null || tokens.isEmpty()) {
-            // [수정] SLF4J 오버로드 모호성 방지: null → Throwable로 해석되는 문제 방지를 위해 문자열 변환 사용
-            //        또한 UserInfoEntity의 PK getter는 getId()이므로 그에 맞춰 로깅합니다.
+        if (tokens.isEmpty()) {
             log.info("[FCM] No native tokens for target user (id={}). Skip sending FOLLOW.",
-                    (targetUser != null && targetUser.getId() != null) ? String.valueOf(targetUser.getId()) : "null");
-            return; // 토큰이 없으면 전송 스킵 (에러 아님)
+                    targetUser != null ? String.valueOf(targetUser.getId()) : "null");
+            return;
         }
-
         sendToTokens(tokens, title, body, data);
     }
 
-    /**
-     * 댓글 알림 도메인 헬퍼
-     */
     public FcmBatchResult sendComment(Collection<String> targetTokens, String actorNickname, String postTitle, Long postId) {
         String title = "새 댓글";
         String body = actorNickname + " 님이 \"" + postTitle + "\"에 댓글을 달았습니다.";
@@ -177,11 +161,6 @@ public class FcmSenderService {
         return sendToTokens(targetTokens, title, body, data);
     }
 
-    // ===== Builders =====
-
-    /**
-     * 좋아요 알림 도메인 헬퍼
-     */
     public FcmBatchResult sendLike(Collection<String> targetTokens, String actorNickname, Long postId) {
         String title = "새 좋아요";
         String body = actorNickname + " 님이 게시글을 좋아합니다.";
@@ -193,13 +172,11 @@ public class FcmSenderService {
         return sendToTokens(targetTokens, title, body, data);
     }
 
+    // ===== builders =====
     private Message buildMessage(String token, String title, String body, Map<String, String> data) {
         return Message.builder()
                 .setToken(token)
-                .setNotification(Notification.builder()
-                        .setTitle(title)
-                        .setBody(body)
-                        .build())
+                .setNotification(Notification.builder().setTitle(title).setBody(body).build())
                 .putAllData(data == null ? Map.of() : data)
                 .setAndroidConfig(androidDefaults())
                 .setApnsConfig(apnsDefaults())
@@ -209,10 +186,7 @@ public class FcmSenderService {
     private MulticastMessage buildMulticastMessage(Collection<String> tokens, String title, String body, Map<String, String> data) {
         return MulticastMessage.builder()
                 .addAllTokens(tokens)
-                .setNotification(Notification.builder()
-                        .setTitle(title)
-                        .setBody(body)
-                        .build())
+                .setNotification(Notification.builder().setTitle(title).setBody(body).build())
                 .putAllData(data == null ? Map.of() : data)
                 .setAndroidConfig(androidDefaults())
                 .setApnsConfig(apnsDefaults())
@@ -220,11 +194,9 @@ public class FcmSenderService {
     }
 
     private AndroidConfig androidDefaults() {
-        // 필요 시 채널ID/TTL 등 지정
         return AndroidConfig.builder()
                 .setTtl(Duration.ofHours(1).toMillis())
                 .setPriority(AndroidConfig.Priority.HIGH)
-                // .setNotification(AndroidNotification.builder().setChannelId("posthere_default").build())
                 .build();
     }
 
@@ -235,25 +207,19 @@ public class FcmSenderService {
                         .setContentAvailable(true)
                         .setSound("default")
                         .build())
-                .setFcmOptions(ApnsFcmOptions.builder()
-                        .setAnalyticsLabel("posthere_apns")
-                        .build())
+                .setFcmOptions(ApnsFcmOptions.builder().setAnalyticsLabel("posthere_apns").build())
                 .build();
     }
 
-    // ===== 실제 토큰 조회 연결 지점 =====
-    // [추가] 프로젝트의 실제 스키마/저장소에 맞게 FCM 토큰 조회 로직을 구현하세요.
-    //       현재는 예비 구현으로 빈 리스트를 반환하여 "토큰 없음 → 전송 스킵" 동작을 하게 합니다.
+    // ===== 실제 토큰 조회 (A안: user_info.fcm_token 사용) =====
     protected List<String> resolveFcmTokens(UserInfoEntity targetUser) {
-        // TODO: 예)
-        // return fcmTokenRepository.findAllByUser(targetUser).stream()
-        //                          .map(FcmTokenEntity::getToken)
-        //                          .toList();
-        return List.of();
+        if (targetUser == null) return List.of();
+        String t = targetUser.getFcmToken();
+        if (t == null || t.isBlank()) return List.of();
+        return List.of(t.trim());
     }
 
     // ===== DTO =====
-
     public record FcmBatchResult(int total, int success, int failure, List<String> failedTokens) {
         public static FcmBatchResult empty() {
             return new FcmBatchResult(0, 0, 0, List.of());

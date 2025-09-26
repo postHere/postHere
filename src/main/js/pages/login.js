@@ -1,3 +1,5 @@
+import {initBackgroundGeolocation} from "../modules/location-tracker";
+
 export function initLogin() {
 
     const loginError = $('#login-error');
@@ -50,7 +52,8 @@ export function initLogin() {
             data: loginData,
             datatype: "json"
         })
-            .done(function (data, textStatus, jqXHR) {
+            .done(async function (data, textStatus, jqXHR) {
+                await initBackgroundGeolocation();
                 fetch('/api/auth/status')
                     .finally(() => {
                         window.location.href = jqXHR.getResponseHeader('Location');

@@ -1,7 +1,13 @@
-export function initMain() {
+import {Preferences} from '@capacitor/preferences';
+
+export async function initMain() {
     let finalAreaKey = null;
+    let finalAreaName = null;
+
+    // 쿼리 파라미터에서 key 추출
     const urlParams = new URLSearchParams(window.location.search);
     const areaKeyFromUrl = urlParams.get('areaKey');
+    const areaNameFromUrl = urlParams.get('areaName');
 
     // 로고 클릭 이벤트 리스너
     $('.logo a').on('click', function (e) {
@@ -28,20 +34,30 @@ export function initMain() {
         history.replaceState({}, document.title, newUrl);
     }
 
-    if (areaKeyFromUrl) {
+    if (areaKeyFromUrl && areaNameFromUrl) {
+        console.log('URL 파라미터에서 key 발견:', areaKeyFromUrl);
         finalAreaKey = areaKeyFromUrl;
+        finalAreaName = areaNameFromUrl;
     } else {
-        const areaKeyFromStorage = localStorage.getItem('currentAreaKey');
-        if (areaKeyFromStorage) {
-            finalAreaKey = areaKeyFromStorage;
+        // 쿼리 파라미터가 없으면 Preferences 값 참조
+        const {value: areaKeyFromPreferences} = await Preferences.get({key: 'currentAreaKey'});
+        const {value: areaNameFromPreferences} = await Preferences.get({key: 'currentAreaName'});
+        console.log('preferences에서 지역 정보 발견: ', areaKeyFromPreferences, areaNameFromPreferences);
+        if (areaKeyFromPreferences && areaNameFromPreferences) {
+            finalAreaKey = areaKeyFromPreferences;
+            finalAreaName = areaNameFromPreferences;
         }
     }
 
     const locationTextElement = $('#current-location-text');
-    if (finalAreaKey) {
-        locationTextElement.text(finalAreaKey);
+    console.log("key : ", finalAreaKey, finalAreaName);
+    if (finalAreaKey && finalAreaName) {
+        locationTextElement.text(finalAreaName);
+
+        // finalAreaKey를 사용해 바로 게시물을 로드
         loadPosts(finalAreaKey);
     } else {
+        console.log("게시물을 불러올 지역 정보가 없습니다.");
         locationTextElement.text("지역 설정 중..");
     }
 
@@ -57,7 +73,7 @@ export function initMain() {
         }, 1500);
     }
 
-    // 댓글 모달을 여는 로직
+    // 포스트 컨테이너에 이벤트 위임 방식으로 댓글 관련 이벤트 바인딩
     $('#post-list-container').on('click', '.comment-trigger', async function (e) {
         e.preventDefault();
         const postCard = $(this).closest('.post-card');

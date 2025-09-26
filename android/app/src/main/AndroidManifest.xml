@@ -6,6 +6,16 @@
     <!-- ✅ Android 13+ (API 33) 알림 권한 — 반드시 선언 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- 백그라운드에서 위치에 접근하기 위해 요청할 권한을 명시 -->
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
             android:allowBackup="true"
             android:icon="@mipmap/ic_launcher"
@@ -22,6 +32,9 @@
                 android:name="com.google.firebase.messaging.default_notification_color"
                 android:resource="@color/green_500"/>
 
+        <!-- capacitor-background-geolocation licence key debug 모드에선 주석-->
+        <!--        <meta-data android:name="com.transistorsoft.locationmanager.license" android:value=""/>-->
+
         <activity
                 android:name=".MainActivity"
                 android:label="@string/title_activity_main"
@@ -34,7 +47,6 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-
         </activity>
 
         <provider
@@ -47,5 +59,4 @@
                     android:resource="@xml/file_paths"/>
         </provider>
     </application>
-
 </manifest>

@@ -1,3 +1,5 @@
+import {Preferences} from "@capacitor/preferences";
+
 export function initForumWrite() {
 
     const submitButton = document.getElementById('submit-btn');
@@ -164,7 +166,7 @@ export function initForumWrite() {
         submitButton.disabled = true;
         submitButton.textContent = '업로드 중...';
 
-        const currentAreaKey = localStorage.getItem('currentAreaKey');
+        const {value: currentAreaKey} = await Preferences.get({key: 'currentAreaKey'});
         if (!currentAreaKey) {
             showToast('지역 설정이 필요합니다.');
             submitButton.disabled = false;

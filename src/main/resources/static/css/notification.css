@@ -1,197 +1,157 @@
-/* ===== Notification page styles ===== */
-
-/* 네비 높이 기본값(안전치) + 페이저 상하 대칭 간격 */
+/* ===== 공통 변수 ===== */
 :root {
-    --footer-height: 120px; /* JS가 실측으로 덮어씀 */
-    --pager-gap: 16px; /* 마지막 카드↔페이저 간격 = 페이저 상단 간격 */
-
-    --pager-height: 40px; /* 페이저의 높이를 변수로 정의 */
-
-    /* 빨간 점 위치/크기/간격(프로필과 1글자 정도 떨어지도록) */
-    --dot-left: 8px; /* 카드 왼쪽에서 점까지 */
-    --dot-size: 8px; /* 점 지름 */
-    --dot-gap: 8px; /* 점과 아바타 사이 간격(≈ 1글자) */
+    --noti-header-h: 56px; /* [신규] 헤더 높이 변수 */
+    --page-side-padding: 16px; /* [신규] 페이지 좌우 기본 여백 */
 }
 
-/* 이 페이지에서 전역 flex 영향 제거 + 가로 스크롤 방지 + 배경 흰색(양옆 띠 제거) */
-#page-notifications {
-    display: flex;
-    justify-content: center;
-    background-color: #f0f2f5;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: hidden;
+/* [신규] 이 페이지에서 app-container의 기본 중앙정렬을 덮어써서 '리스트 화면' 레이아웃로 전환 */
+#page-notifications #app-container {
+    justify-content: flex-start; /* [신규] 위에서부터 쌓이도록 */
+    align-items: stretch; /* [신규] 가로는 꽉 채움 */
 }
 
-
-/* ===== 상단바 ===== */
-.noti-topbar {
-    display: flex;
-    justify-content: center; /* 가운데 타이틀을 위한 중앙 정렬 */
-    align-items: center;
-    height: 35px;
-    background: #fff;
-    border-bottom: 1px solid #e9e9e9;
-    position: sticky;
+/* ===== 상단 헤더 ===== */
+.noti-topbar { /* (유지) fixed 헤더 */
+    position: fixed;
     top: 0;
-    z-index: 1000;
-    width: 100%;
-    padding: 10px 0;
+    left: 0;
+    right: 0;
+    height: var(--noti-header-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--page-side-padding);
+    background: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    z-index: 100;
 }
 
 .noti-title {
+    font-size: 18px;
+    font-weight: 800;
     margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1;
+    color: #111;
 }
 
-.noti-back-btn {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
-    border: 0;
-    background: transparent;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: #333;
-}
-
-/* ===== 리스트 ===== */
-#page-notifications .list {
-    width: 100%;
-    max-width: 360px;
-    margin: 0 auto;
-    padding: 8px 12px 0; /* ← 하단 패딩 제거: 마지막 카드와 페이저 간격은 pager의 margin-top으로만 제어 */
-    box-sizing: border-box;
+/* ===== 리스트 래퍼 ===== */
+.list {
+    /* [변경] 헤더 '바로 밑'부터 시작: 헤더 높이 + 8px */
+    padding-top: calc(var(--noti-header-h) + 8px) !important;
+    /* [변경] 하단은 footer 높이 + 4px만 부여(여백 최소화). 전부 로드되어도 값 고정 → 바닥이 딱 붙어 보임 */
+    padding-bottom: calc(var(--footer-height, 0px) + 4px);
+    padding-left: 0;
+    padding-right: 0;
     background: #fff;
-    border-left: 0;
-    border-right: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: calc(100% - 48px - var(--footer-height));
-    overflow-y: auto;
-    flex-grow: 1;
+    position: relative;
 }
 
-/* 비었을 때 */
-#page-notifications .list .empty {
-    padding: 24px 12px;
-    color: #999;
-    text-align: center;
-}
-
-/* ===== 카드 ===== */
-/* a 요소 자체를 카드로 사용 */
-.noti-card {
-    position: relative; /* 빨간 점 의사요소 위치 기준 */
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 6px;
-    border-bottom: 1px solid #eee;
-    text-decoration: none;
-    color: inherit;
-
-    /* 빨간 점 칼럼을 항상 예약 → 점 유무와 무관하게 정렬 고정 */
-    padding-left: calc(var(--dot-left) + var(--dot-size) + var(--dot-gap));
-}
-
-/* 링크 파란색/밑줄 제거(모든 상태) */
-a.noti-card,
-a.noti-card:link,
-a.noti-card:visited,
-a.noti-card:hover,
-a.noti-card:active {
-    color: inherit;
-    text-decoration: none;
-}
-
-/* 빨간 점: 의사요소. data-unread="true"일 때만 채워짐 */
-.noti-card::before {
+/* [신규] 보이지 않는 1px 스페이서: 여백은 없지만 바닥에서 살짝 '움찔/글로우'가 남도록 */
+.list::after {
     content: "";
-    position: absolute;
-    left: var(--dot-left);
-    top: 50%;
-    transform: translateY(-50%);
-    width: var(--dot-size);
-    height: var(--dot-size);
-    border-radius: 9999px;
-    background: transparent;
+    display: block;
+    height: 1px;
 }
 
-.noti-card[data-unread="true"]::before {
-    background: #e74c3c;
+/* ===== 카드(알림 한 줄) ===== */
+/* [중요] 좌우 여백은 **항상 동일**. 빨간 점 유무와 무관하게 padding 고정. */
+.noti-card {
+    position: relative; /* 빨간 점 절대배치용 */
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px var(--page-side-padding) 14px 28px; /* 좌:28, 우:16 → 항상 동일 */
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: #fff;
 }
 
-/* 프로필 이미지(원형, 전역 규칙 무력화) */
-#page-notifications .noti-card .noti-avatar {
-    width: 42px;
-    height: 42px;
+.list .noti-card:first-child {
+    margin-top: 0 !important;
+}
+
+/* 프로필 아바타 */
+.noti-avatar {
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
-    flex: 0 0 42px;
-    display: block;
-    max-width: none;
-    max-height: none;
-    aspect-ratio: 1 / 1;
+    flex: 0 0 44px;
 }
 
-/* 본문 래퍼 */
+/* 본문 */
 .noti-main {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
     flex: 1 1 auto;
+    min-width: 0;
 }
 
-/* 1줄: 닉네임 + 시간(같은 줄, 오른쪽 끝 정렬 아님) */
+/* 닉네임 + 시간 (시간은 닉네임 오른쪽에 "2글자" 간격) */
 .noti-head {
     display: flex;
     align-items: baseline;
-    gap: 8px; /* 닉네임과 시간 사이 1~2글자 간격 */
+    gap: 0;
+    margin-bottom: 4px;
 }
 
 .noti-nick {
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1.3;
+    color: #111;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 70%;
 }
 
 .noti-time {
-    flex: none; /* 자동 우측 밀림 방지 */
     font-size: 12px;
-    color: #999;
+    color: #9ca3af;
+    margin-left: 2ch; /* [변경] 시각을 닉네임 옆에 */
+    flex: 0 0 auto;
 }
 
-/* 2줄: 메시지 */
-.noti-text {
-    color: #555;
-    line-height: 1.3;
-    word-break: break-word;
+/* 액션 문구(회색) */
+.noti-action {
+    font-size: 14px;
+    line-height: 1.45;
+    color: #6b7280;
 }
 
+/* 댓글 미리보기(최대 2줄 + …) */
 .noti-preview {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #374151;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* 2줄 클램프 */
+    -webkit-line-clamp: 2; /* 2줄 제한 */
     -webkit-box-orient: vertical;
     overflow: hidden;
-    word-break: break-word;
-    margin-top: 2px;
-    font-size: 0.94rem; /* 본문보다 살짝 작게 */
-    line-height: 1.32;
-    opacity: 0.9;
+    word-break: break-word; /* 자연스러운 줄바꿈(긴 단어/URL 대응) */
+    overflow-wrap: anywhere; /* 강제 줄바꿈 허용 */
+    /* -webkit-line-clamp 사용 시 크롬/웹뷰에 기본 말줄임(…) 표시 */
+}
+
+/* [중요 유지] 빨간 점은 **색상만** 토글. 레이아웃 영향 0. */
+.noti-card::before {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    left: 12px; /* 카드 왼쪽 내부 고정 좌표 */
+    top: calc(14px + 22px - 4px); /* 패딩(14)+아바타중앙(22)-반지름(4) */
+    background: transparent; /* 읽음(기본): 투명 */
+}
+
+.noti-card[data-unread="true"]::before {
+    background: #ef4444; /* 미읽음: 빨간 점 표시 */
+}
+
+/* 빈 상태 */
+.empty {
+    padding: 32px var(--page-side-padding);
+    color: #6b7280;
+    text-align: center;
+    font-size: 14px;
 }

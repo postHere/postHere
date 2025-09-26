@@ -24,12 +24,16 @@
 <div id="app-container">
 
     <!-- 상단바: 좌측 뒤로가기 + 가운데 타이틀 -->
+    <!-- [변경] fixed 헤더 유지: 최신 알림이 '헤더 바로 밑'에 보이도록 CSS 상단 패딩을 헤더 높이로만 부여 -->
     <header class="noti-topbar">
         <h2 class="noti-title">알림</h2>
     </header>
 
     <!-- 알림 목록 컨테이너: notification.js가 innerHTML로 카드 목록 렌더링 -->
     <div aria-live="polite" class="list" id="list"></div>
+
+    <!-- [신규] 무한 스크롤 관찰용 센티넬 -->
+    <div aria-hidden="true" id="noti-sentinel"></div>
 
     <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
 </div>

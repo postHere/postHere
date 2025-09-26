@@ -1,4 +1,3 @@
-// src/main/java/io/github/nokasegu/post_here/notification/service/NotificationService.java
 package io.github.nokasegu.post_here.notification.service;
 
 import io.github.nokasegu.post_here.follow.domain.FollowingEntity;
@@ -19,10 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+/**
+ * NotificationService
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -214,20 +214,106 @@ public class NotificationService {
 
     // ===== 리스트/읽음 관련 =====
 
+    /**
+     * [변경] 목록 API
+     * - 정렬은 Repository JPQL의 createdAt DESC, id DESC 를 그대로 사용한다.
+     * - "FOLLOW 최신 1건만" 규칙 + "끊긴 FOLLOW(following_id NULL) 제외"를 **서비스 후처리**로 보장한다.
+     * - 페이지네이션은 그대로 유지하되, **오버페치**(chunk 단위)로 필터링 손실을 보완하고 **hasNext**를 안정적으로 계산한다.
+     * <p>
+     * 동작 요약:
+     * 1) 클라이언트의 (page,size)를 받아, 0페이지부터 chunk 단위로 순차 조회
+     * 2) 각 chunk를 시간 내림차순으로 순회하며 필터링 규칙 적용:
+     * - FOLLOW: following == null 이면 제외 (언팔/삭제 등으로 유령화된 알림 숨김)
+     * - FOLLOW: followerId 기준 "처음 만난" 1건만 채택 (최신 1건)
+     * - COMMENT 등은 그대로 채택
+     * 3) 필터링 결과 수가 (page+1)*size + 1 에 도달하거나, 더 이상 chunk가 없을 때까지 반복
+     * 4) 최종 필터링 스트림에서 [page*size, page*size+size) 범위를 슬라이스하여 응답
+     * 5) 필터링된 전체 수가 슬라이스 끝을 초과하면 hasNext=true
+     */
     @Transactional(readOnly = true)
     public NotificationListResponseDto list(Long targetUserId, int page, int size) {
         UserInfoEntity target = userInfoRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
 
-        List<NotificationEntity> entities =
-                notificationRepository.findUnifiedListByTarget(target, PageRequest.of(page, size));
+        // [신규] 오버페치 chunk 크기: 필터링 손실을 보완하기 위해 요청 size의 3배(최소 60) 정도로 크게
+        final int chunkSize = Math.max(60, size * 3);
 
-        List<NotificationItemResponseDto> items = entities.stream()
+        // [신규] FOLLOW 최신 1건 판별을 위한 전역 Set (팔로워 id)
+        final Set<Long> seenFollowerIds = new HashSet<>();
+
+        // [신규] 필터링 누적 버퍼 (정렬 순서 유지)
+        final List<NotificationEntity> filtered = new ArrayList<>();
+
+        // [신규] 몇 개까지 모아야 하는가: 요청한 페이지의 끝 + 다음 항목(존재 여부 판단용)
+        final int wantUntil = (page + 1) * size + 1;
+
+        boolean moreRepoData = true;
+        int repoPage = 0;
+
+        while (filtered.size() < wantUntil && moreRepoData) {
+            // chunk 단위로 0페이지부터 순차 조회 (정렬은 JPQL에서 DESC 고정)
+            List<NotificationEntity> chunk = notificationRepository.findUnifiedListByTarget(
+                    target, PageRequest.of(repoPage, chunkSize));
+
+            // 더 이상 데이터가 없으면 종료
+            if (chunk == null || chunk.isEmpty()) {
+                moreRepoData = false;
+                break;
+            }
+
+            // === [신규] 후처리 필터링 ===
+            for (NotificationEntity n : chunk) {
+                final NotificationCode code = n.getNotificationCode();
+
+                if (code == NotificationCode.FOLLOW) {
+                    // 끊긴 FOLLOW(연결 NULL) 제외
+                    FollowingEntity f = n.getFollowing();
+                    if (f == null || f.getFollower() == null) {
+                        continue;
+                    }
+                    Long followerId = f.getFollower().getId();
+                    if (followerId == null) continue;
+
+                    // 팔로워별 최신 1건만 채택 (가장 먼저 만나는 것이 최신)
+                    if (seenFollowerIds.contains(followerId)) continue;
+                    seenFollowerIds.add(followerId);
+                    filtered.add(n);
+                } else {
+                    // 그 외 타입은 그대로 채택
+                    filtered.add(n);
+                }
+
+                if (filtered.size() >= wantUntil) break;
+            }
+
+            // 다음 chunk로
+            repoPage++;
+
+            // chunk 사이즈 미만을 반환하면, 더 이상 다음 페이지 없음으로 간주
+            if (chunk.size() < chunkSize) {
+                moreRepoData = false;
+            }
+        }
+
+        // === [신규] 페이지 슬라이싱 ===
+        final int start = Math.min(page * size, filtered.size());
+        final int end = Math.min(start + size, filtered.size());
+        List<NotificationEntity> pageSlice = filtered.subList(start, end);
+
+        // === [신규] hasNext 계산 ===
+        boolean hasNext = filtered.size() > end;
+        // (보수적으로) 필터링 결과가 아직 end를 넘지 못했지만 저장소에 더 있을 수 있으면 true로 보정할 수도 있음.
+        // 여기서는 wantUntil(=end+1)까지 충분히 모을 때까지 loop를 돌렸으므로 위 계산이 안정적이다.
+
+        // DTO 변환
+        List<NotificationItemResponseDto> items = pageSlice.stream()
                 .map(NotificationItemResponseDto::from)
                 .toList();
 
         long unreadCount = notificationRepository.countByTargetUserAndCheckStatusIsFalse(target);
-        return NotificationListResponseDto.of(items, unreadCount);
+
+        // [변경] hasNext 포함 응답
+        return NotificationListResponseDto.of(items, unreadCount, hasNext);
     }
 
     @Transactional(transactionManager = "transactionManager")

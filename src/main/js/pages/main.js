@@ -276,7 +276,10 @@ export function initMain() {
                     </div>
                     <div class="comment-modal-footer">
                         <div class="comment-form-inner">
-                            <img src="${postData.writerProfilePhotoUrl}" alt="내 프로필" class="profile-img">
+                            <!-- [수정] 댓글 입력창 왼쪽 아바타는 로그인 사용자(me) 기준으로 표시합니다.
+                                 - 여기서는 src를 비워두고 id를 부여한 뒤, append 후 JS로 채웁니다.
+                                 - window.__ME__가 없거나 게스트인 경우 글 작성자 사진으로 폴백합니다. -->
+                            <img id="comment-editor-avatar" alt="내 프로필" class="profile-img">
                             <form class="comment-form">
                                 <input class="comment-input" placeholder="댓글을 작성하세요." required type="text">
                                 <button class="comment-submit" type="submit">게시</button>
@@ -290,6 +293,16 @@ export function initMain() {
 
         const modal = $('#comment-modal');
         modal.data('post-card', postCard);
+
+        // [수정] 아바타 src 채우기 로직: window.__ME__ → 폴백(postData.writerProfilePhotoUrl)
+        (function fillCommentAvatar() {
+            const me = (typeof window !== 'undefined') ? window.__ME__ : null;
+            const avatarSrc = (me && me.profilePhotoUrl) ? me.profilePhotoUrl : postData.writerProfilePhotoUrl;
+            const altText = (me && me.nickname) ? me.nickname : '내 프로필';
+            modal.find('#comment-editor-avatar')
+                .attr('src', avatarSrc)
+                .attr('alt', altText);
+        })();
 
         setTimeout(() => {
             modal.addClass('show');

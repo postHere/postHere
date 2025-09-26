@@ -6,6 +6,19 @@ import BackgroundGeolocation from '@transistorsoft/capacitor-background-geolocat
 let isInitialized = false;
 const url = serverConfig.url + '/location';
 
+export async function initPermission() {
+    const status = await BackgroundGeolocation.requestPermission();
+    if (status !== BackgroundGeolocation.AUTHORIZATION_STATUS_ALWAYS) {
+        const confirmed = window.confirm(
+            "위치 추적을 항상 유지하려면 위치 권한을 '항상 허용'으로 설정해야 합니다.\n\n" +
+            "지금 설정 화면으로 이동하시겠습니까?"
+        );
+        if (confirmed) {
+            await BackgroundGeolocation.showSettings();
+        }
+    }
+}
+
 export async function initBackgroundGeolocation() {
 
     if (isInitialized) {
@@ -77,12 +90,13 @@ export async function initBackgroundGeolocation() {
             // 알림 설정
             notification: {
                 title: "postHere 실행 중",
-                text: "위치 정보를 사용하여 주변 게시물을 확인하고 있습니다."
+                text: "위치 정보를 사용하여 주변 게시물을 확인하고 있습니다.",
+                sticky: true
             },
 
             // 디버깅 설정
             logLevel: BackgroundGeolocation.LOG_LEVEL_VERBOSE,
-            debug: true // 개발 중에는 true로 설정하여 로그 확인
+            debug: false // 개발 중에는 true로 설정하여 로그 확인
         });
 
         isInitialized = true;

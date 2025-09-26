@@ -27,7 +27,7 @@ import {initParkWrite} from './pages/park-write.js';
 import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
 import {initForumEdit} from './pages/forum-edit'
-// ✅ [PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
+//[PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
 import {initPush} from './pages/push.js';
 import {initFindOverWrite} from "./pages/find-overwrite";
 import {initBackgroundGeolocation} from './modules/location-tracker';
@@ -52,7 +52,7 @@ App.addListener('backButton', ({canGoBack}) => {
     // 4b. 뒤로 갈 페이지가 없는 첫 화면의 경우
     const currentPage = window.location.pathname;
 
-    // 🚨 앱 종료를 허용할 페이지들의 목록입니다. 실제 경로에 맞게 수정하세요.
+    //앱 종료를 허용할 페이지들의 목록입니다. 실제 경로에 맞게 수정하세요.
     const exitPages = ['/login', '/start', '/forumMain'];
     if (exitPages.includes(currentPage)) {
         // 해당 페이지들에서 뒤로가기를 누르면 앱을 종료합니다.
@@ -64,7 +64,7 @@ App.addListener('backButton', ({canGoBack}) => {
     }
 });
 
-// ✅ [PUSH] 네이티브 푸시(FCM)는 로그인/회원가입 페이지가 아닐 때만 초기화
+//[PUSH] 네이티브 푸시(FCM)는 로그인/회원가입 페이지가 아닐 때만 초기화
 (async () => {
     try {
         const path = window.location.pathname;

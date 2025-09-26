@@ -33,7 +33,20 @@ public class ForumController {
     }
 
     @GetMapping("/forumMain")
-    public String forumPage(Model model) {
+    public String forumPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        // [수정] 댓글 입력창(모달)에서 "로그인 사용자" 아바타를 표시하기 위해
+        //        현재 로그인 유저 정보를 'me'로 모델에 주입합니다.
+        //        - 템플릿(main.html)에서 window.__ME__로 직렬화하여 JS에서 사용합니다.
+        if (userDetails != null && userDetails.getUserInfo() != null) {
+            var u = userDetails.getUserInfo();
+            java.util.Map<String, Object> me = new java.util.HashMap<>();
+            me.put("id", u.getId());
+            me.put("nickname", u.getNickname());
+            me.put("profilePhotoUrl", u.getProfilePhotoUrl());
+            model.addAttribute("me", me);
+        } else {
+            model.addAttribute("me", null);
+        }
         return "forum/main";
     }
 

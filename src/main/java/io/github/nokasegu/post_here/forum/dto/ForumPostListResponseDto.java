@@ -19,7 +19,6 @@ public class ForumPostListResponseDto {
     private String writerNickname;
     private Long writerId;
     private List<String> imageUrls;
-    private String musicApiUrl;
     private String writerProfilePhotoUrl;
     private int totalComments;
     private boolean author;
@@ -49,7 +48,6 @@ public class ForumPostListResponseDto {
         this.imageUrls = forumEntity.getImages().stream()
                 .map(ForumImageEntity::getImgUrl)
                 .collect(Collectors.toList());
-        this.musicApiUrl = forumEntity.getMusicApiUrl();
         this.writerProfilePhotoUrl = forumEntity.getWriter().getProfilePhotoUrl();
         this.totalComments = totalComments;
         this.createdAt = forumEntity.getCreatedAt();

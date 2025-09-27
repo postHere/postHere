@@ -3,9 +3,9 @@ package io.github.nokasegu.post_here.forum.controller;
 import io.github.nokasegu.post_here.common.dto.WrapperDTO;
 import io.github.nokasegu.post_here.common.exception.Code;
 import io.github.nokasegu.post_here.common.security.CustomUserDetails;
+import io.github.nokasegu.post_here.forum.domain.ForumAreaEntity;
 import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.service.ForumService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +33,20 @@ public class ForumController {
     }
 
     @GetMapping("/forumMain")
-    public String forumPage(Model model) {
+    public String forumPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        // [수정] 댓글 입력창(모달)에서 "로그인 사용자" 아바타를 표시하기 위해
+        //        현재 로그인 유저 정보를 'me'로 모델에 주입합니다.
+        //        - 템플릿(main.html)에서 window.__ME__로 직렬화하여 JS에서 사용합니다.
+        if (userDetails != null && userDetails.getUserInfo() != null) {
+            var u = userDetails.getUserInfo();
+            java.util.Map<String, Object> me = new java.util.HashMap<>();
+            me.put("id", u.getId());
+            me.put("nickname", u.getNickname());
+            me.put("profilePhotoUrl", u.getProfilePhotoUrl());
+            model.addAttribute("me", me);
+        } else {
+            model.addAttribute("me", null);
+        }
         return "forum/main";
     }
 
@@ -156,10 +169,9 @@ public class ForumController {
     @ResponseBody
     @PostMapping("/forum/searchArea")
     public WrapperDTO<String> setForumArea(
-            @RequestBody ForumAreaRequestDto requestDto,
-            HttpSession session) {
-        Long areaKey = forumService.setForumArea(requestDto, session);
-        String redirectUrl = "/forumMain?areaKey=" + areaKey;
+            @RequestBody ForumAreaRequestDto requestDto) {
+        ForumAreaEntity area = forumService.getAreaByAddress(requestDto.getLocation());
+        String redirectUrl = "/forumMain?areaKey=" + area.getId() + "&areaName=" + area.getAddress();
         return WrapperDTO.<String>builder()
                 .status(Code.OK.getCode())
                 .message("지역 설정이 성공적으로 변경되었습니다.")
@@ -179,23 +191,12 @@ public class ForumController {
                 .build();
     }
 
-    // 현재 위치 정보를 받아 해당 지역의 PK를 반환하는 API
-    @ResponseBody
-    @PostMapping("/location")
-    public WrapperDTO<Long> updateCurrentLocation(@RequestBody ForumAreaRequestDto requestDto) {
-        Long areaKey = forumService.getAreaKeyByAddress(requestDto.getLocation());
-        return WrapperDTO.<Long>builder()
-                .status(Code.OK.getCode())
-                .message(Code.OK.getValue())
-                .data(areaKey)
-                .build();
-    }
-
     /**
      * [추가] 현재 로그인된 사용자의 Forum 게시물 목록을 반환하는 API
      */
+    // 미사용으로 추정
     @ResponseBody
-    @GetMapping("/api/v1/forums/my-posts")
+    @GetMapping("/forums/my-posts")
     public ResponseEntity<Page<ForumPostSummaryDto>> getMyForums(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 4) Pageable pageable) {
@@ -207,7 +208,7 @@ public class ForumController {
     }
 
     @ResponseBody
-    @GetMapping("/api/v1/users/{nickname}/forums")
+    @GetMapping("/profile/forumlist/{nickname}")
     public ResponseEntity<Page<ForumPostSummaryDto>> getForumsForUser(
             @PathVariable String nickname,
             @PageableDefault(size = 4) Pageable pageable) {

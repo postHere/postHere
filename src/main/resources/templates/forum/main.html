@@ -5,22 +5,36 @@
     <title>Forum Main</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css2?family=Agbalumo&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Agbalumo&family=Noto+Sans+KR:wght@400;700&display=swap"
-          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet"/>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link href="/pwa/manifest.json" rel="manifest">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+
+    <!-- [수정] 로그인 사용자(me) 정보를 JS 전역(window.__ME__)으로 주입합니다.
+         - ForumController에서 model.addAttribute("me", ...)로 설정한 값을 직렬화합니다.
+         - main.js에서 댓글 입력창 아바타 바인딩에 사용됩니다. -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.__ME__ = /*[[${me}]]*/ null;
+        /*]]>*/
+    </script>
+
     <script defer th:src="@{/js/bundle.js}"></script>
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <link rel="stylesheet" th:href="@{/css/main-nav.css}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body id="page-main">
 <div id="app-container">
     <header class="top-bar">
         <div class="top-bar-inner">
-            <div class="logo">PostHere</div>
+            <div class="logo">
+                <a href="/forumMain">
+                    <img alt="PostHere Logo" th:src="@{/images/logo-img.png}">
+                </a>
+            </div>
             <div class="location-area">
                 <a href="/forum/area" id="current-location-link">
                     <span class="location-icon">📍</span>

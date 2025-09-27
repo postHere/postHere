@@ -1,36 +1,20 @@
 // /static/js/pages/notification.js
-// 역할: 알림 목록 로딩 + 페이징 + (읽음 처리 단일 엔드포인트 연계)
-// 템플릿과의 매칭: #list, #prev, #next, #page
+// 역할: 알림 목록 로딩 + (읽음 처리 단일 엔드포인트 연계)
+// 템플릿과의 매칭: #list
 
 export function initNotification() {
     // 이 페이지가 아니면 종료
     if (document.body?.id !== 'page-notifications') return;
 
-    const $list = document.querySelector('#list');
-    const $btnPrev = document.querySelector('#prev');
-    const $btnNext = document.querySelector('#next');
-    const $page = document.querySelector('#page');
+    let readAllOnce = false;
 
-    if (!$list || !$btnPrev || !$btnNext || !$page) {
-        console.warn('[notification] 필수 DOM 요소를 찾지 못했습니다.');
+    const $list = document.querySelector('#list');
+
+    if (!$list) {
+        console.warn('[notification] 알림 리스트 요소를 찾지 못했습니다.');
         return;
     }
 
-    // ===== 뒤로가기 버튼 처리 (좌상단 아이콘) =====
-    const $back = document.getElementById('noti-back');
-    if ($back) {
-        $back.addEventListener('click', (e) => {
-            e.preventDefault();
-            // 같은 오리진 & 히스토리가 있으면 back, 아니면 /forumMain 폴백
-            if (document.referrer && document.referrer.startsWith(location.origin) && history.length > 1) {
-                history.back();
-            } else {
-                location.assign('/forumMain');
-            }
-        });
-    }
-
-    // ===== ▼ (있다면) 네비 높이를 CSS 변수(--footer-height)에 반영 =====
     function syncFooterHeightVar() {
         try {
             const nav = document.querySelector('.main-nav-bar');
@@ -45,18 +29,16 @@ export function initNotification() {
     setTimeout(syncFooterHeightVar, 300);
     window.addEventListener('resize', syncFooterHeightVar);
     window.addEventListener('orientationchange', syncFooterHeightVar);
-    // ===== ▲ 추가 끝 =====
 
-    // 백엔드 엔드포인트
-    const API_BASE = '/api/notifications'; // 목록/카운트 전용
-    // 읽음 처리(전체/선택)는 POST /notification 단일 엔드포인트 사용
+    const API_BASE = '/api/notifications';
 
-    async function postJson(url, bodyObj) {
+    async function postJson(url, bodyObj, signal) {
         const res = await fetch(url, {
             method: 'POST',
             credentials: 'include',
             headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-            body: bodyObj ? JSON.stringify(bodyObj) : '{}'
+            body: bodyObj ? JSON.stringify(bodyObj) : '{}',
+            signal
         });
         const ct = res.headers.get('content-type') || '';
         if (!res.ok || !ct.includes('application/json')) {
@@ -66,13 +48,6 @@ export function initNotification() {
         return res.json();
     }
 
-    // 페이지 상태
-    let page = 0;
-    const size = 10; // ✅ 10개 페이징
-    let last = false;
-    let readAllOnce = false; // ✅ 진입 후 1회만 read-all
-
-    // createdAt → "now" | "Xm" | "Xh" | "Xd"
     function timeAgo(iso) {
         if (!iso) return '';
         const d = new Date(iso);
@@ -85,16 +60,14 @@ export function initNotification() {
         const h = Math.floor(m / 60);
         if (h < 24) return `${h}h`;
         const dd = Math.floor(h / 24);
-        return `${dd}d`; // ✅ 7일 이상도 Xd 유지
+        return `${dd}d`;
     }
 
-    // 전역 도트 표시/숨김
     function setNavDotVisible(visible) {
         const dot = document.getElementById('nav-bell-dot');
         if (dot) dot.style.display = visible ? 'inline-block' : 'none';
     }
 
-    // 페이지를 떠날 때(탭 이동/닫기/다른 페이지로 이동) 전역 도트 숨김
     function attachLeaveHandlersOnce() {
         const hide = () => setNavDotVisible(false);
         window.addEventListener('pagehide', hide, {once: true});
@@ -104,9 +77,22 @@ export function initNotification() {
         window.addEventListener('beforeunload', hide, {once: true});
     }
 
-    function render(items = []) {
-        $list.innerHTML = '';
-        if (!items.length) {
+    // [추가] 코드→한국어 문구 매핑(요청된 고정 문구 적용)
+    function mapText(code) {
+        switch (code) {
+            case 'FOLLOW':
+                return '회원님을 팔로우하기 시작했습니다';
+            case 'COMMENT':
+            case 'FORUM_COMMENT':
+                return '회원님의 Forum에 댓글을 남겼습니다';
+            default:
+                return '알림';
+        }
+    }
+
+    function render(items = [], {append = false} = {}) {
+        if (!append) $list.innerHTML = '';
+        if (!items.length && !append) {
             const empty = document.createElement('div');
             empty.className = 'empty';
             empty.textContent = '새 알림이 없습니다.';
@@ -118,15 +104,11 @@ export function initNotification() {
 
         items.forEach((it) => {
             const id = it.id ?? it.notificationId ?? it.notification_pk ?? null;
-
-            // ✅ 응답 필드명 호환
             const code = it.type ?? it.notificationCode ?? it.code ?? 'NOTI';
-            const text =
-                it.text ??
-                it.message ??
-                (code === 'FOLLOW' ? 'Started following you' : code);
 
-            // ✅ 닉네임/아바타
+            // [수정] 텍스트는 한국어로 고정(요청 반영)
+            const fixedText = mapText(code);
+
             const actorNick =
                 it.actor?.nickname ??
                 it.followerNickname ??
@@ -135,30 +117,20 @@ export function initNotification() {
                 it.following?.follower?.nickname ??
                 '';
 
-            const avatarUrl =
-                it.actor?.profilePhotoUrl ??
-                it.followerProfilePhotoUrl ??
-                '/images/profile-default.png'; // ✅ 기본 경로 확정
-
+            const avatarUrl = it.actor?.profilePhotoUrl ?? it.followerProfilePhotoUrl ?? '/images/profile-default.png';
             const createdAt = it.createdAt ?? it.created_at ?? null;
+            const read = (typeof it.read === 'boolean') ? it.read : (typeof it.checkStatus === 'boolean') ? it.checkStatus : (typeof it.checked === 'boolean') ? it.checked : false;
 
-            // ✅ 읽음 여부(여러 키 호환)
-            const read =
-                (typeof it.read === 'boolean') ? it.read :
-                    (typeof it.checkStatus === 'boolean') ? it.checkStatus :
-                        (typeof it.checked === 'boolean') ? it.checked : false;
+            // ===================== [변경] 링크 우선순위 유지 + 존재 시 사용 =====================
+            const link = it.link || (actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#');
 
-            // === 카드(전체를 링크로) ===
             const row = document.createElement('a');
             row.className = 'noti-card';
             if (id != null) row.dataset.id = String(id);
-            row.href = actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#';
-            row.setAttribute('aria-label', actorNick ? `${actorNick} ${text}` : text);
-
-            // ✅ 빨간 점: DOM 생성 대신 data-unread 속성 사용(정렬 고정)
+            row.href = link; // [변경] it.link 우선
+            row.setAttribute('aria-label', actorNick ? `${actorNick} ${fixedText}` : fixedText);
             row.dataset.unread = String(!read);
 
-            // 프로필 이미지
             const img = document.createElement('img');
             img.className = 'noti-avatar';
             img.alt = actorNick ? `${actorNick} profile` : 'profile';
@@ -168,76 +140,70 @@ export function initNotification() {
             };
             row.appendChild(img);
 
-            // 본문 래퍼
             const main = document.createElement('div');
             main.className = 'noti-main';
-
-            // (1줄) 닉네임 + 시간 (같은 줄)
             const head = document.createElement('div');
             head.className = 'noti-head';
-
             const nickEl = document.createElement('span');
             nickEl.className = 'noti-nick';
-            nickEl.textContent = actorNick ? `@${actorNick}` : '(알 수 없음)';
-
+            // [수정] @ 제거 요청 반영
+            nickEl.textContent = actorNick || '(알 수 없음)';
             const timeEl = document.createElement('span');
             timeEl.className = 'noti-time';
             timeEl.textContent = timeAgo(createdAt);
-
             head.appendChild(nickEl);
             head.appendChild(timeEl);
 
-            // (2줄) 메시지
             const textEl = document.createElement('div');
             textEl.className = 'noti-text';
-            textEl.textContent = String(text);
+            textEl.textContent = String(fixedText);
 
             main.appendChild(head);
             main.appendChild(textEl);
 
+            // 댓글 미리보기(있을 때만)
+            if (it.commentPreview) {
+                const pv = document.createElement('div');
+                pv.className = 'noti-preview';
+                pv.textContent = String(it.commentPreview);
+                main.appendChild(pv);
+            }
+
             row.appendChild(main);
             frag.appendChild(row);
         });
-
         $list.appendChild(frag);
-
-        // ❌ (변경) 여기서는 도트를 숨기지 않는다.
-        // setNavDotVisible(false);
     }
 
-    async function load(p = 0) {
+    // ====== 무한 스크롤 로딩 ======
+    const PAGE_SIZE = 30;
+    let page = 0;
+    let isLoading = false;
+    let isLast = false;
+    let aborter = null;
+
+    async function load({append = false} = {}) {
+        if (isLoading || isLast) return;
+        isLoading = true;
+
         try {
-            const data = await postJson(`${API_BASE}/list`, {page: p, size});
+            aborter = new AbortController();
+            const data = await postJson(`${API_BASE}/list`, {page, size: PAGE_SIZE}, aborter.signal);
+            const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
 
-            // {items, unreadCount} 형태 또는 배열 대응
-            const items = Array.isArray(data?.items)
-                ? data.items
-                : Array.isArray(data)
-                    ? data
-                    : [];
-            render(items);
+            render(items, {append});
 
-            // 마지막 페이지 추정
-            last = items.length < size;
+            // [수정] 페이지네이션 메타가 없을 수 있어 size로 종료 판단
+            if (items.length < PAGE_SIZE) {
+                isLast = true;
+            } else {
+                page += 1;
+            }
 
-            // 페이지 표시/버튼 상태
-            page = p;
-            $page.textContent = String(page + 1);
-            $btnPrev.disabled = page <= 0;
-            $btnPrev.setAttribute('aria-disabled', String($btnPrev.disabled));
-            $btnNext.disabled = !!last;
-            $btnNext.setAttribute('aria-disabled', String($btnNext.disabled));
-
-            // ✅ 진입 후 1회만 전체 읽음 처리(서버 상태만 즉시 갱신)
             if (!readAllOnce) {
                 readAllOnce = true;
                 try {
-                    await postJson('/notification', {}); // 단일 엔드포인트 (suffix 금지)
-
-                    // ❌ (변경) 입장만으로는 종 도트를 숨기지 않는다.
-                    // setNavDotVisible(false);
-
-                    // 전역 도트는 "페이지를 떠날 때"만 숨김 보장
+                    await postJson('/notification', {});
                     attachLeaveHandlersOnce();
                 } catch (e) {
                     console.debug('[notification] read-all failed:', e?.message || e);
@@ -245,20 +211,94 @@ export function initNotification() {
             }
         } catch (e) {
             console.error('[notification] load failed:', e?.message || e);
+            if (!append) render([]);
+        } finally {
+            isLoading = false;
+            aborter = null;
         }
     }
 
-    // 이벤트
-    $btnPrev.addEventListener('click', () => {
-        // ✅ 내부 페이지 이동 시에만 종 도트를 숨김
-        setNavDotVisible(false);
-        if (page > 0) load(page - 1);
-    });
-    $btnNext.addEventListener('click', () => {
-        setNavDotVisible(false);
-        if (!last) load(page + 1);
-    });
+    // [추가] overscroll bounce(부드럽게) - 리스트만 적용, nav는 고정
+    function attachBounce(scrollEl) {
+        if (!scrollEl) return;
+        let startY = 0;
+        let pulling = 0;
+        let isTouching = false;
+        const maxPull = 80;
+        const damp = 0.25;
+
+        const onTouchStart = (e) => {
+            isTouching = true;
+            startY = (e.touches ? e.touches[0].clientY : e.clientY);
+            pulling = 0;
+            scrollEl.style.transition = 'transform 0s';
+        };
+        const onTouchMove = (e) => {
+            if (!isTouching) return;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY);
+            const dy = y - startY;
+
+            const atTop = scrollEl.scrollTop <= 0;
+            const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
+
+            let offset = 0;
+            if (dy > 0 && atTop) {
+                offset = Math.min(maxPull, dy * damp);
+            } else if (dy < 0 && atBottom) {
+                offset = Math.max(-maxPull, dy * damp);
+            }
+            pulling = offset;
+            if (offset !== 0) {
+                e.preventDefault();
+                scrollEl.style.transform = `translateY(${offset}px)`;
+            }
+        };
+        const onTouchEnd = () => {
+            isTouching = false;
+            if (pulling !== 0) {
+                scrollEl.style.transition = 'transform 200ms ease-out';
+                scrollEl.style.transform = 'translateY(0)';
+            }
+            pulling = 0;
+        };
+
+        scrollEl.addEventListener('touchstart', onTouchStart, {passive: false});
+        scrollEl.addEventListener('touchmove', onTouchMove, {passive: false});
+        scrollEl.addEventListener('touchend', onTouchEnd, {passive: true});
+    }
+
+    // [추가] 무한 스크롤 트리거(리스트 스크롤)
+    function attachInfiniteScroll(scrollEl) {
+        const onScroll = () => {
+            if (isLoading || isLast) return;
+            const threshold = 300;
+            const nearBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - threshold;
+            if (nearBottom) {
+                load({append: true});
+            }
+        };
+        scrollEl.addEventListener('scroll', onScroll, {passive: true});
+        scrollEl.__infHandler = onScroll;
+    }
+
+    function detachInfiniteScroll(scrollEl) {
+        const h = scrollEl?.__infHandler;
+        if (!h) return;
+        scrollEl.removeEventListener('scroll', h);
+        delete scrollEl.__infHandler;
+    }
 
     // 최초 로드
-    load(0);
+    attachBounce($list);
+    attachInfiniteScroll($list);
+    load({append: false});
+
+    // [안정성] 페이지 떠날 때 로딩 취소
+    window.addEventListener('pagehide', () => {
+        try {
+            aborter?.abort();
+        } catch {
+        }
+        detachInfiniteScroll($list);
+    }, {once: true});
 }

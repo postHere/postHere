@@ -10,7 +10,6 @@ import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,12 +46,11 @@ public class ForumService {
                 .writer(writer)
                 .location(area)
                 .contentsText(requestDto.getContent())
-                .musicApiUrl(requestDto.getSpotifyTrackId())
                 .createdAt(LocalDateTime.now())
                 .build();
         ForumEntity savedForum = forumRepository.save(forum);
 
-        // 2. ★★★ 변경: 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결합니다. ★★★
+        // 2. 이미지 URL 목록을 사용하여 이미지를 DB에 저장하고 게시글과 연결
         if (requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty()) {
             for (String imageUrl : requestDto.getImageUrls()) {
                 forumImageService.saveImage(imageUrl, savedForum);
@@ -73,7 +71,6 @@ public class ForumService {
         ForumEntity forum = getForumEntityAndCheckPermission(forumId, userId);
 
         forum.setContentsText(requestDto.getContent());
-        forum.setMusicApiUrl(requestDto.getMusicApiUrl());
         forum.setUpdatedAt(LocalDateTime.now());
 
         // deletedImageIds 목록을 기반으로 삭제 로직을 ForumImageService에 위임
@@ -130,35 +127,14 @@ public class ForumService {
     }
 
     /**
-     * 사용자가 선택한 지역을 세션에 저장하고, 해당 지역의 ID를 반환하는 메서드
-     *
-     * @param requestDto 클라이언트로부터 받은 지역 정보 DTO
-     * @param session    현재 HTTP 세션
-     * @return 세션에 저장된 지역의 PK (ID)
-     */
-    public Long setForumArea(ForumAreaRequestDto requestDto, HttpSession session) {
-        String newLocationAddress = requestDto.getLocation();
-
-        ForumAreaEntity area = forumAreaRepository.findByAddress(newLocationAddress)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역 정보입니다."));
-
-        // 세션에 지역 주소(address)를 저장
-        session.setAttribute("selectedForumAreaAddress", area.getAddress());
-
-        // 지역의 PK를 반환하여 컨트롤러가 리다이렉트 URL을 구성
-        return area.getId();
-    }
-
-    /**
      * 주소 문자열을 사용하여 지역의 PK (ID)를 조회합니다.
      *
      * @param address 조회할 지역의 주소 문자열
      * @return 해당 지역의 PK (ID)
      */
-    public Long getAreaKeyByAddress(String address) {
-        ForumAreaEntity area = forumAreaRepository.findByAddress(address)
+    public ForumAreaEntity getAreaByAddress(String address) {
+        return forumAreaRepository.findByAddress(address)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역 정보입니다."));
-        return area.getId();
     }
 
     /**

@@ -1,4 +1,3 @@
-// src/main/java/io/github/nokasegu/post_here/notification/controller/NotificationApiController.java
 package io.github.nokasegu.post_here.notification.controller;
 
 import io.github.nokasegu.post_here.notification.dto.MarkReadRequestDto;
@@ -59,6 +58,8 @@ public class NotificationApiController {
         Long me = resolveUserId(principal);
         int page = (body == null) ? 0 : body.safePage();
         int size = (body == null) ? 20 : body.safeSize();
+
+        // [변경] 서비스가 "FOLLOW 최신 1건만 + NULL 연결 제외 + 오버페치 + hasNext 계산"을 수행하여 반환
         return notificationService.list(me, page, size);
     }
 

@@ -1,7 +1,62 @@
-export function initMain() {
+import {Preferences} from '@capacitor/preferences';
+
+export async function initMain() {
     let finalAreaKey = null;
+    let finalAreaName = null;
+
+    // 쿼리 파라미터에서 key 추출
     const urlParams = new URLSearchParams(window.location.search);
     const areaKeyFromUrl = urlParams.get('areaKey');
+    const areaNameFromUrl = urlParams.get('areaName');
+
+
+    if (areaKeyFromUrl && areaNameFromUrl) {
+        console.log('URL 파라미터에서 key 발견:', areaKeyFromUrl);
+        finalAreaKey = areaKeyFromUrl;
+        finalAreaName = areaNameFromUrl;
+
+        // URL로 이동한 지역 키를 새로운 Preferences키에 저장
+        await Preferences.set({key: 'viewingAreaKey', value: finalAreaKey}); // 추가
+        await Preferences.set({key: 'viewingAreaName', value: finalAreaName}); // 추가
+
+    } else {
+        // 쿼리 파라미터가 없으면 Preferences 값 참조
+        const {value: areaKeyFromPreferences} = await Preferences.get({key: 'currentAreaKey'});
+        const {value: areaNameFromPreferences} = await Preferences.get({key: 'currentAreaName'});
+        console.log('preferences에서 지역 정보 발견: ', areaKeyFromPreferences, areaNameFromPreferences);
+        if (areaKeyFromPreferences && areaNameFromPreferences) {
+            finalAreaKey = areaKeyFromPreferences;
+            finalAreaName = areaNameFromPreferences;
+
+            // GPS로 결정된 지역 키를 새로운 Preferences 키에도 저장 (동일하게 설정)
+            await Preferences.set({key: 'viewingAreaKey', value: finalAreaKey}); // 추가
+            await Preferences.set({key: 'viewingAreaName', value: finalAreaName}); // 추가
+        }
+    }
+
+    const locationTextElement = $('#current-location-text');
+    console.log("key : ", finalAreaKey, finalAreaName);
+    if (finalAreaKey && finalAreaName) {
+        locationTextElement.text(finalAreaName);
+
+        // finalAreaKey를 사용해 바로 게시물을 로드
+        loadPosts(finalAreaKey);
+    } else {
+        console.log("게시물을 불러올 지역 정보가 없습니다.");
+        locationTextElement.text("지역 설정 중..");
+    }
+
+    // 로고 클릭 이벤트 리스너
+    $('.logo a').on('click', function (e) {
+        e.preventDefault(); // 기본 링크 동작을 막음
+        // 현재 위치 키를 다시 불러와서 게시글을 로드
+        if (finalAreaKey) {
+            loadPosts(finalAreaKey);
+        } else {
+            // 위치가 설정되지 않았다면 기본 동작 (전체 새로고침)
+            window.location.reload();
+        }
+    });
 
     // URL에서 메시지 파라미터 확인 및 알림 띄우기
     const messageParam = urlParams.get('message');
@@ -16,23 +71,6 @@ export function initMain() {
         history.replaceState({}, document.title, newUrl);
     }
 
-    if (areaKeyFromUrl) {
-        finalAreaKey = areaKeyFromUrl;
-    } else {
-        const areaKeyFromStorage = localStorage.getItem('currentAreaKey');
-        if (areaKeyFromStorage) {
-            finalAreaKey = areaKeyFromStorage;
-        }
-    }
-
-    const locationTextElement = $('#current-location-text');
-    if (finalAreaKey) {
-        locationTextElement.text(finalAreaKey);
-        loadPosts(finalAreaKey);
-    } else {
-        locationTextElement.text("지역 설정 중..");
-    }
-
     function showToast(message) {
         const toast = document.getElementById("toast");
         const messageEl = toast.querySelector('.toast-message');
@@ -45,7 +83,7 @@ export function initMain() {
         }, 1500);
     }
 
-    // 댓글 모달을 여는 로직
+    // 포스트 컨테이너에 이벤트 위임 방식으로 댓글 관련 이벤트 바인딩
     $('#post-list-container').on('click', '.comment-trigger', async function (e) {
         e.preventDefault();
         const postCard = $(this).closest('.post-card');
@@ -65,7 +103,7 @@ export function initMain() {
         const submitButton = form.find('.comment-submit');
         submitButton.prop('disabled', true);
         try {
-            const response = await fetch(`/api/forum/${postId}/comments`, {
+            const response = await fetch(`/forum/${postId}/comments`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({content})
@@ -166,7 +204,7 @@ export function initMain() {
         const postId = modal.data('post-id');
 
         try {
-            const response = await fetch(`/api/forum/${postId}/comments/${commentId}`, {
+            const response = await fetch(`/forum/${postId}/comments/${commentId}`, {
                 method: 'DELETE'
             });
             if (response.status === 204) {
@@ -192,12 +230,20 @@ export function initMain() {
     });
 
     function createEmptyPostHtml() {
-        const imagePath = '../images/map-icon.png';
+        const mapIconSvg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                <line x1="16" y1="6" x2="16" y2="22"></line>
+                <line x1="8" y1="2" x2="8" y2="18"></line>
+            </svg>
+        `;
         return `
             <div class="empty-forum-container">
-                <img src="${imagePath}" alt="Map icon" class="empty-icon">
+                <div class="empty-icon-wrapper">
+                    ${mapIconSvg}
+                </div>
                 <p class="empty-text">해당 지역에는 작성된 Forum이 없어요.</p>
-                <p class="empty-subtext">다른 이야기를 만나고 싶다면,<br>발걸음을 옮기거나 상단 아이콘을 눌러 함께해요.</p>
+                <p class="empty-subtext">다른 이야기를 만나고 싶다면, 발걸음을 옮기거나<br>상단 아이콘을 눌러 함께해요.</p>
             </div>
         `;
     }
@@ -211,6 +257,10 @@ export function initMain() {
             success: function (result) {
                 const container = $('#post-list-container');
                 container.empty();
+
+                // 빈 목록 상태를 관리하는 클래스를 먼저 제거
+                container.removeClass('empty-list');
+
                 if (result.status === '000' && result.data && result.data.length > 0) {
                     result.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                     result.data.forEach(post => {
@@ -222,10 +272,14 @@ export function initMain() {
                         initCarousel(newPostCard);
                     });
                 } else {
+                    container.addClass('empty-list');
                     container.html(createEmptyPostHtml());
                 }
             },
             error: function () {
+                const container = $('#post-list-container'); //오류 처리에도 컨테이너 참조 추가
+                container.empty();
+                container.addClass('empty-list'); //중앙 정렬 클래스 부여
                 container.html(createEmptyPostHtml());
             }
         });
@@ -256,7 +310,10 @@ export function initMain() {
                     </div>
                     <div class="comment-modal-footer">
                         <div class="comment-form-inner">
-                            <img src="${postData.writerProfilePhotoUrl}" alt="내 프로필" class="profile-img">
+                            <!-- [수정] 댓글 입력창 왼쪽 아바타는 로그인 사용자(me) 기준으로 표시합니다.
+                                 - 여기서는 src를 비워두고 id를 부여한 뒤, append 후 JS로 채웁니다.
+                                 - window.__ME__가 없거나 게스트인 경우 글 작성자 사진으로 폴백합니다. -->
+                            <img id="comment-editor-avatar" alt="내 프로필" class="profile-img">
                             <form class="comment-form">
                                 <input class="comment-input" placeholder="댓글을 작성하세요." required type="text">
                                 <button class="comment-submit" type="submit">게시</button>
@@ -270,6 +327,16 @@ export function initMain() {
 
         const modal = $('#comment-modal');
         modal.data('post-card', postCard);
+
+        // [수정] 아바타 src 채우기 로직: window.__ME__ → 폴백(postData.writerProfilePhotoUrl)
+        (function fillCommentAvatar() {
+            const me = (typeof window !== 'undefined') ? window.__ME__ : null;
+            const avatarSrc = (me && me.profilePhotoUrl) ? me.profilePhotoUrl : postData.writerProfilePhotoUrl;
+            const altText = (me && me.nickname) ? me.nickname : '내 프로필';
+            modal.find('#comment-editor-avatar')
+                .attr('src', avatarSrc)
+                .attr('alt', altText);
+        })();
 
         setTimeout(() => {
             modal.addClass('show');
@@ -320,7 +387,7 @@ export function initMain() {
     /// 모달용 댓글 목록을 불러와서 표시하는 함수
     async function loadCommentsForModal(postId, modal) {
         try {
-            const response = await fetch(`/api/forum/${postId}/comments`);
+            const response = await fetch(`/forum/${postId}/comments`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -425,8 +492,8 @@ export function initMain() {
                     ${optionsHtml}
                 </div>
                 <div class="post-content">
+                    ${imagesHtml} 
                     <p>${escapeHTML(post.contentsText)}</p>
-                    ${imagesHtml}
                 </div>
                 <div class="post-actions">
                     <div>

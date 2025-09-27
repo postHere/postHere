@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+Project background_geolocation = project(':transistorsoft-capacitor-background-geolocation')
+apply from: "${background_geolocation.projectDir}/app.gradle"
+
+
 android {
     namespace "com.nokasegu.post_here"
     compileSdk rootProject.ext.compileSdkVersion
@@ -23,6 +27,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            shrinkResources false
         }
     }
 }

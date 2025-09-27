@@ -10,6 +10,9 @@ const config = {
         // 3. 불러온 설정 파일의 url 값을 사용합니다.
         url: serverConfig.url,
         cleartext: true
+    },
+    android: {
+        useLegacyBridge: true
     }
 };
 

@@ -26,17 +26,16 @@ import {initForumAreaSearch} from './pages/forum-area-search.js';
 import {initParkWrite} from './pages/park-write.js';
 import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
-import {initForumEdit} from './pages/forum-edit';
-// ✅ [PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
+import {initForumEdit} from './pages/forum-edit'
+//[PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
 import {initPush} from './pages/push.js';
 import {initFindOverWrite} from "./pages/find-overwrite";
+import {initBackgroundGeolocation} from './modules/location-tracker';
 
 // --- 3. 초기 경로 설정 ---
 // 앱이 처음 로드되었을 때(경로가 '/') 시작 페이지로 이동시킵니다.
 // 이 로직은 다른 어떤 코드보다 먼저 실행되는 것이 좋습니다.
 if (window.location.pathname === '/') {
-    // 🚨 '/start' 경로는 실제 프로젝트의 시작 페이지 경로(예: '/login')로 반드시 변경하세요.
-    // window.location.replace('http://1.235.197.58:8081/start');
     window.location.replace('/start');
 }
 
@@ -53,11 +52,11 @@ App.addListener('backButton', ({canGoBack}) => {
     // 4b. 뒤로 갈 페이지가 없는 첫 화면의 경우
     const currentPage = window.location.pathname;
 
-    // 🚨 앱 종료를 허용할 페이지들의 목록입니다. 실제 경로에 맞게 수정하세요.
+    //앱 종료를 허용할 페이지들의 목록입니다. 실제 경로에 맞게 수정하세요.
     const exitPages = ['/login', '/start', '/forumMain'];
     if (exitPages.includes(currentPage)) {
         // 해당 페이지들에서 뒤로가기를 누르면 앱을 종료합니다.
-        void App.exitApp();
+        App.exitApp();
     } else {
         // 그 외의 페이지인데 뒤로 갈 곳이 없다면(예: 푸시 알림으로 바로 진입)
         // 사용자가 앱에 갇히지 않도록 메인 페이지로 이동시킵니다.
@@ -65,8 +64,7 @@ App.addListener('backButton', ({canGoBack}) => {
     }
 });
 
-
-// ✅ [PUSH] 네이티브 푸시(FCM)는 로그인/회원가입 페이지가 아닐 때만 초기화
+//[PUSH] 네이티브 푸시(FCM)는 로그인/회원가입 페이지가 아닐 때만 초기화
 (async () => {
     try {
         const path = window.location.pathname;
@@ -79,13 +77,17 @@ App.addListener('backButton', ({canGoBack}) => {
     }
 })();
 
-
-// --- 5. 페이지 라우터 ---
-document.addEventListener('DOMContentLoaded', () => {
+// --- 5. 페이지 라우터: 현재 페이지에 맞는 스크립트 실행 ---
+// HTML 문서의 로딩이 완료되면, 현재 페이지를 확인하고 그에 맞는 init 함수를 실행합니다.
+document.addEventListener('DOMContentLoaded', async () => {
     const pageId = document.body.id;
     console.log(`현재 페이지 ID: ${pageId}. 해당 스크립트를 초기화합니다.`);
 
     initMainNav();
+
+    if (pageId !== 'page-login' && pageId !== 'page-signup') {
+        await initBackgroundGeolocation();
+    }
 
     switch (pageId) {
         case 'page-main':

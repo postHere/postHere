@@ -6,6 +6,7 @@ import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
 import io.github.nokasegu.post_here.find.service.FindService;
 import io.github.nokasegu.post_here.location.dto.LocationRequestDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,12 +16,14 @@ import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class FindController {
 
     private final FindService findService;
 
-    @GetMapping("/find-write")
+    @GetMapping("/find")
     public String findController(Model model) {
+        log.debug("testtttttttttttttt");
         return "/find/find-write";
     }
 

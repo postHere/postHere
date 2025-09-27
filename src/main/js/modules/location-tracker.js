@@ -74,6 +74,7 @@ export async function initBackgroundGeolocation() {
             // 위치 추적 설정
             desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
             distanceFilter: 30,
+            elasticityMultiplier: 2.0,
 
             // 네이티브 HTTP 설정
             autoSync: true, //위치를 감지할 때마다 아래 url로 위치 전송

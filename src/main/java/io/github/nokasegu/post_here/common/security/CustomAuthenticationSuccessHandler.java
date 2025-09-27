@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.nokasegu.post_here.common.dto.WrapperDTO;
 import io.github.nokasegu.post_here.common.exception.Code;
 import io.github.nokasegu.post_here.userInfo.dto.CheckLoginDto;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     private final ObjectMapper objectMapper;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         response.setHeader("Location", "/forumMain");
 
         CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();

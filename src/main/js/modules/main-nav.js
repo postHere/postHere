@@ -40,6 +40,14 @@ export function initMainNav() {
         }
     });
 
+    // [추가] Friends 페이지에서는 '사람(프로필)' 아이콘을 활성화로 강제 지정
+    //        - 기존 규칙으로는 /friends 가 /profile 과 매칭되지 않으므로 보정
+    if (currentPath.startsWith('/friends')) {
+        navLinks.forEach(item => item.classList.remove('active'));
+        const profileLink = document.querySelector('.footer-nav a[href="/profile"]');
+        if (profileLink) profileLink.classList.add('active');
+    }
+
     if (!document.querySelector('.footer-nav a.active')) {
         const homeLink = document.querySelector('.footer-nav a[href="/forumMain"]');
         if (homeLink) homeLink.classList.add('active');

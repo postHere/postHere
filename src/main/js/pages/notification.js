@@ -6,46 +6,39 @@ export function initNotification() {
     // 이 페이지가 아니면 종료
     if (document.body?.id !== 'page-notifications') return;
 
-    // [신규] 웹뷰/브라우저의 자동 스크롤 복원 무력화 (최신 알림을 헤더 바로 밑에 보장)
-    try {
-        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    } catch {
-    }
-
     let readAllOnce = false;
 
     const $list = document.querySelector('#list');
-    const $sentinel = document.getElementById('noti-sentinel'); // [신규] 무한 스크롤 센티넬
 
     if (!$list) {
         console.warn('[notification] 알림 리스트 요소를 찾지 못했습니다.');
         return;
     }
 
-    function syncLayoutVars() {
+    function syncFooterHeightVar() {
         try {
-            const navBar = document.querySelector('.main-nav-bar');   // 하단 바 전체
-            const hNav = navBar ? Math.ceil(navBar.getBoundingClientRect().height) : 0;
-            const navPx = (hNav && Number.isFinite(hNav)) ? `${hNav}px` : null;
-            if (navPx) document.documentElement.style.setProperty('--footer-height', navPx);
-            // 상단은 헤더 고정이므로 별도 계산 필요 없음(헤더 높이로 CSS가 padding-top 계산)
+            const nav = document.querySelector('.main-nav-bar');
+            const h = nav ? Math.ceil(nav.getBoundingClientRect().height) : 0;
+            const px = (h && Number.isFinite(h)) ? `${h}px` : null;
+            if (px) document.documentElement.style.setProperty('--footer-height', px);
         } catch { /* ignore */
         }
     }
 
-    syncLayoutVars();
-    setTimeout(syncLayoutVars, 300);
-    window.addEventListener('resize', syncLayoutVars);
-    window.addEventListener('orientationchange', syncLayoutVars);
+    syncFooterHeightVar();
+    setTimeout(syncFooterHeightVar, 300);
+    window.addEventListener('resize', syncFooterHeightVar);
+    window.addEventListener('orientationchange', syncFooterHeightVar);
 
     const API_BASE = '/api/notifications';
 
-    async function postJson(url, bodyObj) {
+    async function postJson(url, bodyObj, signal) {
         const res = await fetch(url, {
             method: 'POST',
             credentials: 'include',
             headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-            body: bodyObj ? JSON.stringify(bodyObj) : '{}'
+            body: bodyObj ? JSON.stringify(bodyObj) : '{}',
+            signal
         });
         const ct = res.headers.get('content-type') || '';
         if (!res.ok || !ct.includes('application/json')) {
@@ -84,160 +77,133 @@ export function initNotification() {
         window.addEventListener('beforeunload', hide, {once: true});
     }
 
-    // === 문구 한글 통일: 타입별 맵핑 ===
-    function koreanMessageOf(it) {
-        // 가능한 코드 값: FOLLOW, FORUM_COMMENT, COMMENT, etc.
-        const code = (it.type ?? it.notificationCode ?? it.code ?? '').toUpperCase();
-        if (code === 'FOLLOW') {
-            return '님이 회원님을 팔로우하기 시작했습니다';
+    // [추가] 코드→한국어 문구 매핑(요청된 고정 문구 적용)
+    function mapText(code) {
+        switch (code) {
+            case 'FOLLOW':
+                return '회원님을 팔로우하기 시작했습니다';
+            case 'COMMENT':
+            case 'FORUM_COMMENT':
+                return '회원님의 Forum에 댓글을 남겼습니다';
+            default:
+                return '알림';
         }
-        if (code === 'FORUM_COMMENT' || code === 'COMMENT') {
-            return '님이 회원님의 Forum에 댓글을 남겼습니다';
-        }
-        // 알 수 없는 타입은 서버 메시지 사용(최후의 보루)
-        return (it.text ?? it.message ?? (code || '')) || '';
     }
 
-    // 렌더 한 건
-    function renderOne(it) {
-        const id = it.id ?? it.notificationId ?? it.notification_pk ?? null;
-        const actorNick = it.actor?.nickname ?? it.followerNickname ?? it.actor?.name ?? it.follower?.nickname ?? it.following?.follower?.nickname ?? '';
-        const avatarUrl = it.actor?.profilePhotoUrl ?? it.followerProfilePhotoUrl ?? '/images/profile-default.png';
-        const createdAt = it.createdAt ?? it.created_at ?? null;
-        const read = (typeof it.read === 'boolean') ? it.read
-            : (typeof it.checkStatus === 'boolean') ? it.checkStatus
-                : (typeof it.checked === 'boolean') ? it.checked : false;
-
-        // 댓글 알림 링크 우선, 없으면 프로필
-        const link = it.link || (actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#');
-
-        const row = document.createElement('a');
-        row.className = 'noti-card';
-        if (id != null) row.dataset.id = String(id);
-        row.href = link;
-        row.dataset.unread = String(!read);
-
-        const img = document.createElement('img');
-        img.className = 'noti-avatar';
-        img.alt = actorNick ? `${actorNick} profile` : 'profile';
-        img.src = avatarUrl || '/images/profile-default.png';
-        img.onerror = () => {
-            img.src = '/images/profile-default.png';
-        };
-        row.appendChild(img);
-
-        const main = document.createElement('div');
-        main.className = 'noti-main';
-
-        const head = document.createElement('div');
-        head.className = 'noti-head';
-
-        const nickEl = document.createElement('span');
-        nickEl.className = 'noti-nick';
-        // @ 제거
-        nickEl.textContent = actorNick || '(알 수 없음)';
-
-        const timeEl = document.createElement('span');
-        timeEl.className = 'noti-time';
-        timeEl.textContent = timeAgo(createdAt);
-
-        head.appendChild(nickEl);
-        head.appendChild(timeEl);
-
-        const actionEl = document.createElement('div');
-        actionEl.className = 'noti-action';
-        actionEl.textContent = koreanMessageOf(it);
-
-        main.appendChild(head);
-        main.appendChild(actionEl);
-
-        if (it.commentPreview) {
-            const pv = document.createElement('div');
-            pv.className = 'noti-preview';
-            pv.textContent = String(it.commentPreview);
-            main.appendChild(pv);
+    function render(items = [], {append = false} = {}) {
+        if (!append) $list.innerHTML = '';
+        if (!items.length && !append) {
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            empty.textContent = '새 알림이 없습니다.';
+            $list.appendChild(empty);
+            return;
         }
 
-        row.appendChild(main);
-        return row;
-    }
-
-    // [신규] 중복 방지용 Set (페이지 경계 중복 안전)
-    const seenIds = new Set();
-
-    // 누적 렌더
-    function append(items = []) {
-        if (!items.length) return;
         const frag = document.createDocumentFragment();
-        for (const it of items) {
-            const nid = it.id ?? it.notificationId ?? it.notification_pk;
-            if (nid != null && seenIds.has(nid)) continue; // [신규] 중복 스킵
-            if (nid != null) seenIds.add(nid);
-            frag.appendChild(renderOne(it));
-        }
+
+        items.forEach((it) => {
+            const id = it.id ?? it.notificationId ?? it.notification_pk ?? null;
+            const code = it.type ?? it.notificationCode ?? it.code ?? 'NOTI';
+
+            // [수정] 텍스트는 한국어로 고정(요청 반영)
+            const fixedText = mapText(code);
+
+            const actorNick =
+                it.actor?.nickname ??
+                it.followerNickname ??
+                it.actor?.name ??
+                it.follower?.nickname ??
+                it.following?.follower?.nickname ??
+                '';
+
+            const avatarUrl = it.actor?.profilePhotoUrl ?? it.followerProfilePhotoUrl ?? '/images/profile-default.png';
+            const createdAt = it.createdAt ?? it.created_at ?? null;
+            const read = (typeof it.read === 'boolean') ? it.read : (typeof it.checkStatus === 'boolean') ? it.checkStatus : (typeof it.checked === 'boolean') ? it.checked : false;
+
+            // ===================== [변경] 링크 우선순위 유지 + 존재 시 사용 =====================
+            const link = it.link || (actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#');
+
+            const row = document.createElement('a');
+            row.className = 'noti-card';
+            if (id != null) row.dataset.id = String(id);
+            row.href = link; // [변경] it.link 우선
+            row.setAttribute('aria-label', actorNick ? `${actorNick} ${fixedText}` : fixedText);
+            row.dataset.unread = String(!read);
+
+            const img = document.createElement('img');
+            img.className = 'noti-avatar';
+            img.alt = actorNick ? `${actorNick} profile` : 'profile';
+            img.src = avatarUrl || '/images/profile-default.png';
+            img.onerror = () => {
+                img.src = '/images/profile-default.png';
+            };
+            row.appendChild(img);
+
+            const main = document.createElement('div');
+            main.className = 'noti-main';
+            const head = document.createElement('div');
+            head.className = 'noti-head';
+            const nickEl = document.createElement('span');
+            nickEl.className = 'noti-nick';
+            // [수정] @ 제거 요청 반영
+            nickEl.textContent = actorNick || '(알 수 없음)';
+            const timeEl = document.createElement('span');
+            timeEl.className = 'noti-time';
+            timeEl.textContent = timeAgo(createdAt);
+            head.appendChild(nickEl);
+            head.appendChild(timeEl);
+
+            const textEl = document.createElement('div');
+            textEl.className = 'noti-text';
+            textEl.textContent = String(fixedText);
+
+            main.appendChild(head);
+            main.appendChild(textEl);
+
+            // 댓글 미리보기(있을 때만)
+            if (it.commentPreview) {
+                const pv = document.createElement('div');
+                pv.className = 'noti-preview';
+                pv.textContent = String(it.commentPreview);
+                main.appendChild(pv);
+            }
+
+            row.appendChild(main);
+            frag.appendChild(row);
+        });
         $list.appendChild(frag);
     }
 
-    // === 무한 스크롤 ===
+    // ====== 무한 스크롤 로딩 ======
+    const PAGE_SIZE = 30;
     let page = 0;
-    const size = 30;                      // 선로딩 강화
-    let loading = false;
-    let done = false;
+    let isLoading = false;
+    let isLast = false;
+    let aborter = null;
 
-    async function loadNext() {
-        if (loading || done) return;
-        loading = true;
+    async function load({append = false} = {}) {
+        if (isLoading || isLast) return;
+        isLoading = true;
+
         try {
-            const data = await postJson(`${API_BASE}/list`, {page, size});
-            // 서버 DTO: { items: [...], unreadCount: N } (페이지 메타 없음)
+            aborter = new AbortController();
+            const data = await postJson(`${API_BASE}/list`, {page, size: PAGE_SIZE}, aborter.signal);
             const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
 
-            if (page === 0 && !items.length) {
-                $list.innerHTML = '';
-                const empty = document.createElement('div');
-                empty.className = 'empty';
-                empty.textContent = '새 알림이 없습니다.';
-                $list.appendChild(empty);
-                done = true;
-                // 첫 진입에 아무것도 없어도 스크롤 0 보정
-                requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, 0)));
-                return;
-            }
+            render(items, {append});
 
-            append(items);
-            page += 1;
-
-            // [중요] 초기 진입 직후 헤더 바로 밑에서 시작하도록 2-frame 보정
-            if (page === 1) {
-                requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, 0)));
-            }
-
-            // hasNext가 응답에 없으므로 휴리스틱:
-            //  - hasNext(명시) => 신뢰
-            //  - 없으면 items.length > 0인 동안 계속 로드, 빈 배열 받으면 종료
-            const respHasNext = (typeof data?.hasNext === 'boolean')
-                ? data.hasNext
-                : (typeof data?.pageInfo?.hasNext === 'boolean')
-                    ? data.pageInfo.hasNext
-                    : undefined;
-
-            if (respHasNext === true) {
-                // 계속
-            } else if (respHasNext === false) {
-                done = true;
-                if ($sentinel) $sentinel.style.display = 'none';
+            // [수정] 페이지네이션 메타가 없을 수 있어 size로 종료 판단
+            if (items.length < PAGE_SIZE) {
+                isLast = true;
             } else {
-                // 메타가 없으면 '빈 배열 나올 때까지' 계속
-                if (items.length === 0) {
-                    done = true;
-                    if ($sentinel) $sentinel.style.display = 'none';
-                }
+                page += 1;
             }
 
             if (!readAllOnce) {
                 readAllOnce = true;
                 try {
-                    await postJson('/notification', {}); // 기존 엔드포인트 유지
+                    await postJson('/notification', {});
                     attachLeaveHandlersOnce();
                 } catch (e) {
                     console.debug('[notification] read-all failed:', e?.message || e);
@@ -245,25 +211,94 @@ export function initNotification() {
             }
         } catch (e) {
             console.error('[notification] load failed:', e?.message || e);
+            if (!append) render([]);
         } finally {
-            loading = false;
+            isLoading = false;
+            aborter = null;
         }
     }
 
-    if ($sentinel && 'IntersectionObserver' in window) {
-        const io = new IntersectionObserver((entries) => {
-            for (const ent of entries) {
-                if (ent.isIntersecting) loadNext();
+    // [추가] overscroll bounce(부드럽게) - 리스트만 적용, nav는 고정
+    function attachBounce(scrollEl) {
+        if (!scrollEl) return;
+        let startY = 0;
+        let pulling = 0;
+        let isTouching = false;
+        const maxPull = 80;
+        const damp = 0.25;
+
+        const onTouchStart = (e) => {
+            isTouching = true;
+            startY = (e.touches ? e.touches[0].clientY : e.clientY);
+            pulling = 0;
+            scrollEl.style.transition = 'transform 0s';
+        };
+        const onTouchMove = (e) => {
+            if (!isTouching) return;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY);
+            const dy = y - startY;
+
+            const atTop = scrollEl.scrollTop <= 0;
+            const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
+
+            let offset = 0;
+            if (dy > 0 && atTop) {
+                offset = Math.min(maxPull, dy * damp);
+            } else if (dy < 0 && atBottom) {
+                offset = Math.max(-maxPull, dy * damp);
             }
-        }, {root: null, rootMargin: '1000px 0px', threshold: 0}); // 넉넉한 선로딩
-        io.observe($sentinel);
-    } else {
-        window.addEventListener('scroll', () => {
-            const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 800;
-            if (nearBottom) loadNext();
-        });
+            pulling = offset;
+            if (offset !== 0) {
+                e.preventDefault();
+                scrollEl.style.transform = `translateY(${offset}px)`;
+            }
+        };
+        const onTouchEnd = () => {
+            isTouching = false;
+            if (pulling !== 0) {
+                scrollEl.style.transition = 'transform 200ms ease-out';
+                scrollEl.style.transform = 'translateY(0)';
+            }
+            pulling = 0;
+        };
+
+        scrollEl.addEventListener('touchstart', onTouchStart, {passive: false});
+        scrollEl.addEventListener('touchmove', onTouchMove, {passive: false});
+        scrollEl.addEventListener('touchend', onTouchEnd, {passive: true});
+    }
+
+    // [추가] 무한 스크롤 트리거(리스트 스크롤)
+    function attachInfiniteScroll(scrollEl) {
+        const onScroll = () => {
+            if (isLoading || isLast) return;
+            const threshold = 300;
+            const nearBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - threshold;
+            if (nearBottom) {
+                load({append: true});
+            }
+        };
+        scrollEl.addEventListener('scroll', onScroll, {passive: true});
+        scrollEl.__infHandler = onScroll;
+    }
+
+    function detachInfiniteScroll(scrollEl) {
+        const h = scrollEl?.__infHandler;
+        if (!h) return;
+        scrollEl.removeEventListener('scroll', h);
+        delete scrollEl.__infHandler;
     }
 
     // 최초 로드
-    loadNext();
+    attachBounce($list);
+    attachInfiniteScroll($list);
+    load({append: false});
+
+    // [안정성] 페이지 떠날 때 로딩 취소
+    window.addEventListener('pagehide', () => {
+        try {
+            aborter?.abort();
+        } catch {
+        }
+        detachInfiniteScroll($list);
+    }, {once: true});
 }

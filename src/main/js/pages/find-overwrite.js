@@ -1,17 +1,18 @@
-import { setupTextAndDrawControls, setAndDrawBackgroundImage } from "./find-write.js";
+import {setAndDrawBackgroundImage, setupTextAndDrawControls} from "./find-write.js";
 
-async function setInitialBackgroundImage({ imageCtx, rect }) {
+async function setInitialBackgroundImage({imageCtx, rect, updateSaveBtnState, scale}) {
     const findUrl = document.body.getAttribute('data-find-url');
+    console.log(`Found ${findUrl}`);
     if (!findUrl) return;
 
     try {
-        // 👇 loadImageFromS3가 Image 객체를 반환하므로, 변수명을 img로 변경합니다.
+        // 👇 loadImageFromS3가 Image 객체를 반환
         const img = await loadImageFromS3(findUrl);
-        // 👇 새로 만든 설정 및 그리기 함수를 호출합니다.
-        setAndDrawBackgroundImage(img, imageCtx, rect);
+        setAndDrawBackgroundImage(img, imageCtx, rect, scale);
+        updateSaveBtnState();
     } catch (error) {
         console.error("배경 이미지 로딩 실패:", error);
-        alert("이미지를 불러오는 데 실패했습니다.");
+        // alert("이미지를 불러오는 데 실패했습니다.");
     }
 }
 
@@ -29,9 +30,12 @@ async function loadImageFromS3(imageUrl) {
     });
 }
 
-export function initFindOverWrite() {
+export function initFindOverwrite() {
 
     const dependencies = setupTextAndDrawControls();
-    // imageCtx와 rect를 넘겨줍니다.
+    // dependencies.interactionManager.config.getBackgroundImage = () => null;
     setInitialBackgroundImage(dependencies);
 }
+
+// 로컬 테스트용 코드
+// initFindOverwrite();

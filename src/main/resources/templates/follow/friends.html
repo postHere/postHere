@@ -9,6 +9,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <meta content="" name="_csrf" th:attr="content=${_csrf?.token}"/>
     <meta content="X-CSRF-TOKEN" name="_csrf_header" th:attr="content=${_csrf?.headerName}"/>
+
+    <!-- [유지] index.css 로드 (스크롤 루트가 #app-container가 되는 레이아웃) -->
     <link rel="stylesheet" th:href="@{/css/index.css}">
     <link rel="stylesheet" th:href="@{/css/friends.css}">
     <link rel="stylesheet" th:href="@{/css/main-nav.css}">
@@ -18,12 +20,9 @@
 <body id="page-friends">
 <div id="app-container">
     <header class="header">
-        <button aria-label="뒤로 가기" class="back-btn" onclick="history.back()">
-            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-        </button>
+        <!-- [수정] 네이티브에서 상단 Safe Area 문제 + 뒤로가기 버튼 제거 요청
+             - 기존 back-btn 버튼 제거
+             - 타이틀만 중앙 정렬 유지 -->
         <h1>Friends</h1>
     </header>
 
@@ -53,8 +52,8 @@
         </button>
     </div>
 
-
     <section class="panel active" id="panel-followers">
+        <!-- [수정] 각 패널의 .list가 자체 스크롤 루트가 되도록 CSS/JS에서 처리(바운스/무한스크롤 일관) -->
         <div aria-live="polite" class="list" id="list-followers"></div>
         <div class="pager">
             <button id="prev-followers">이전</button>
@@ -73,7 +72,7 @@
     </section>
 
     <section class="panel" id="panel-search">
-        <!-- ✅ Enter로 검색되도록 form 래핑 -->
+        <!-- ✅ Enter로 검색되도록 form 래핑 (유지) -->
         <form class="searchbar" id="searchForm">
             <label for="searchInput">닉네임으로 검색</label>
             <input aria-label="닉네임으로 검색" autocomplete="off" id="searchInput" placeholder="닉네임으로 검색" type="text"/>
@@ -86,8 +85,8 @@
             <button id="next-search">다음</button>
         </div>
     </section>
+
     <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
-    \
 </div>
 </body>
 </html>

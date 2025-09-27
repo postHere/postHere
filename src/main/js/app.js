@@ -29,7 +29,7 @@ import {initFindOnMap} from "./pages/find-on-map";
 import {initForumEdit} from './pages/forum-edit'
 //[PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
 import {initPush} from './pages/push.js';
-import {initFindOverWrite} from "./pages/find-overwrite";
+import {initFindOverwrite} from "./pages/find-overwrite";
 import {initBackgroundGeolocation} from './modules/location-tracker';
 
 // --- 3. 초기 경로 설정 ---
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             initFindWrite();
             break;
         case 'page-find-overwrite':
-            initFindOverWrite();
+            initFindOverwrite();
             break;
         case 'page-on-map' :
             initFindOnMap();

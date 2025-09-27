@@ -1,23 +1,11 @@
-const serverConfig = require('../../../../SERVER_URL.js');
-
 import {Preferences} from '@capacitor/preferences';
 import BackgroundGeolocation from '@transistorsoft/capacitor-background-geolocation';
+
+const serverConfig = require('../../../../SERVER_URL.js');
 
 let isInitialized = false;
 const url = serverConfig.url + '/location';
 
-export async function initPermission() {
-    const status = await BackgroundGeolocation.requestPermission();
-    if (status !== BackgroundGeolocation.AUTHORIZATION_STATUS_ALWAYS) {
-        const confirmed = window.confirm(
-            "위치 추적을 항상 유지하려면 위치 권한을 '항상 허용'으로 설정해야 합니다.\n\n" +
-            "지금 설정 화면으로 이동하시겠습니까?"
-        );
-        if (confirmed) {
-            await BackgroundGeolocation.showSettings();
-        }
-    }
-}
 
 export async function initBackgroundGeolocation() {
 
@@ -59,6 +47,14 @@ export async function initBackgroundGeolocation() {
                         value: data.forumName
                     });
                 console.log('[http] 새로운 포럼 정보 저장 완료:', data.forumKey, data.forumName);
+
+                const event = new CustomEvent('locationUpdated', {
+                    detail: {
+                        areaKey: data.forumKey,
+                        areaName: data.forumName
+                    }
+                });
+                window.dispatchEvent(event);
             }
         } catch (e) {
             console.error("서버 응답 파싱 실패", e);
@@ -87,6 +83,12 @@ export async function initBackgroundGeolocation() {
             stopOnTerminate: false, // 앱이 강제 종료되어도 추적을 멈추지 않음 (필수)
             startOnBoot: true,     // 휴대폰 재부팅 시 자동으로 추적 시작 (필수)
 
+            backgroundPermissionRationale: {
+                title: "백그라운드 위치 정보 권한이 필요합니다",
+                message: "정확한 서비스 제공을 위해 위치 권한을 '항상 허용'으로 설정해주세요.",
+                positiveAction: "설정으로 이동"
+            },
+
             // 알림 설정
             notification: {
                 title: "postHere 실행 중",
@@ -97,13 +99,39 @@ export async function initBackgroundGeolocation() {
             // 디버깅 설정
             logLevel: BackgroundGeolocation.LOG_LEVEL_VERBOSE,
             debug: false // 개발 중에는 true로 설정하여 로그 확인
-        });
+        })
+
+        const permission = await BackgroundGeolocation.requestPermission();
+
+        let shouldStart = true;
+
+        switch (permission) {
+            case BackgroundGeolocation.AUTHORIZATION_STATUS_ALWAYS:
+                console.log("[Geolocation] 권한: 항상 허용.");
+                break;
+
+            case BackgroundGeolocation.AUTHORIZATION_STATUS_WHEN_IN_USE:
+                console.log("[Geolocation] 권한: 앱 사용 중에만 허용. 설정 변경이 필요합니다.");
+                break;
+
+            default:
+                console.log("[Geolocation] 권한 없음. 새로 요청합니다.");
+                const newStatus = await BackgroundGeolocation.requestPermission();
+                if (newStatus === BackgroundGeolocation.AUTHORIZATION_STATUS_ALWAYS) {
+                    console.log("[Geolocation] 권한이 '항상 허용'으로 부여되었습니다.");
+                } else {
+                    console.log("[Geolocation] '항상 허용' 권한을 얻지 못했습니다.");
+                    // '항상 허용'이 아니면 시작하지 않도록 설정
+                    shouldStart = false;
+                }
+                break;
+        }
 
         isInitialized = true;
         console.log('위치 추적기 초기화 완료 :', state);
 
         // 4. 설정이 완료된 후, start() 메소드로 추적을 명시적으로 시작합니다.
-        if (!state.enabled) {
+        if (shouldStart && !state.enabled) {
             await BackgroundGeolocation.start();
             console.log('백그라운드 위치 추적 시작!');
         }

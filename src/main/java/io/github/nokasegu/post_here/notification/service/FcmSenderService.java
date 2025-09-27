@@ -84,7 +84,7 @@ public class FcmSenderService {
         // 1) 우선 멀티캐스트 시도
         try {
             MulticastMessage message = buildMulticastMessage(list, title, body, data);
-            BatchResponse br = firebaseMessaging.sendMulticast(message);
+            BatchResponse br = firebaseMessaging.sendEachForMulticast(message);
 
             int success = br.getSuccessCount();
             int failure = br.getFailureCount();
@@ -198,6 +198,20 @@ public class FcmSenderService {
             return;
         }
         sendToTokens(tokens, title, body, data);
+    }
+
+    public void sendFindNotification(UserInfoEntity targetUser, String writer, String amount) {
+        String title = "fin'd";
+        String body = writer + "님 외 " + amount + "명의 fin'd가 존재합니다";
+
+        List<String> tokens = resolveFcmTokens(targetUser);
+        if (tokens.isEmpty()) {
+            // [추가 로그]
+            log.info("[FCM] No native tokens for target user (id={}). Skip sending FOLLOW.",
+                    (targetUser != null ? String.valueOf(targetUser.getId()) : "null"));
+            return;
+        }
+        sendToTokens(tokens, title, body, null);
     }
 
     public FcmBatchResult sendComment(Collection<String> targetTokens, String actorNickname, String postTitle, Long postId) {

@@ -10,6 +10,8 @@ import io.github.nokasegu.post_here.location.dto.LocationResponseDto;
 import io.github.nokasegu.post_here.location.service.LocationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,13 +29,13 @@ public class LocationController {
     private final FindService findService;
 
     @PostMapping("/location")
-    public WrapperDTO<LocationResponseDto> whereAmI(@RequestBody LocationRequestDto location) {
+    public WrapperDTO<LocationResponseDto> whereAmI(@RequestBody LocationRequestDto location, @AuthenticationPrincipal UserDetails user) {
 
         String address = geocodingUtil.getAddressFromCoordinates(location.getLng(), location.getLat());
         log.info("address: {} {} {}", location.getLng(), location.getLat(), address);
-        
+
         ForumAreaEntity area = locationService.getForumArea(address);
-        findService.checkFindReadable(location.getLng(), location.getLat());
+        findService.checkFindReadable(location.getLng(), location.getLat(), user.getUsername());
 
         return WrapperDTO.<LocationResponseDto>builder()
                 .status(Code.OK.getCode())

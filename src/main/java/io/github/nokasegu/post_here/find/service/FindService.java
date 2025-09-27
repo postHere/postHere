@@ -6,8 +6,10 @@ import io.github.nokasegu.post_here.find.dto.FindNearbyReadableOnlyDto;
 import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
 import io.github.nokasegu.post_here.find.dto.FindPostSummaryDto;
 import io.github.nokasegu.post_here.find.repository.FindRepository;
+import io.github.nokasegu.post_here.notification.service.FcmSenderService;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
+import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +26,8 @@ public class FindService {
 
     private final FindRepository findRepository;
     private final UserInfoRepository userInfoRepository;
+    private final FcmSenderService fcmSenderService;
+    private final UserInfoService userInfoService;
 
     public List<FindNearbyResponseDto> getFindsInArea(double lng, double lat) {
 
@@ -47,11 +51,12 @@ public class FindService {
                 .collect(Collectors.toList());
     }
 
-    public void checkFindReadable(double lng, double lat) {
+    public void checkFindReadable(double lng, double lat, String userEmail) {
 
+        UserInfoEntity user = userInfoService.getUserInfoByEmail(userEmail);
         List<FindNearbyReadableOnlyDto> result = findRepository.findNearbyReadableOnly(lng, lat);
         int amount = result.size();
-        //메세지 양식 : {nickname}님 외 {amount}명의 fin'd가 존재합니다
+        fcmSenderService.sendFindNotification(user, result.get(0).getNickname(), String.valueOf(amount));
     }
 
     /**

@@ -14,26 +14,57 @@ html, body {
     --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
+#post-list-container.empty-list {
+    display: flex; /* 플렉스 컨테이너로 만듭니다. */
+    flex-direction: column; /* 내용을 세로로 정렬합니다. */
+    justify-content: center; /* 세로 중앙 정렬 (가운데로 밀어줍니다) */
+    align-items: center; /* 가로 중앙 정렬 */
+
+    min-height: 80vh;
+
+    width: 100%;
+    padding: 0; /* 패딩 제거 (중앙 정렬에 방해될 수 있습니다) */
+}
+
+/* 빈 게시글 컨테이너의 내부 텍스트 및 아이콘 정렬 */
+.empty-forum-container {
+    text-align: center; /* 내부 텍스트를 중앙 정렬합니다. */
+}
+
+/* 게시글이 있을 때 (#post-list-container에 .empty-list가 없을 때) */
+#post-list-container {
+    display: block; /* 또는 flex; flex-direction: column; justify-content: flex-start; */
+    padding: 1px; /* 게시글 목록에 적절한 패딩을 다시 설정합니다. (필요하다면) */
+    min-height: auto; /* 높이 제한을 해제합니다. */
+}
+
 .main-container {
     padding-bottom: 60px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    position: relative; /* 내부 콘텐츠(게시글, 네비바)를 배치하기 위해 flex 속성 */
+    position: relative;
+    width: 100%;
+    padding-top: calc(50px + env(safe-area-inset-top, 0px));
 }
 
 /* 상단 바 */
 .top-bar {
     display: flex;
-    height: 35px;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
     background-color: #fff;
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
+    border-bottom: 1px solid #F0F0F0;
+    position: fixed;
     top: 0;
     z-index: 1000;
+    width: 100%;
+    max-width: 400px;
+    padding: calc(5px + env(safe-area-inset-top, 0px)) 20px 3px 20px;
+    height: auto;
+
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* 상단바 컨테이너 스타일 */
@@ -47,12 +78,14 @@ html, body {
 .logo {
     display: flex;
     align-items: center;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .logo img {
     height: 40px;
     width: 100px;
     object-fit: contain;
+    padding-left: 13px;
 }
 
 .location-area {
@@ -67,6 +100,8 @@ html, body {
     color: inherit;
     display: flex;
     align-items: center;
+    padding-right: 8px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .location-icon {
@@ -103,7 +138,7 @@ html, body {
 
 .empty-text {
     font-size: 1.2em;
-    font-weight: bold;
+    font-weight: 800;
     margin-bottom: 10px;
 }
 
@@ -120,7 +155,7 @@ html, body {
     margin-bottom: 15px;
     overflow: hidden;
     position: relative;
-    width: 100%;
+    width: 380px;
 }
 
 /* 게시글 헤더 (작성자 정보 및 옵션) */
@@ -128,7 +163,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 15px;
+    padding: 15px 15px 10px 15px;
 }
 
 .post-author {
@@ -175,7 +210,7 @@ html, body {
 .post-image-carousel {
     position: relative;
     width: 100%;
-    padding-bottom: 75%;
+    padding-bottom: 133.33%;
     overflow: hidden;
     margin-bottom: 10px;
 }
@@ -363,9 +398,9 @@ html, body {
 /* 오른쪽에서 나타나는 모달 내용 컨테이너 */
 .comment-modal-content {
     background-color: #fff;
-    width: 70%;
-    max-width: 360px;
-    height: 60%;
+    width: 100%;
+    max-width: 350px;
+    height: 80%;
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
@@ -558,7 +593,7 @@ html, body {
     border-radius: 8px;
     padding: 12px;
     position: fixed;
-    top: 50px; /* 변경: 화면 상단에 위치 */
+    top: 110px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9999;

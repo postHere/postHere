@@ -5,47 +5,68 @@
     color: #333;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    min-height: 100svh;
+    width: 100%;
 }
 
 /* 폼 스타일링: header와 main, footer를 수직으로 배치 */
 #forum-form {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100%;
+    min-height: 100svh;
 }
 
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 15px;
     background-color: #E0E0E0;
+    position: fixed;
+    font-weight: 800;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 400px; /* index.css max-width 가정 */
+    z-index: 950;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 5px 10px 5px;
+
 }
 
 .header-title {
-    font-size: 1rem;
+    font-size: 1.3rem;
     font-weight: 900;
     color: #333;
     flex-grow: 1; /* 제목이 남은 공간을 차지하여 중앙에 배치 */
-    text-align: left;
-    margin-left: 20px;
+    text-align: center;
+    margin-left: 0;
 }
 
 .icon-button {
     background: none;
     border: none;
-    font-size: 1rem;
+    font-size: 1.5rem;
     cursor: pointer;
     padding: 5px;
     color: #333;
+    margin-left: 16px;
 }
 
 .toolbar-top {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 15px;
-    padding: 70px 10px 5px 30px;
+    padding: 50px 10px 20px 0;
+    margin-top: calc(50px + env(safe-area-inset-top, 0px));
+}
+
+#text-count-display {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: #333;
+    padding-right: 15px; /* 화면 우측 끝에서 약간의 여백 확보 */
 }
 
 .toolbar-top .icon-button {
@@ -53,6 +74,7 @@
     border: none;
     font-size: 1.3rem;
     cursor: pointer;
+    margin-right: 7px;
     padding: 8px; /* 아이콘과 배경 사이의 여백 */
     border-radius: 50%; /* 원형 배경 */
     color: #333;
@@ -64,8 +86,8 @@
 
 /* 텍스트 작성 영역 스타일링 */
 .writing-area {
+    width: 350px;
     flex-grow: 1;
-    padding: 8px 20px 0 20px;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -77,7 +99,7 @@
     background-color: #fff;
     border-radius: 9px 9px 0 0;
     box-shadow: none;
-    padding: 15px;
+    padding: 25px 30px;
 }
 
 .writing-area #content {
@@ -98,13 +120,13 @@
 /* 하단 공유 버튼 스타일링 */
 .submit-button {
     position: absolute;
-    bottom: 30px;
+    bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
-    width: 300px; /* 더 짧은 너비로 변경 */
-    max-width: none; /* 최대 너비 제한을 없앱니다. */
-    padding: 8px 20px;
-    border-radius: 5px;
+    width: 330px;
+    max-width: none;
+    padding: 10px 15px;
+    border-radius: 8px;
     border: none;
     background-color: #ddd;
     color: #fff;
@@ -119,13 +141,13 @@
 .submit-button:disabled {
     background-color: #ddd; /* 비활성화 시 배경색 */
     color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .submit-button:not(:disabled) {
     background-color: #72966a;
     color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     cursor: pointer;
 }
 
@@ -138,14 +160,14 @@
 /* 이미지 미리보기 컨테이너 및 삭제 버튼 스타일 */
 .image-preview-container {
     position: absolute;;
-    bottom: 80px; /* 공유 버튼과의 간격 조정 */
+    bottom: 130px; /* 공유 버튼과의 간격 조정 */
     left: 0;
     right: 0;
     width: auto;
     background-color: transparent;
     display: flex;
     gap: 10px;
-    padding: 10px 20px;
+    padding: 20px 22px;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     overflow-x: auto;
@@ -165,8 +187,8 @@
 }
 
 .img-preview {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     object-fit: cover;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -176,8 +198,8 @@
     position: absolute;
     top: 5px;
     right: 5px;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     background-color: rgba(0, 0, 0, 0.4);
     color: #fff;
     border-radius: 50%;
@@ -188,7 +210,6 @@
     cursor: pointer;
     backdrop-filter: blur(2px); /* 투명한 회색 배경 */
 }
-
 
 /* Toast 알림창 */
 .toast-container {

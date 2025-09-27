@@ -9,6 +9,43 @@ export async function initMain() {
     const areaKeyFromUrl = urlParams.get('areaKey');
     const areaNameFromUrl = urlParams.get('areaName');
 
+
+    if (areaKeyFromUrl && areaNameFromUrl) {
+        console.log('URL 파라미터에서 key 발견:', areaKeyFromUrl);
+        finalAreaKey = areaKeyFromUrl;
+        finalAreaName = areaNameFromUrl;
+
+        // URL로 이동한 지역 키를 새로운 Preferences키에 저장
+        await Preferences.set({key: 'viewingAreaKey', value: finalAreaKey}); // 추가
+        await Preferences.set({key: 'viewingAreaName', value: finalAreaName}); // 추가
+
+    } else {
+        // 쿼리 파라미터가 없으면 Preferences 값 참조
+        const {value: areaKeyFromPreferences} = await Preferences.get({key: 'currentAreaKey'});
+        const {value: areaNameFromPreferences} = await Preferences.get({key: 'currentAreaName'});
+        console.log('preferences에서 지역 정보 발견: ', areaKeyFromPreferences, areaNameFromPreferences);
+        if (areaKeyFromPreferences && areaNameFromPreferences) {
+            finalAreaKey = areaKeyFromPreferences;
+            finalAreaName = areaNameFromPreferences;
+
+            // GPS로 결정된 지역 키를 새로운 Preferences 키에도 저장 (동일하게 설정)
+            await Preferences.set({key: 'viewingAreaKey', value: finalAreaKey}); // 추가
+            await Preferences.set({key: 'viewingAreaName', value: finalAreaName}); // 추가
+        }
+    }
+
+    const locationTextElement = $('#current-location-text');
+    console.log("key : ", finalAreaKey, finalAreaName);
+    if (finalAreaKey && finalAreaName) {
+        locationTextElement.text(finalAreaName);
+
+        // finalAreaKey를 사용해 바로 게시물을 로드
+        loadPosts(finalAreaKey);
+    } else {
+        console.log("게시물을 불러올 지역 정보가 없습니다.");
+        locationTextElement.text("지역 설정 중..");
+    }
+
     // 로고 클릭 이벤트 리스너
     $('.logo a').on('click', function (e) {
         e.preventDefault(); // 기본 링크 동작을 막음
@@ -32,33 +69,6 @@ export async function initMain() {
         showToast('게시글이 성공적으로 작성되었습니다!');
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         history.replaceState({}, document.title, newUrl);
-    }
-
-    if (areaKeyFromUrl && areaNameFromUrl) {
-        console.log('URL 파라미터에서 key 발견:', areaKeyFromUrl);
-        finalAreaKey = areaKeyFromUrl;
-        finalAreaName = areaNameFromUrl;
-    } else {
-        // 쿼리 파라미터가 없으면 Preferences 값 참조
-        const {value: areaKeyFromPreferences} = await Preferences.get({key: 'currentAreaKey'});
-        const {value: areaNameFromPreferences} = await Preferences.get({key: 'currentAreaName'});
-        console.log('preferences에서 지역 정보 발견: ', areaKeyFromPreferences, areaNameFromPreferences);
-        if (areaKeyFromPreferences && areaNameFromPreferences) {
-            finalAreaKey = areaKeyFromPreferences;
-            finalAreaName = areaNameFromPreferences;
-        }
-    }
-
-    const locationTextElement = $('#current-location-text');
-    console.log("key : ", finalAreaKey, finalAreaName);
-    if (finalAreaKey && finalAreaName) {
-        locationTextElement.text(finalAreaName);
-
-        // finalAreaKey를 사용해 바로 게시물을 로드
-        loadPosts(finalAreaKey);
-    } else {
-        console.log("게시물을 불러올 지역 정보가 없습니다.");
-        locationTextElement.text("지역 설정 중..");
     }
 
     function showToast(message) {
@@ -233,7 +243,7 @@ export async function initMain() {
                     ${mapIconSvg}
                 </div>
                 <p class="empty-text">해당 지역에는 작성된 Forum이 없어요.</p>
-                <p class="empty-subtext">다른 이야기를 만나고 싶다면,<br>발걸음을 옮기거나 상단 아이콘을 눌러 함께해요.</p>
+                <p class="empty-subtext">다른 이야기를 만나고 싶다면, 발걸음을 옮기거나<br>상단 아이콘을 눌러 함께해요.</p>
             </div>
         `;
     }
@@ -247,6 +257,10 @@ export async function initMain() {
             success: function (result) {
                 const container = $('#post-list-container');
                 container.empty();
+
+                // 빈 목록 상태를 관리하는 클래스를 먼저 제거
+                container.removeClass('empty-list');
+
                 if (result.status === '000' && result.data && result.data.length > 0) {
                     result.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                     result.data.forEach(post => {
@@ -258,10 +272,14 @@ export async function initMain() {
                         initCarousel(newPostCard);
                     });
                 } else {
+                    container.addClass('empty-list');
                     container.html(createEmptyPostHtml());
                 }
             },
             error: function () {
+                const container = $('#post-list-container'); //오류 처리에도 컨테이너 참조 추가
+                container.empty();
+                container.addClass('empty-list'); //중앙 정렬 클래스 부여
                 container.html(createEmptyPostHtml());
             }
         });
@@ -474,8 +492,8 @@ export async function initMain() {
                     ${optionsHtml}
                 </div>
                 <div class="post-content">
+                    ${imagesHtml} 
                     <p>${escapeHTML(post.contentsText)}</p>
-                    ${imagesHtml}
                 </div>
                 <div class="post-actions">
                     <div>

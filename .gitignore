@@ -49,3 +49,6 @@ node_modules/
 /src/main/resources/static/js/bundle.js
 /src/main/resources/static/js/*.bundle.js
 /android/app/google-services.json
+
+# firebase 관련
+src/main/resources/firebase-service-account.json

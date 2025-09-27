@@ -1,7 +1,7 @@
 :root {
     --primary-color: #46825C;
     --sub-text-color: #777;
-    --border-color: #ddd;
+    --border-color: #F0F0F0;
 }
 
 .main-nav-bar {
@@ -14,9 +14,9 @@
 
     background-color: #fff;
     border-top: 1px solid var(--border-color);
-    padding: 10px 0;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-    z-index: 1010; /* [유지] 가장 위에 위치 (조건 2 만족) */
+    padding: 16px;
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
+    z-index: 1010; /* 가장 위에 위치 */
 }
 
 /* 네비게이션 아이콘 영역 (유지) */
@@ -38,6 +38,9 @@
     padding: 5px 10px;
     position: relative;
     transition: color 0.3s ease-in-out;
+
+    /* 클릭 시 파란색 하이라이트 제거 */
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* 폰트 어썸 아이콘의 색상 변경 (유지) */
@@ -68,7 +71,7 @@
     /* UI 디자인: 반투명 배경, 둥근 모서리, 그림자 */
     width: 90%;
     max-width: 250px;
-    padding: 15px 20px;
+    padding: 15px 10px;
     border-radius: 12px;
 
     /* [핵심: 반투명 배경] */
@@ -103,9 +106,15 @@
     flex-direction: column;
     align-items: center;
     text-decoration: none;
-    color: var(--primary-color); /* 활성화 색상 사용 */
+    color: var(--sub-text-color);
     opacity: 0.8;
     transition: opacity 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.toggle-item:hover,
+.toggle-item:focus {
+    color: var(--primary-color);
 }
 
 .toggle-item:hover {

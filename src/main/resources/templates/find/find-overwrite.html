@@ -2,40 +2,249 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fin'd Overwrite</title>
-    <link rel="stylesheet" th:href="@{/css/find-overwrite.css}">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- 로컬 테스트용 -->
+    <!--    <link rel="stylesheet" href="find-write.css">-->
+    <!--    <script defer type="module" src="./find-overwrite.js"></script>-->
+    <!-- 실제 서비스용 -->
+    <link rel="stylesheet" th:href="@{/css/find-write.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
+<!-- 로컬 테스트용 -->
+<!--<body id="page-find-write" data-find-url="https://posthere-s3.s3.ap-northeast-2.amazonaws.com/default_profile.jpg">-->
+<!--<body id="page-find-overwrite" data-find-url="http://127.0.0.1:8080/icons/'25%20%EB%A7%90%EC%94%80%EC%B9%B4%EB%93%9C%20%ED%8C%8C%EB%9E%91.png">-->
+<!-- 실제 서비스용 -->
 <body id="page-find-overwrite" data-find-url="${find_url}">
-<div id="canvas-container">
-    <canvas id="image-canvas"></canvas>
-    <canvas id="paint-canvas"></canvas>
-    <canvas id="object-canvas"></canvas>
-</div>
-<div id="toolbar">
-    <div id="container-color">
-        <div id="red"></div>
-        <div id="green"></div>
-        <div id="blue"></div>
-        <div id="black"></div>
+    <div id="header-container">
+        <button id="back-btn" class="svg-container">
+            <svg width="35" height="35" viewBox="0 0 35 35" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="17.5" cy="17.5" r="17.5" fill="#161616" fill-opacity="0.72"/>
+                <path d="M13.2741 17.0006L20.2842 9.99053C20.4795 9.79527 20.4795 9.47868 20.2842 9.28342L19.7185 8.71774C19.5232 8.52247 19.2067 8.52247 19.0114 8.71774L11.0821 16.647C10.8869 16.8423 10.8869 17.1589 11.0821 17.3541L19.0114 25.2834C19.2067 25.4787 19.5232 25.4787 19.7185 25.2834L20.2842 24.7177C20.4795 24.5225 20.4795 24.2059 20.2842 24.0106L13.2741 17.0006Z"
+                      fill="white"/>
+            </svg>
+        </button>
+        <span id="page-title">Fin'd</span>
     </div>
-    <div id="container-thickness">
-        <label for="thickness">굵기: </label>
-        <input id="thickness" name="thickness" type="range">
+    <div id="tool-btn-container">
+        <button id="tool-draw" class="svg-container">
+            <svg id="tool-draw-unselected" width="35" height="35" viewBox="0 0 35 35" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+                <circle cx="17.5" cy="17.5" r="17.5" fill="#F5F5F5"/>
+                <g clip-path="url(#clip0_2939_4321)">
+                    <path d="M8.66663 10.6667L20.75 13.5834L22 19.8334L17.8333 24.0001L11.5833 22.7501L8.66663 10.6667ZM8.66663 10.6667L14.9883 16.9884M17 24.8334L22.8333 19.0001L25.3333 21.5001L19.5 27.3334L17 24.8334ZM17.8333 18.1667C17.8333 19.0872 17.0871 19.8334 16.1666 19.8334C15.2462 19.8334 14.5 19.0872 14.5 18.1667C14.5 17.2463 15.2462 16.5001 16.1666 16.5001C17.0871 16.5001 17.8333 17.2463 17.8333 18.1667Z"
+                          stroke="#6C8B52" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <defs>
+                    <clipPath id="clip0_2939_4321">
+                        <rect width="20" height="20" fill="white" transform="translate(7 9)"/>
+                    </clipPath>
+                </defs>
+            </svg>
+            <svg id="tool-draw-selected" class="hidden" width="35" height="35" viewBox="0 0 35 35" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+                <circle cx="17.5" cy="17.5" r="17.5" fill="#8C8C8C"/>
+                <g clip-path="url(#clip0_3063_2101)">
+                    <path d="M8.66666 10.6667L20.75 13.5834L22 19.8334L17.8333 24.0001L11.5833 22.7501L8.66666 10.6667ZM8.66666 10.6667L14.9883 16.9884M17 24.8334L22.8333 19.0001L25.3333 21.5001L19.5 27.3334L17 24.8334ZM17.8333 18.1667C17.8333 19.0872 17.0871 19.8334 16.1667 19.8334C15.2462 19.8334 14.5 19.0872 14.5 18.1667C14.5 17.2463 15.2462 16.5001 16.1667 16.5001C17.0871 16.5001 17.8333 17.2463 17.8333 18.1667Z"
+                          stroke="#374729" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <defs>
+                    <clipPath id="clip0_3063_2101">
+                        <rect width="20" height="20" fill="white" transform="translate(7 9)"/>
+                    </clipPath>
+                </defs>
+            </svg>
+        </button>
+        <button id="tool-text" class="svg-container">
+            <svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="17.5" cy="17.5" r="17.5" fill="#F5F5F5"/>
+                <path d="M10.3334 13.8333V11.3333H23.6667V13.8333M14.5 24.6666H19.5M17 11.3333V24.6666" stroke="#6C8B52"
+                      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <button id="btn-clear" class="svg-container hidden">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.57144 11.5H27.4286" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10.9286 11.5H25.0714V25.6429C25.0714 26.0596 24.9058 26.4594 24.6111 26.754C24.3165 27.0487 23.9167 27.2143 23.5 27.2143H12.5C12.0832 27.2143 11.6835 27.0487 11.3888 26.754C11.0941 26.4594 10.9286 26.0596 10.9286 25.6429V11.5Z"
+                      stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14.0714 11.4999V10.7142C14.0714 9.6723 14.4853 8.67304 15.2221 7.93629C15.9588 7.19955 16.9581 6.78564 18 6.78564C19.0419 6.78564 20.0412 7.19955 20.7779 7.93629C21.5147 8.67304 21.9286 9.6723 21.9286 10.7142V11.4999"
+                      stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15.6429 16.2166V22.5047" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M20.3571 16.2166V22.5047" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="18" cy="18" r="17.75" stroke="white" stroke-width="0.5"/>
+            </svg>
+        </button>
     </div>
-    <div id="container-text">
-        <label for="text-input">Text: </label>
-        <input id="text-input" name="" type="text">
-        <input id="add-text-btn" type="button" value="삽입">
+    <div id="middle-container">
+        <div id="canvas-container">
+            <canvas id="image-canvas"></canvas>
+            <canvas id="paint-canvas"></canvas>
+            <canvas id="object-canvas"></canvas>
+            <svg id="tool-expiration-date" width="35" height="35" viewBox="0 0 35 35" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+                <rect width="35" height="35" rx="17.5" fill="#F5F5F5"/>
+                <g clip-path="url(#clip0_2125_2910)">
+                    <path d="M28.95 17.3643C28.9336 19.2532 28.5042 21.1157 27.692 22.8213" stroke="#000001"
+                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17.9 28.4143C16.4489 28.4143 15.012 28.1284 13.6713 27.5731C12.3307 27.0178 11.1125 26.2039 10.0864 25.1778C8.01417 23.1055 6.84998 20.2949 6.84998 17.3643"
+                          stroke="#000001" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21.2999 20.7642L17.8999 16.5142H12.7999" stroke="#000001" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M26.4 27.5641C27.8083 27.5641 28.95 26.4224 28.95 25.0141C28.95 23.6058 27.8083 22.4641 26.4 22.4641C24.9916 22.4641 23.85 23.6058 23.85 25.0141C23.85 26.4224 24.9916 27.5641 26.4 27.5641Z"
+                          stroke="#000001" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M7.56396 13.2842C7.93445 12.3583 8.43225 11.4886 9.04296 10.7002" stroke="#000001"
+                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12.324 7.77618C13.282 7.22298 14.32 6.82155 15.401 6.58618" stroke="#000001"
+                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M28.236 13.2842C27.8655 12.3583 27.3677 11.4886 26.757 10.7002" stroke="#000001"
+                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M23.4759 7.77618C22.5179 7.22298 21.4799 6.82155 20.3989 6.58618" stroke="#000001"
+                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <defs>
+                    <clipPath id="clip0_2125_2910">
+                        <rect width="23.8" height="23.8" fill="white" transform="translate(6 5.6001)"/>
+                    </clipPath>
+                </defs>
+            </svg>
+            <!--    <input type="date" id="date-picker-input" style="display: none;">-->
+            <input type="text" id="date-picker-input" style="display: none;">
+        </div>
     </div>
-    <div id="container-font-size">
-        <label for="font-size-slider">글자 크기: </label>
-        <input id="font-size-slider" max="72" min="8" name="" type="range" value="20">
-        <span id="font-size-value">20</span>px
+    <div id="bottom-container">
+
     </div>
-    <div id="container-save">
-        <button id="save-btn">저장</button>
+    <div id="footer-container">
+        <button id="btn-save">share</button>
     </div>
-</div>
+    <div id="text-input-overlay" class="hidden">
+        <form id="text-input-form">
+            <input type="text" id="dynamic-text-input" placeholder="How's your feeling?">
+        </form>
+    </div>
+    <div id="editing-tools-container" class="hidden">
+        <div id="weight-slider-container">
+            <div id="weight-slider-wrapper">
+                <div id="weight-slider-track-wrapper">
+                    <svg width="12" height="236" viewBox="0 0 12 236" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M-0.308664 235.75L-12 4.0951e-06L11.3827 6.13928e-06C6.81694 92.0661 4.2571 143.684 -0.308664 235.75Z"
+                              fill="#D9D9D9"/>
+                    </svg>
+                </div>
+                <div id="weight-slider-thumb-wrapper">
+                    <svg width="15" height="31" viewBox="0 0 15 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g filter="url(#filter0_d_3009_5746)">
+                            <circle cx="0" cy="15.5" r="11.5" fill="white"/>
+                        </g>
+                        <defs>
+                            <filter id="filter0_d_3009_5746" x="-16" y="0" width="31" height="31"
+                                    filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                                <feColorMatrix in="SourceAlpha" type="matrix"
+                                               values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                                <feOffset/>
+                                <feGaussianBlur stdDeviation="2"/>
+                                <feComposite in2="hardAlpha" operator="out"/>
+                                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+                                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_3009_5746"/>
+                                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_3009_5746"
+                                         result="shape"/>
+                            </filter>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div id="color-slider-container">
+            <div id="color-gradient-icon-wrapper">
+                <svg width="30" height="31" viewBox="0 0 30 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="30" height="31" rx="7" fill="#2E2E2E"/>
+                    <g clip-path="url(#paint0_angular_2844_5187_clip_path)" data-figma-skip-parse="true">
+                        <g transform="matrix(0 0.0105 -0.0105 0 15.5 15.5)">
+                            <foreignObject x="-1142.86" y="-1142.86" width="2285.71" height="2285.71">
+                                <div xmlns="http://www.w3.org/1999/xhtml"
+                                     style="background:conic-gradient(from 90deg,rgba(95, 203, 59, 1) 0deg,rgba(11, 186, 247, 1) 36deg,rgba(82, 110, 255, 1) 72deg,rgba(182, 27, 242, 1) 108deg,rgba(243, 15, 188, 1) 144deg,rgba(253, 41, 117, 1) 180deg,rgba(254, 87, 40, 1) 216deg,rgba(255, 152, 13, 1) 252deg,rgba(253, 190, 27, 1) 288deg,rgba(183, 199, 37, 1) 324deg,rgba(95, 203, 59, 1) 360deg);height:100%;width:100%;opacity:1"></div>
+                            </foreignObject>
+                        </g>
+                    </g>
+                    <circle cx="15.5" cy="15.5" r="9.75"
+                            data-figma-gradient-fill="{&#34;type&#34;:&#34;GRADIENT_ANGULAR&#34;,&#34;stops&#34;:[{&#34;color&#34;:{&#34;r&#34;:0.37254902720451355,&#34;g&#34;:0.79607844352722168,&#34;b&#34;:0.23137255012989044,&#34;a&#34;:1.0},&#34;position&#34;:0.0},{&#34;color&#34;:{&#34;r&#34;:0.043137256056070328,&#34;g&#34;:0.7294117808341980,&#34;b&#34;:0.96862745285034180,&#34;a&#34;:1.0},&#34;position&#34;:0.10000000149011612},{&#34;color&#34;:{&#34;r&#34;:0.32156863808631897,&#34;g&#34;:0.43137255311012268,&#34;b&#34;:1.0,&#34;a&#34;:1.0},&#34;position&#34;:0.20000000298023224},{&#34;color&#34;:{&#34;r&#34;:0.71372550725936890,&#34;g&#34;:0.10588235408067703,&#34;b&#34;:0.94901961088180542,&#34;a&#34;:1.0},&#34;position&#34;:0.30000001192092896},{&#34;color&#34;:{&#34;r&#34;:0.95294117927551270,&#34;g&#34;:0.058823529630899429,&#34;b&#34;:0.73725491762161255,&#34;a&#34;:1.0},&#34;position&#34;:0.40000000596046448},{&#34;color&#34;:{&#34;r&#34;:0.99215686321258545,&#34;g&#34;:0.16078431904315948,&#34;b&#34;:0.45882353186607361,&#34;a&#34;:1.0},&#34;position&#34;:0.50},{&#34;color&#34;:{&#34;r&#34;:0.99607843160629272,&#34;g&#34;:0.34117648005485535,&#34;b&#34;:0.15686275064945221,&#34;a&#34;:1.0},&#34;position&#34;:0.60000002384185791},{&#34;color&#34;:{&#34;r&#34;:1.0,&#34;g&#34;:0.59607845544815063,&#34;b&#34;:0.050980392843484879,&#34;a&#34;:1.0},&#34;position&#34;:0.69999998807907104},{&#34;color&#34;:{&#34;r&#34;:0.99215686321258545,&#34;g&#34;:0.74509805440902710,&#34;b&#34;:0.10588235408067703,&#34;a&#34;:1.0},&#34;position&#34;:0.80000001192092896},{&#34;color&#34;:{&#34;r&#34;:0.71764707565307617,&#34;g&#34;:0.78039216995239258,&#34;b&#34;:0.14509804546833038,&#34;a&#34;:1.0},&#34;position&#34;:0.89999997615814209}],&#34;stopsVar&#34;:[{&#34;color&#34;:{&#34;r&#34;:0.37254902720451355,&#34;g&#34;:0.79607844352722168,&#34;b&#34;:0.23137255012989044,&#34;a&#34;:1.0},&#34;position&#34;:0.0},{&#34;color&#34;:{&#34;r&#34;:0.043137256056070328,&#34;g&#34;:0.7294117808341980,&#34;b&#34;:0.96862745285034180,&#34;a&#34;:1.0},&#34;position&#34;:0.10000000149011612},{&#34;color&#34;:{&#34;r&#34;:0.32156863808631897,&#34;g&#34;:0.43137255311012268,&#34;b&#34;:1.0,&#34;a&#34;:1.0},&#34;position&#34;:0.20000000298023224},{&#34;color&#34;:{&#34;r&#34;:0.71372550725936890,&#34;g&#34;:0.10588235408067703,&#34;b&#34;:0.94901961088180542,&#34;a&#34;:1.0},&#34;position&#34;:0.30000001192092896},{&#34;color&#34;:{&#34;r&#34;:0.95294117927551270,&#34;g&#34;:0.058823529630899429,&#34;b&#34;:0.73725491762161255,&#34;a&#34;:1.0},&#34;position&#34;:0.40000000596046448},{&#34;color&#34;:{&#34;r&#34;:0.99215686321258545,&#34;g&#34;:0.16078431904315948,&#34;b&#34;:0.45882353186607361,&#34;a&#34;:1.0},&#34;position&#34;:0.50},{&#34;color&#34;:{&#34;r&#34;:0.99607843160629272,&#34;g&#34;:0.34117648005485535,&#34;b&#34;:0.15686275064945221,&#34;a&#34;:1.0},&#34;position&#34;:0.60000002384185791},{&#34;color&#34;:{&#34;r&#34;:1.0,&#34;g&#34;:0.59607845544815063,&#34;b&#34;:0.050980392843484879,&#34;a&#34;:1.0},&#34;position&#34;:0.69999998807907104},{&#34;color&#34;:{&#34;r&#34;:0.99215686321258545,&#34;g&#34;:0.74509805440902710,&#34;b&#34;:0.10588235408067703,&#34;a&#34;:1.0},&#34;position&#34;:0.80000001192092896},{&#34;color&#34;:{&#34;r&#34;:0.71764707565307617,&#34;g&#34;:0.78039216995239258,&#34;b&#34;:0.14509804546833038,&#34;a&#34;:1.0},&#34;position&#34;:0.89999997615814209}],&#34;transform&#34;:{&#34;m00&#34;:1.2858792349190956e-15,&#34;m01&#34;:-21.0,&#34;m02&#34;:26.0,&#34;m10&#34;:21.0,&#34;m11&#34;:1.2858792349190956e-15,&#34;m12&#34;:5.0},&#34;opacity&#34;:1.0,&#34;blendMode&#34;:&#34;NORMAL&#34;,&#34;visible&#34;:true}"
+                            stroke="white" stroke-width="1.5"/>
+                    <defs>
+                        <clipPath id="paint0_angular_2844_5187_clip_path">
+                            <circle cx="15.5" cy="15.5" r="9.75" stroke-width="1.5"/>
+                        </clipPath>
+                    </defs>
+                </svg>
+            </div>
+            <div id="color-slider-wrapper">
+                <div id="color-slider-track-wrapper">
+                    <svg width="284" height="32" viewBox="0 0 284 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="284" height="32" rx="9" fill="#2E2E2E"/>
+                        <rect x="6" y="8" width="270" height="17" rx="7" fill="url(#paint0_linear_3080_5558)"/>
+                        <defs>
+                            <linearGradient id="paint0_linear_3080_5558" x1="6" y1="16.5" x2="276" y2="16.5"
+                                            gradientUnits="userSpaceOnUse">
+                                <stop stop-color="white"/>
+                                <stop offset="0.1" stop-color="#FF0000"/>
+                                <stop offset="0.2" stop-color="#F2FF00"/>
+                                <stop offset="0.3" stop-color="#FF7B00"/>
+                                <stop offset="0.4" stop-color="#00FFDD"/>
+                                <stop offset="0.5" stop-color="#5EFF00"/>
+                                <stop offset="0.6" stop-color="#004DFF"/>
+                                <stop offset="0.7" stop-color="#B300FF"/>
+                                <stop offset="0.8" stop-color="#E5C674"/>
+                                <stop offset="0.9" stop-color="#678550"/>
+                                <stop offset="1"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div id="color-slider-thumb-wrapper">
+                    <svg width="31" height="63" viewBox="0 0 31 63" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g filter="url(#filter0_d_2844_5194)">
+                            <path d="M16.4547 46.9379C16.1627 47.8744 14.8373 47.8743 14.5453 46.9379L4.21322 13.7976C4.0125 13.1538 4.49354 12.5 5.1679 12.5L25.8321 12.5C26.5065 12.5 26.9875 13.1538 26.7868 13.7976L16.4547 46.9379Z"
+                                  fill="#D9D9D9"/>
+                        </g>
+                        <g filter="url(#filter1_d_2844_5194)">
+                            <circle cx="15.5" cy="47.5" r="11.5" fill="white"/>
+                        </g>
+                        <defs>
+                            <filter id="filter0_d_2844_5194" x="0.167206" y="12.5" width="30.6656" height="43.1401"
+                                    filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                                <feColorMatrix in="SourceAlpha" type="matrix"
+                                               values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                                <feOffset dy="4"/>
+                                <feGaussianBlur stdDeviation="2"/>
+                                <feComposite in2="hardAlpha" operator="out"/>
+                                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+                                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2844_5194"/>
+                                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2844_5194"
+                                         result="shape"/>
+                            </filter>
+                            <filter id="filter1_d_2844_5194" x="0" y="32" width="31" height="31"
+                                    filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                                <feColorMatrix in="SourceAlpha" type="matrix"
+                                               values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                                <feOffset/>
+                                <feGaussianBlur stdDeviation="2"/>
+                                <feComposite in2="hardAlpha" operator="out"/>
+                                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+                                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2844_5194"/>
+                                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2844_5194"
+                                         result="shape"/>
+                            </filter>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

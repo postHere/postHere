@@ -1,32 +1,354 @@
+html {
+    height: 100%;
+}
+body#page-find-write {
+    margin: 0;
+    background-color: lightgray;
+    width: 100%; /* html 태그의 width(360px)를 상속 */
+    height: 100%; /* html 태그의 height(780px)를 상속 */
+    position: relative; /* 자식 요소의 absolute 위치 기준이 되도록 설정 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #404040;
+}
+body#page-find-overwrite {
+    margin: 0;
+    background-color: lightgray;
+    width: 100%; /* html 태그의 width(360px)를 상속 */
+    height: 100%; /* html 태그의 height(780px)를 상속 */
+    position: relative; /* 자식 요소의 absolute 위치 기준이 되도록 설정 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #404040;
+}
+
+/* 1. div id="header-container" */
+#header-container {
+    width: 100%;
+    height: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* 1 - 1. */
+#back-btn {
+    position: absolute;
+    top: 4px;
+    left: 12px;
+    height: 35px;
+
+}
+/* 1 - 2. */
+#page-title {
+    font-weight: 600;
+    font-size: 17px;
+}
+
+/* 2. div id="tool-btn-container" */
+#tool-btn-container {
+    display: flex;
+    justify-content: center;
+}
+#tool-btn-container.hidden {
+    display: none;
+}
+/* 2 - 1, 2, 3, 4 */
+#tool-btn-container > button {
+    padding: 5px;
+    height: 35px;
+    box-sizing: content-box;
+}
+/* 2 - 2. */
+#tool-draw .hidden {
+    display: none;
+}
+/* 2 - 4. */
+#btn-clear {
+    fill: white;
+    height: 36px;
+}
+#btn-clear.hidden {
+    display: none;
+}
+
+/* 3. div id="middle-container" */
+#middle-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    /*transition: transform 0.2s ease-in-out;*/
+}
+/* 3 - 1. */
 #canvas-container {
     position: relative;
-    width: 300px;
-    height: 300px;
-    border: 1px solid black;
+    width: 330px;
+    height: 330px;
+    border-radius: 8px;
+    background-color: #FFFFFF;
 }
+/* 3 - 1 - 1, 2, 3 */
 #canvas-container > canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    touch-action: none; /* 캔버스 위에서의 터치 제스처로 페이지가 스크롤되거나 확대/축소되지 않도록 설정 */
+}
+/* 3 - 1 - 4. */
+#tool-expiration-date {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+}
+
+/* 4. div id="bottom-container" */
+#bottom-container {
+    /*height: 24px;*/
+    /*height: 100%;*/
+    display: flex;
+    justify-content: center;
+}
+
+/* 5. div id="footer-container" */
+#footer-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /*justify-content: center;*/
+}
+/* 5 - 1. */
+#btn-save {
+    width: 316.25px;
+    height: 36px;
+    font-size: 12pt;
+    border: none;
+    border-radius: 8px;
+    margin: 21px 0;
+}
+#btn-save.inactive {
+    background-color: #D9D9D9;
+    color: #FFFFFF;
+    cursor: not-allowed;
+}
+#btn-save.active {
+    background-color: #6C8B52;
+    color: #FFFFFF;
+    cursor: pointer;
+}
+#btn-save.hidden-placeholder {
+    visibility: hidden;
+}
+
+/* 6. div id="text-input-overlay" */
+/* 텍스트 입력 모달창 관련 */
+#text-input-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-}
-#container-color {
+    background-color: rgba(63, 63, 63, 0.84);
+    z-index: 10;
+    /* Flexbox를 중앙 정렬에만 사용하고, 자식 요소들은 absolute로 배치합니다. */
     display: flex;
+    align-items: center;
+    justify-content: center;
 }
-#container-color > * {
-    width: 30px;
-    height: 30px;
+#text-input-overlay.hidden {
+    display: none;
 }
-#red {
-    background-color: red;
+/* 6 - 1 - 1. */
+/* 중앙 텍스트 입력 필드 */
+#dynamic-text-input {
+    width: 100%;
+    max-width: 288px;
+    /*background-color: rgba(63, 63, 63, 0.84);*/
+    background-color: rgba(22, 22, 22, 0.72);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 12px 12px;
+    font-size: 40px; /* 기본 폰트 크기 */
+    text-align: center;
+    margin: 0 auto; /* 컨테이너 내에서 수평 중앙 정렬 */
+    display: block;
 }
-#green {
-    background-color: green;
+#dynamic-text-input:focus {
+    outline: none;
 }
-#blue {
-    background-color: blue;
+
+/* 7. div id="editing-tools-container" */
+#editing-tools-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 78px);
+    z-index: 10; /* 텍스트 입력 오버레이(z-index: 20) 바로 아래에 위치 */
+    pointer-events: none; /* 컨테이너 자체는 클릭되지 않도록 설정 */
 }
-#black {
-    background-color: black;
+#editing-tools-container.hidden {
+    display: none;
+}
+#editing-tools-container.hidden-placeholder {
+    margin-bottom: 78px;
+    /*box-sizing: border-box;*/
+}
+/* 7 - * */
+/* 편집 도구 컨테이너 안의 자식 요소들은 클릭이 가능하도록 재설정 */
+#editing-tools-container > * {
+    pointer-events: auto;
+}
+/* 7 - 1. */
+/* 왼쪽 폰트 크기 툴바 (absolute 배치) */
+#weight-slider-container {
+    position: absolute; /* ✨ position 속성을 여기로 이동 */
+    left: 0; /* ✨ left 속성을 여기로 이동 */
+    top: 50%; /* ✨ top 속성을 여기로 이동 */
+    transform: translateY(-50%); /* ✨ transform 속성을 여기로 이동 */
+    display: flex;
+    justify-content: flex-start;
+    width: 30px; /* 터치 영역 확보 */
+    height: 236px;
+}
+/* 7 - 1 - 1 - 2. */
+#weight-slider-thumb-wrapper {
+    position: absolute;
+    left: 6px;
+    top: 50%; /* JS로 이 값을 변경하여 핸들을 움직입니다 */
+    transform: translate(-50%, -50%); /* 핸들의 중앙을 정확한 위치에 맞춤 */
+    cursor: pointer;
+    touch-action: none;
+}
+/* 7 - 2. */
+/* 하단 색상 툴바 (absolute 배치) */
+#color-slider-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 323px;
+    margin: 0px auto;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+}
+/* 7 - 2 - 2. */
+#color-slider-wrapper {
+    /*flex-grow: 1;*/
+    position: relative;
+    height: 32px;
+    display: flex;
+    align-items: center;
+}
+/* 7 - 2 - 2 - 1. */
+#color-slider-track-wrapper {
+    /*width: 100%;*/
+    height: 32px;
+}
+/* 7 - 2 - 2 - 2. */
+#color-slider-thumb-wrapper {
+    position: absolute;
+    height: 63px;
+    top: 0; /* 수직 중앙 정렬 */
+    left: 0; /* JS로 이 값을 변경 */
+    transform: translate(-50%, -50%); /* 핸들 중앙 보정 */
+    cursor: pointer;
+    touch-action: none;
+}
+
+/* 복수 위치 공통 */
+.svg-container {
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background-color: transparent;
+}
+
+/* 라이브러리를 통한 삽입 */
+/* - 달력 관련 */
+@keyframes slideInUp {
+    from {
+        /* 시작 위치: 화면 아래쪽 밖, 투명한 상태 */
+        transform: translate(-50%, 100%);
+        opacity: 0;
+    }
+    to {
+        /* 끝 위치: 원래 자리, 불투명한 상태 */
+        transform: translate(-50%, 0%);
+        opacity: 1;
+    }
+}
+/* 애니메이션 적용 */
+.flatpickr-calendar.open.animate-open {
+    animation: slideInUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+/* 달력 전체 컨테이너 스타일 */
+.flatpickr-calendar {
+    position: absolute !important;
+    bottom: 10px !important; /* 화면 하단에서 약간 띄움 */
+    top: auto !important;
+    left: 50% !important;
+    transform: translate(-50%, 0%) !important;
+
+    background: #FFFFFF; /* 배경색 */
+    border-radius: 16px; /* 둥근 모서리 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* 그림자 효과 */
+    border: none;
+    width: 320px; /* 너비 */
+    padding: 15px;
+    box-sizing: border-box;
+}
+/* 달력 상단 (월, 년도, 화살표) */
+.flatpickr-month {
+    color: #000000;
+    fill: #000000;
+    font-weight: 600;
+    /*font-size: 20px;*/
+    padding-bottom: 15px;
+}
+.flatpickr-prev-month svg, .flatpickr-next-month svg {
+    fill: #000000;
+    width: 14px;
+    height: 14px;
+}
+/* 요일 (일, 월, 화...) */
+.flatpickr-weekday {
+    color: #9e9e9e;
+    font-weight: 500;
+    font-size: 12px;
+}
+/* 날짜(숫자) 기본 스타일 */
+.flatpickr-day {
+    /*color: #333333;*/
+    border-width: 0px !important;
+    /*border-radius: 0px !important;*/
+    font-weight: 500;
+    font-size: 15px;
+}
+/* 이전/다음 달의 희미한 날짜 */
+.flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
+    color: #CACACA !important;
+}
+/* 날짜에 마우스를 올렸을 때 */
+.flatpickr-day:hover {
+    color: #FFFFFF !important;
+    background-color: #333333 !important;
+}
+/* 오늘 날짜 */
+.flatpickr-day.today {
+    color: #000000;
+    background-color: #D6D6D6;
+}
+/* 선택된 날짜 (사용자가 제공한 스타일 유지) */
+.flatpickr-day.selected {
+    color: #FFFFFF !important;
+    background-color: #333333 !important;
+    border: none !important;
+}
+/* 모바일 웹 브라우저 접속 시 날짜 선택 요소 숨기기 */
+.flatpickr-input.flatpickr-mobile {
+    visibility: hidden; /* 시각적으로 완전히 숨김 */
 }

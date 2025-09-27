@@ -16,6 +16,11 @@ export class CanvasInteractionManager {
         this.isDrawing = false;
         this.selectedObject = null;
 
+        this.isPotentialDrag = false; // '클릭'일지 '드래그'일지 모르는 상태
+        this.DRAG_THRESHOLD = 5; // 드래그로 인식할 최소 픽셀 이동 거리
+        this.startX = 0; // 터치 시작 X 좌표
+        this.startY = 0; // 터치 시작 Y 좌표
+
         this.lastX = 0;
         this.lastY = 0;
         this.dragOffsetX = 0;
@@ -45,19 +50,43 @@ export class CanvasInteractionManager {
 
     handleStart(event) {
 
+        if (event.type === 'touchstart') {
+            event.preventDefault();
+        }
+
         if (this.config.isInteractionDisabled && this.config.isInteractionDisabled()) return;
 
         // 두 손가락 터치 (핀치 줌/회전)
         if (event.touches && event.touches.length === 2) {
             const touch1 = event.touches[0];
             const touch2 = event.touches[1];
+
+            // 1. 각 손가락의 캔버스 내 좌표를 계산합니다.
+            const coords1 = { x: touch1.clientX - this.rect.left, y: touch1.clientY - this.rect.top };
+            const coords2 = { x: touch2.clientX - this.rect.left, y: touch2.clientY - this.rect.top };
+
+            // 2. 각 좌표에 있는 객체를 찾습니다.
+            const object1 = this.config.findSelectableObject(coords1);
+            const object2 = this.config.findSelectableObject(coords2);
+
+            // 3. 두 손가락이 모두 존재하고 동일한 객체를 가리키는지 확인합니다.
+            if (object1 && object1 === object2) {
+                this.selectedObject = object1;
+            } else {
+                this.selectedObject = null; // 다르거나 객체가 없으면 null로 초기화
+            }
+
+            // 4. (기존 로직 유지) 특정 객체를 선택하지 못했다면, 배경 이미지를 제어 대상으로 설정합니다.
+            if (!this.selectedObject && this.config.getBackgroundImage) {
+                this.selectedObject = this.config.getBackgroundImage();
+            }
+
+            // 5. 최종적으로 선택된 객체가 없으면 아무 동작도 하지 않습니다.
+            if (!this.selectedObject) return;
+
+            // --- 이하 핀치 줌 준비 코드는 동일합니다. ---
             const pinchCenterX = (touch1.clientX + touch2.clientX) / 2 - this.rect.left;
             const pinchCenterY = (touch1.clientY + touch2.clientY) / 2 - this.rect.top;
-
-            // 설정(config)을 통해 선택할 객체를 찾음
-            this.selectedObject = this.config.findSelectableObject({ x: pinchCenterX, y: pinchCenterY });
-
-            if (!this.selectedObject) return;
 
             this.isPinching = true;
             this.isDragging = false;
@@ -74,7 +103,6 @@ export class CanvasInteractionManager {
                 initialAngle: getAngle(touch1, touch2),
             };
 
-            this.config.onObjectSelect?.(this.selectedObject);
             return;
         }
 
@@ -82,14 +110,16 @@ export class CanvasInteractionManager {
         const { offsetX, offsetY } = getEventCoordinates(event, this.rect);
         this.selectedObject = this.config.findSelectableObject({ x: offsetX, y: offsetY });
 
-        // 객체를 선택한 경우: 드래그 모드 시작
         if (this.selectedObject) {
-            this.isDragging = true;
+            // 객체를 선택한 경우: 드래그 '준비' 상태로 변경
+            this.isPotentialDrag = true;
+            this.isDragging = false; // ✨ 드래그 상태를 명확하게 초기화
+            this.startX = offsetX;
+            this.startY = offsetY;
             this.dragOffsetX = offsetX - this.selectedObject.translateX;
             this.dragOffsetY = offsetY - this.selectedObject.translateY;
-            this.config.onObjectSelect?.(this.selectedObject);
-            // 객체를 선택하지 않은 경우: 그리기 모드 시작 (설정에 onDrawStart가 있는 경우)
         } else if (this.config.onDrawStart) {
+            // 객체를 선택하지 않은 경우: 그리기 모드 시작
             this.isDrawing = true;
             [this.lastX, this.lastY] = [offsetX, offsetY];
             this.config.onDrawStart?.();
@@ -97,7 +127,10 @@ export class CanvasInteractionManager {
     }
 
     handleMove(event) {
-        event.preventDefault();
+
+        if (event.type === 'touchmove') {
+            event.preventDefault();
+        }
 
         // 핀치 줌/회전 중
         if (this.isPinching && event.touches && event.touches.length === 2) {
@@ -140,27 +173,48 @@ export class CanvasInteractionManager {
 
         const { offsetX, offsetY } = getEventCoordinates(event, this.rect);
 
-        // 객체 드래그 중
+        // 드래그 판단 로직
+        if (this.isPotentialDrag && this.selectedObject) {
+            const dx = offsetX - this.startX;
+            const dy = offsetY - this.startY;
+            if (Math.sqrt(dx * dx + dy * dy) > this.DRAG_THRESHOLD) {
+                this.isPotentialDrag = false; // '준비' 상태 해제
+                this.isDragging = true;       // '실제 드래그' 상태로 전환
+            }
+        }
+
+        // 실제 액션이 수행될 때만 preventDefault를 호출하도록 변경
         if (this.isDragging && this.selectedObject) {
+            event.preventDefault(); // ✨ 실제 액션이 있을 때만 preventDefault 호출
             this.selectedObject.translateX = offsetX - this.dragOffsetX;
             this.selectedObject.translateY = offsetY - this.dragOffsetY;
             this.config.onObjectMove?.();
-            // 그리기 중
         } else if (this.isDrawing && this.config.onDrawMove) {
+            event.preventDefault(); // ✨ 실제 액션이 있을 때만 preventDefault 호출
             this.config.onDrawMove({ x: this.lastX, y: this.lastY }, { x: offsetX, y: offsetY });
             [this.lastX, this.lastY] = [offsetX, offsetY];
         }
     }
 
     handleEnd() {
+        // '드래그', '핀치 줌'이 아니라 '클릭'이었는지 명확하게 판단
+        // isPotentialDrag는 true로 시작해서 드래그가 시작되면 false가 됨
+        const isClick = this.isPotentialDrag && !this.isDragging && !this.isPinching;
+
+        if (isClick && this.selectedObject) {
+            this.config.onObjectSelect?.(this.selectedObject);
+        }
+
         if (this.isPinching) {
             this.pinchStartState = {};
             this.initialPinchDistance = null;
         }
 
+        // 모든 상호작용 상태를 깔끔하게 초기화
         this.isDragging = false;
         this.isPinching = false;
         this.isDrawing = false;
+        this.isPotentialDrag = false;
         this.selectedObject = null;
 
         this.config.onInteractionEnd?.();

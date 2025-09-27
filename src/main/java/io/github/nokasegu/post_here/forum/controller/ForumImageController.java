@@ -27,7 +27,7 @@ public class ForumImageController {
         List<String> imageUrls = images.stream()
                 .map(image -> {
                     try {
-                        // ★★★ 변경: S3에 업로드만 하고 URL을 반환합니다. ★★★
+                        // S3에 업로드만 하고 URL을 반환
                         return forumImageService.uploadImage(image);
                     } catch (IOException e) {
                         throw new RuntimeException("이미지 업로드 중 오류가 발생했습니다.", e);

@@ -7,9 +7,11 @@ html, body {
     padding: 0;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
     background-color: #f0f2f5;
-    overflow: hidden; /* 스크롤바를 제거하여 앱처럼 보이게 함 */
+    overflow-y: auto;
+    font-family: Pretendard, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* 앱 화면 컨테이너 */
@@ -19,6 +21,7 @@ html, body {
     max-width: 400px; /* PC 등 큰 화면에서 너무 커지는 것을 방지 */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background-color: #fff;
+    padding: 16px;
 
     position: relative;
 
@@ -26,21 +29,21 @@ html, body {
 
     display: flex;
     flex-direction: column;
-    justify-content: center; /* 폼을 수직으로 중앙 정렬 */
+    justify-content: flex-start;
     align-items: center;
 }
 
-/* 로그인 */
-#page-login #app-container {
-    padding: 16px;
-}
-
-#page-signup #app-container {
-    padding: 20px;
-}
 
 /* 메인 페이지용 스타일 */
 #page-main #app-container {
-    justify-content: flex-start;
     align-items: stretch;
+}
+
+#page-main-nav #app-container {
+    padding: 16px;
+}
+
+#page-login #app-container,
+#page-signup #app-container {
+    justify-content: center;
 }

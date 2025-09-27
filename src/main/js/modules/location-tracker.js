@@ -18,7 +18,7 @@ export async function initBackgroundGeolocation() {
 
     //위치 로그용 이벤트 (없어도 기능에는 영향 없음)
     BackgroundGeolocation.onLocation(location => {
-            console.log('[location]', location.coords.latitude, location.coords.longitude);
+            console.log('[location]', location.coords.latitude, location.coords.longitude,);
         },
         error => {
             console.log('[location]', error)
@@ -28,7 +28,7 @@ export async function initBackgroundGeolocation() {
     //네이티브 HTTP 요청이 성공/실패할 때마다 호출됩니다.
     BackgroundGeolocation.onHttp(async (response) => {
 
-        console.log('[http] success: ', response);
+        console.log('[http] success: ', response.responseText);
 
         // 서버 응답을 Preferences에 저장
         try {
@@ -64,18 +64,25 @@ export async function initBackgroundGeolocation() {
     });
 
     try {
+
+        const {value: user} = await Preferences.get({key: 'user'});
+        console.log('location : ', user);
+
         // 3. ready() 메소드로 플러그인의 모든 설정을 한 번에 구성합니다.
         const state = await BackgroundGeolocation.ready({
 
             // 위치 추적 설정
             desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-            distanceFilter: 0,
+            distanceFilter: 30,
 
             // 네이티브 HTTP 설정
             autoSync: true, //위치를 감지할 때마다 아래 url로 위치 전송
             url: url,
             method: 'POST',
             locationTemplate: '{"latitude":<%= latitude %>,"longitude":<%= longitude %>}',
+            params: {
+                "user": user,
+            },
             headers: {
                 'Content-Type': 'application/json'
             },

@@ -601,18 +601,16 @@ export function setupTextAndDrawControls() {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
 
-        // 2. 임시 캔버스를 생성하여 3개의 캔버스를 하나로 합칩니다.
+        // 2. 임시 캔버스 생성 및 병합
         const mergedCanvas = document.createElement('canvas');
         mergedCanvas.width = imageCanvas.width;
         mergedCanvas.height = imageCanvas.height;
         const mergedCtx = mergedCanvas.getContext('2d');
-
-        // 3. 캔버스를 순서대로 그립니다. (배경 -> 페인트 -> 텍스트/객체)
         mergedCtx.drawImage(imageCanvas, 0, 0);
         mergedCtx.drawImage(paintCanvas, 0, 0);
         mergedCtx.drawImage(objectCanvas, 0, 0);
 
-        // 4. 합쳐진 캔버스를 Blob 객체로 변환합니다.
+        // 3. Blob 객체로 변환
         mergedCanvas.toBlob(async (blob) => {
             if (!blob) {
                 alert('이미지 변환에 실패했습니다.');
@@ -624,12 +622,35 @@ export function setupTextAndDrawControls() {
             const formData = new FormData();
             formData.append('content_capture', blob, 'find-write.png');
 
-            if (selectedExpirationDate) {
+            // 'page-find-write' 페이지에서만 만료 날짜를 추가합니다.
+            if (selectedExpirationDate && document.body.id === 'page-find-write') {
                 formData.append('expiration_date', selectedExpirationDate);
             }
 
+            let submitUrl = '';
+            const body = document.body;
+
+            // 페이지 ID에 따라 URL 결정
+            if (body.id === 'page-find-write') {
+                submitUrl = '/find';
+            } else if (body.id === 'page-find-overwrite') {
+                const findNo = body.dataset.findNo;
+                submitUrl = `/find/${findNo}`;
+            } else if (body.id === 'page-park-write') {
+                const nickname = body.dataset.nickname;
+                submitUrl = `/profile/park/${nickname}`;
+            }
+
+            if (!submitUrl) {
+                alert('요청을 보낼 주소를 결정할 수 없습니다.');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'share';
+                return;
+            }
+
             try {
-                const response = await fetch('/find', {
+                // 결정된 URL로 fetch 요청
+                const response = await fetch(submitUrl, {
                     method: 'POST',
                     body: formData,
                 });
@@ -641,14 +662,11 @@ export function setupTextAndDrawControls() {
                 const result = await response.json();
                 console.log('서버 응답:', result);
 
-                // 저장 성공 시 페이지 이동 (리다이렉트)
                 window.location.href = '/map';
 
             } catch (error) {
                 console.error('전송 중 오류 발생:', error);
                 alert('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
-
-                // 오류 발생 시에는 버튼을 다시 활성화
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'share';
             }

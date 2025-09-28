@@ -227,7 +227,7 @@ export function initProfile() {
         openModal(editProfileModal);
     });
 
-    if (checkNicknameBtn) checkNicknameBtn.addEventListener('click', () => {
+    if (checkNicknameBtn) checkNicknameBtn.addEventListener('click', async () => {
         const nickname = nicknameInput.value;
         if (!nickname) {
             nicknameFeedback.textContent = '닉네임을 입력해주세요.';
@@ -235,19 +235,28 @@ export function initProfile() {
             isNicknameAvailable = false;
             return;
         }
-        // This is a simulation of an API call
-        setTimeout(() => {
-            if (nickname.toLowerCase() === 'admin') {
-                nicknameFeedback.textContent = '닉네임 변경 불가!';
-                nicknameFeedback.style.color = 'red';
-                isNicknameAvailable = false;
-            } else {
-                nicknameFeedback.textContent = '닉네임 변경 가능!';
+
+        try {
+            // 실제 서버 API를 호출하여 닉네임 중복 여부를 확인합니다.
+            const response = await fetch(`/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+            if (!response.ok) throw new Error('Server error');
+            const data = await response.json();
+
+            if (data.available) {
+                nicknameFeedback.textContent = '사용 가능한 닉네임입니다.';
                 nicknameFeedback.style.color = 'green';
                 isNicknameAvailable = true;
+            } else {
+                nicknameFeedback.textContent = '이미 사용 중인 닉네임입니다.';
+                nicknameFeedback.style.color = 'red';
+                isNicknameAvailable = false;
             }
-        }, 500);
-
+        } catch (error) {
+            nicknameFeedback.textContent = '오류가 발생했습니다.';
+            nicknameFeedback.style.color = 'red';
+            isNicknameAvailable = false;
+            console.error("Nickname check failed:", error);
+        }
     });
 
     if (newPasswordInput) newPasswordInput.addEventListener('input', validatePassword);
@@ -263,17 +272,39 @@ export function initProfile() {
         });
     });
 
-    if (editProfileForm) editProfileForm.addEventListener('submit', (e) => {
+    if (editProfileForm) editProfileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        let updateMessage = '프로필 업데이트:';
+
         if (isNicknameAvailable && nicknameInput.value) {
-            updateMessage += `\n- 새 닉네임: ${nicknameInput.value}`;
+            // CSRF 토큰 헤더 준비
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+            const headers = {'Content-Type': 'application/json'};
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            try {
+                const response = await fetch('/profile/edit/nickname', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({nickname: nicknameInput.value})
+                });
+
+                if (response.ok) {
+                    alert('닉네임이 성공적으로 변경되었습니다. 페이지를 새로고침합니다.');
+                    location.reload(); // 성공 시 페이지를 새로고침하여 변경사항 반영
+                } else {
+                    const errorData = await response.json();
+                    alert('닉네임 변경에 실패했습니다: ' + (errorData.message || '서버 오류'));
+                }
+            } catch (error) {
+                console.error('Error updating nickname:', error);
+                alert('닉네임 변경 중 오류가 발생했습니다.');
+            }
+        } else {
+            alert('닉네임 중복 확인을 먼저 완료해주세요.');
         }
-        if (newPassword) {
-            updateMessage += `\n- 새 비밀번호 설정 완료`;
-        }
-        alert(updateMessage);
-        closeModal(editProfileModal);
     });
 
     if (tabFind) tabFind.addEventListener('click', () => switchTab('find'));

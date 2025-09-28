@@ -6,28 +6,43 @@ import io.github.nokasegu.post_here.find.dto.FindNearbyReadableOnlyDto;
 import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
 import io.github.nokasegu.post_here.find.dto.FindPostSummaryDto;
 import io.github.nokasegu.post_here.find.repository.FindRepository;
+import io.github.nokasegu.post_here.notification.service.FcmSenderService;
+import io.github.nokasegu.post_here.notification.service.NotificationService;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
+import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FindService {
 
     private final FindRepository findRepository;
     private final UserInfoRepository userInfoRepository;
+    private final FcmSenderService fcmSenderService;
+    private final UserInfoService userInfoService;
+    private final NotificationService notificationService;
 
-    public List<FindNearbyResponseDto> getFindsInArea(double lng, double lat) {
 
-        List<FindNearbyDto> nearbyAll = findRepository.findNearby(lng, lat);
+    private final Map<Long, Map<Long, Instant>> userNotificationTimestamps = new ConcurrentHashMap<>();
+
+    public List<FindNearbyResponseDto> getFindsInArea(double lng, double lat, Long userId) {
+
+        List<FindNearbyDto> nearbyAll = findRepository.findNearby(lng, lat, userId);
 
         return nearbyAll.stream()
                 .map(dto -> {
@@ -47,11 +62,36 @@ public class FindService {
                 .collect(Collectors.toList());
     }
 
-    public void checkFindReadable(double lng, double lat) {
+    public void checkFindReadable(double lng, double lat, String userEmail) {
 
-        List<FindNearbyReadableOnlyDto> result = findRepository.findNearbyReadableOnly(lng, lat);
-        int amount = result.size();
-        //메세지 양식 : {nickname}님 외 {amount}명의 fin'd가 존재합니다
+        UserInfoEntity user = userInfoService.getUserInfoByEmail(userEmail);
+        List<FindNearbyReadableOnlyDto> nearbyFinds = findRepository.findNearbyReadableOnly(lng, lat, user.getId());
+
+        if (nearbyFinds.isEmpty()) {
+            log.info("사용자 {} 주변에 새로운 Fin'd가 없습니다.", user.getNickname());
+            return;
+        }
+
+        int count = 0;
+        String nickname = null;
+
+        for (FindNearbyReadableOnlyDto find : nearbyFinds) {
+            boolean alreadyNotified = hasBeenNotifiedRecently(user.getId(), find.getFind_pk());
+
+            if (!alreadyNotified) {
+                count++;
+                nickname = find.getNickname();
+                recordNotification(user.getId(), find.getFind_pk());
+            } else {
+                log.info("{}에게 {}번 알림은 이미 보냄.", user.getNickname(), find.getFind_pk());
+            }
+        }
+
+        if (count > 0) {
+            String message = nickname + "님 외 " + count + "명의 fin'd가 존재합니다";
+            notificationService.createFind(user, message);
+            fcmSenderService.sendFindNotification(user, message);
+        }
     }
 
     /**
@@ -92,5 +132,29 @@ public class FindService {
                 .location("Unknown")
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
                 .build());
+    }
+
+
+    /**
+     * 특정 사용자에게 특정 fin'd에 대한 알림이 최근에 보내졌는지 확인
+     */
+    private boolean hasBeenNotifiedRecently(Long userId, Long findId) {
+        Map<Long, Instant> userNotifications = userNotificationTimestamps.get(userId);
+        if (userNotifications == null) return false;
+
+        Instant lastNotificationTime = userNotifications.get(findId);
+        if (lastNotificationTime == null) return false;
+
+        // 1시간 이내에 알림을 보냈는지 확인
+        return lastNotificationTime.isAfter(Instant.now().minus(1, ChronoUnit.HOURS));
+    }
+
+    /**
+     * 알림을 보낸 기록을 저장
+     */
+    private void recordNotification(Long userId, Long findId) {
+        userNotificationTimestamps
+                .computeIfAbsent(userId, k -> new ConcurrentHashMap<>())
+                .put(findId, Instant.now());
     }
 }

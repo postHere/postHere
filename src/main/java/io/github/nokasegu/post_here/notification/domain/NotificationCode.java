@@ -8,7 +8,7 @@ import lombok.Getter;
 public enum NotificationCode {
     FOLLOW("FOLLOW"),
     COMMENT("COMMENT"),
-    FIND_UPDATE("FIND_UPDATE"),
+    FIND_FOUND("FIND_FOUND"),
     PARK_UPDATE("PARK_UPDATE");
 
 

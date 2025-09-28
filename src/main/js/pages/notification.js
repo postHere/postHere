@@ -103,73 +103,96 @@ export function initNotification() {
         const frag = document.createDocumentFragment();
 
         items.forEach((it) => {
-            const id = it.id ?? it.notificationId ?? it.notification_pk ?? null;
-            const code = it.type ?? it.notificationCode ?? it.code ?? 'NOTI';
+            const id = it.id ?? null;
+            const code = it.type ?? null;
+            const createdAt = it.createdAt ?? null;
+            const read = it.isRead ?? false;
 
-            // [수정] 텍스트는 한국어로 고정(요청 반영)
-            const fixedText = mapText(code);
+            // ▼▼▼ 1. 변수를 먼저 선언하고 초기값을 할당합니다. ▼▼▼
+            let fixedText = '';
+            let actorNick = '';
+            let avatarUrl = '';
+            let link = it.link || '#'; // link는 DTO에 있으면 우선 사용
 
-            const actorNick =
-                it.actor?.nickname ??
-                it.followerNickname ??
-                it.actor?.name ??
-                it.follower?.nickname ??
-                it.following?.follower?.nickname ??
-                '';
+            // ▼▼▼ 2. if/else 블록에서는 값만 변경합니다. ▼▼▼
+            if (code === 'FIND_FOUND') {
+                fixedText = it.text || '습득물이 발견되었습니다.';
+                // actorNick은 '' (빈 문자열) 유지
+            } else {
+                fixedText = mapText(code);
+                actorNick = it.actor?.nickname ?? '(알 수 없음)';
+                avatarUrl = it.actor?.profilePhotoUrl ?? '/images/profile-default.png';
+                // FOLLOW 타입 등 link가 없는 경우 actorNick으로 프로필 링크 생성
+                if (!it.link && actorNick) {
+                    link = `/profile/${encodeURIComponent(actorNick)}`;
+                }
+            }
 
-            const avatarUrl = it.actor?.profilePhotoUrl ?? it.followerProfilePhotoUrl ?? '/images/profile-default.png';
-            const createdAt = it.createdAt ?? it.created_at ?? null;
-            const read = (typeof it.read === 'boolean') ? it.read : (typeof it.checkStatus === 'boolean') ? it.checkStatus : (typeof it.checked === 'boolean') ? it.checked : false;
-
-            // ===================== [변경] 링크 우선순위 유지 + 존재 시 사용 =====================
-            const link = it.link || (actorNick ? `/profile/${encodeURIComponent(actorNick)}` : '#');
-
+            // ▼▼▼ 3. 이제 모든 변수에 안전하게 접근할 수 있습니다. ▼▼▼
             const row = document.createElement('a');
             row.className = 'noti-card';
             if (id != null) row.dataset.id = String(id);
-            row.href = link; // [변경] it.link 우선
+            row.href = link;
             row.setAttribute('aria-label', actorNick ? `${actorNick} ${fixedText}` : fixedText);
             row.dataset.unread = String(!read);
 
-            const img = document.createElement('img');
-            img.className = 'noti-avatar';
-            img.alt = actorNick ? `${actorNick} profile` : 'profile';
-            img.src = avatarUrl || '/images/profile-default.png';
-            img.onerror = () => {
-                img.src = '/images/profile-default.png';
-            };
-            row.appendChild(img);
+            if (code === 'FIND_FOUND') {
+                // FIND_FOUND 전용 렌더링
+                const main = document.createElement('div');
+                main.className = 'noti-main';
+                const head = document.createElement('div');
+                head.className = 'noti-head';
+                const timeEl = document.createElement('span');
+                timeEl.className = 'noti-time';
+                timeEl.textContent = timeAgo(createdAt);
+                const textEl = document.createElement('div');
+                textEl.className = 'noti-text';
+                textEl.textContent = fixedText;
 
-            const main = document.createElement('div');
-            main.className = 'noti-main';
-            const head = document.createElement('div');
-            head.className = 'noti-head';
-            const nickEl = document.createElement('span');
-            nickEl.className = 'noti-nick';
-            // [수정] @ 제거 요청 반영
-            nickEl.textContent = actorNick || '(알 수 없음)';
-            const timeEl = document.createElement('span');
-            timeEl.className = 'noti-time';
-            timeEl.textContent = timeAgo(createdAt);
-            head.appendChild(nickEl);
-            head.appendChild(timeEl);
+                head.appendChild(timeEl);
+                main.appendChild(head);
+                main.appendChild(textEl);
+                row.appendChild(main);
+            } else {
+                // 일반 알림 렌더링
+                const img = document.createElement('img');
+                img.className = 'noti-avatar';
+                img.alt = `${actorNick} profile`;
+                img.src = avatarUrl;
+                img.onerror = () => {
+                    img.src = '/images/profile-default.png';
+                };
+                row.appendChild(img);
 
-            const textEl = document.createElement('div');
-            textEl.className = 'noti-text';
-            textEl.textContent = String(fixedText);
+                const main = document.createElement('div');
+                main.className = 'noti-main';
+                const head = document.createElement('div');
+                head.className = 'noti-head';
+                const nickEl = document.createElement('span');
+                nickEl.className = 'noti-nick';
+                nickEl.textContent = actorNick;
+                const timeEl = document.createElement('span');
+                timeEl.className = 'noti-time';
+                timeEl.textContent = timeAgo(createdAt);
 
-            main.appendChild(head);
-            main.appendChild(textEl);
+                head.appendChild(nickEl);
+                head.appendChild(timeEl);
 
-            // 댓글 미리보기(있을 때만)
-            if (it.commentPreview) {
-                const pv = document.createElement('div');
-                pv.className = 'noti-preview';
-                pv.textContent = String(it.commentPreview);
-                main.appendChild(pv);
+                const textEl = document.createElement('div');
+                textEl.className = 'noti-text';
+                textEl.textContent = fixedText;
+
+                main.appendChild(head);
+                main.appendChild(textEl);
+
+                if (it.commentPreview) {
+                    const pv = document.createElement('div');
+                    pv.className = 'noti-preview';
+                    pv.textContent = String(it.commentPreview);
+                    main.appendChild(pv);
+                }
+                row.appendChild(main);
             }
-
-            row.appendChild(main);
             frag.appendChild(row);
         });
         $list.appendChild(frag);

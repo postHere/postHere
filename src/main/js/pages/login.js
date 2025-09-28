@@ -1,4 +1,5 @@
 import {initBackgroundGeolocation} from "../modules/location-tracker";
+import {Preferences} from "@capacitor/preferences";
 
 export function initLogin() {
 
@@ -50,14 +51,20 @@ export function initLogin() {
             type: "POST",
             url: "/login",
             data: loginData,
-            datatype: "json"
+            dataType: "json"
         })
             .done(async function (data, textStatus, jqXHR) {
+
+                const locationHeader = jqXHR.getResponseHeader('Location');
+                const username = data?.data?.username;
+
+                await Preferences.set({
+                    key: 'user',
+                    value: username
+                });
+
                 await initBackgroundGeolocation();
-                fetch('/api/auth/status')
-                    .finally(() => {
-                        window.location.href = jqXHR.getResponseHeader('Location');
-                    })
+                window.location.replace(locationHeader);
             })
             .fail(function (xhr, status, error) {
                 const message = xhr.responseJSON.message;

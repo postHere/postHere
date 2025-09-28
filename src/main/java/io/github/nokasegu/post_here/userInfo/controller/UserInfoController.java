@@ -1,5 +1,6 @@
 package io.github.nokasegu.post_here.userInfo.controller;
 
+import io.github.nokasegu.post_here.userInfo.dto.NameUpdateDto;
 import io.github.nokasegu.post_here.userInfo.dto.UserInfoDto;
 import io.github.nokasegu.post_here.userInfo.service.EmailService;
 import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
@@ -258,4 +259,17 @@ public class UserInfoController {
 
         return "userInfo/profile";
     }
+
+    @PostMapping("/profile/edit/nickname")
+    public ResponseEntity<Void> updateNickname(Principal principal, @RequestBody NameUpdateDto requestDto) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build(); // 401 Unauthorized
+        }
+
+        userInfoService.updateNickname(principal.getName(), requestDto.getNickname());
+
+        return ResponseEntity.ok().build();
+    }
+
+
 }

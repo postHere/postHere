@@ -190,4 +190,20 @@ public class UserInfoService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
     }
 
+    public void updateNickname(String email, String newNickname) {
+        // 1. 닉네임 중복 여부를 다시 한번 확인하여 안전성을 높입니다.
+        if (!isNicknameAvailable(newNickname)) {
+            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+        }
+
+        // 2. 이메일로 사용자 정보를 찾아옵니다.
+        UserInfoEntity user = userInfoRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
+
+        // 3. 엔티티의 닉네임을 변경합니다.
+        user.setNickname(newNickname);
+
+        // 4. @Transactional 어노테이션에 의해 메소드가 끝나면 변경사항이 자동으로 DB에 저장됩니다.
+    }
+
 }

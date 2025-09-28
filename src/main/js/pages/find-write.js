@@ -74,34 +74,33 @@ export function setupTextAndDrawControls() {
     const datePickerInput = document.getElementById("date-picker-input"); // flatpickr를 연결할 숨겨진 input
 
     // flatpickr 인스턴스 생성 및 설정
-    const flatpickrInstance = flatpickr(datePickerInput, {
-        appendTo: document.body, // z-index 및 위치 문제를 피하기 위해 body에 직접 추가
-        clickOutsideToClose: true, // 달력 바깥을 클릭하면 닫힘
-        animate: true, // 애니메이션 활성화
-        dateFormat: "Y-m-d", // 날짜 형식 지정
+    // 👇 if문으로 감싸서 해당 요소들이 존재할 때만 flatpickr를 실행
+    if (expirationDateBtn && datePickerInput) {
+        // flatpickr 인스턴스 생성 및 설정
+        const flatpickrInstance = flatpickr(datePickerInput, {
+            appendTo: document.body,
+            clickOutsideToClose: true,
+            animate: true,
+            dateFormat: "Y-m-d",
+            onOpen: function (selectedDates, dateStr, instance) {
+                if (selectedExpirationDate) {
+                    instance.setDate(selectedExpirationDate, false);
+                }
+            },
+            onChange: function (selectedDates, dateStr, instance) {
+                if (selectedDates.length > 0) {
+                    selectedExpirationDate = dateStr;
+                    console.log("선택된 날짜:", selectedExpirationDate);
+                }
+            },
+        });
 
-        // 달력이 열릴 때마다 실행되는 함수
-        onOpen: function (selectedDates, dateStr, instance) {
-            // 이전에 선택한 날짜가 있으면, 그 날짜를 달력에 표시
-            if (selectedExpirationDate) {
-                instance.setDate(selectedExpirationDate, false); // false 옵션으로 onChange 이벤트 방지
-            }
-        },
-        // 날짜를 선택했을 때 실행되는 함수
-        onChange: function (selectedDates, dateStr, instance) {
-            // 선택된 날짜를 selectedExpirationDate 변수에 저장
-            if (selectedDates.length > 0) {
-                selectedExpirationDate = dateStr;
-                // selectedExpirationDate = selectedDates[0];
-                console.log("선택된 날짜:", selectedExpirationDate); // 정상적으로 저장되는지 확인용
-            }
-        },
-    });
+        // 달력 아이콘 버튼 클릭 시 flatpickr 달력을 열도록 이벤트 리스너 추가
+        expirationDateBtn.addEventListener('click', () => {
+            flatpickrInstance.open();
+        });
 
-    // 달력 아이콘 버튼 클릭 시 flatpickr 달력을 열도록 이벤트 리스너 추가
-    expirationDateBtn.addEventListener('click', () => {
-        flatpickrInstance.open();
-    });
+    }
 
     if (!paintCanvas.getContext || !objectCanvas.getContext || !imageCanvas.getContext) {
         alert("canvas context 불러오기 실패");
@@ -213,17 +212,17 @@ export function setupTextAndDrawControls() {
 
 // --- 커스텀 색상 슬라이더 로직 (09.22 월 추가) ---
     const sliderColors = [
-        { c: [255, 255, 255], p: 0.0 }, // 0% White (#FFFFFF)
-        { c: [255, 0, 0],     p: 0.1 }, // 10% Red (#FF0000)
-        { c: [242, 255, 0],   p: 0.2 }, // 20% Yellow (#F2FF00)
-        { c: [255, 123, 0],   p: 0.3 }, // 30% Orange (#FF7B00)
-        { c: [0, 255, 221],   p: 0.4 }, // 40% Cyan (#00FFDD)
-        { c: [94, 255, 0],    p: 0.5 }, // 50% Green (#5EFF00)
-        { c: [0, 77, 255],    p: 0.6 }, // 60% Blue (#004DFF)
-        { c: [178, 0, 255],   p: 0.7 }, // 70% Purple (#B200FF)
-        { c: [229, 198, 116], p: 0.8 }, // 80% Tan (#E5C674)
-        { c: [103, 133, 80],  p: 0.9 }, // 90% Olive (#678550)
-        { c: [0, 0, 0],       p: 1.0 }  // 100% Black (#000000)
+        {c: [255, 255, 255], p: 0.0}, // 0% White (#FFFFFF)
+        {c: [255, 0, 0], p: 0.1}, // 10% Red (#FF0000)
+        {c: [242, 255, 0], p: 0.2}, // 20% Yellow (#F2FF00)
+        {c: [255, 123, 0], p: 0.3}, // 30% Orange (#FF7B00)
+        {c: [0, 255, 221], p: 0.4}, // 40% Cyan (#00FFDD)
+        {c: [94, 255, 0], p: 0.5}, // 50% Green (#5EFF00)
+        {c: [0, 77, 255], p: 0.6}, // 60% Blue (#004DFF)
+        {c: [178, 0, 255], p: 0.7}, // 70% Purple (#B200FF)
+        {c: [229, 198, 116], p: 0.8}, // 80% Tan (#E5C674)
+        {c: [103, 133, 80], p: 0.9}, // 90% Olive (#678550)
+        {c: [0, 0, 0], p: 1.0}  // 100% Black (#000000)
     ];
 
     function interpolateColor(c1, c2, factor) {
@@ -543,6 +542,7 @@ export function setupTextAndDrawControls() {
 
         }
     }
+
     // 키보드가 나타나거나 사라질 때(화면 크기가 변할 때)마다 핸들러 함수를 호출합니다.
     window.visualViewport.addEventListener('resize', handleViewportResize);
 

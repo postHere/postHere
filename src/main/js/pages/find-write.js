@@ -74,34 +74,33 @@ export function setupTextAndDrawControls() {
     const datePickerInput = document.getElementById("date-picker-input"); // flatpickr를 연결할 숨겨진 input
 
     // flatpickr 인스턴스 생성 및 설정
-    const flatpickrInstance = flatpickr(datePickerInput, {
-        appendTo: document.body, // z-index 및 위치 문제를 피하기 위해 body에 직접 추가
-        clickOutsideToClose: true, // 달력 바깥을 클릭하면 닫힘
-        animate: true, // 애니메이션 활성화
-        dateFormat: "Y-m-d", // 날짜 형식 지정
+    // 👇 if문으로 감싸서 해당 요소들이 존재할 때만 flatpickr를 실행
+    if (expirationDateBtn && datePickerInput) {
+        // flatpickr 인스턴스 생성 및 설정
+        const flatpickrInstance = flatpickr(datePickerInput, {
+            appendTo: document.body,
+            clickOutsideToClose: true,
+            animate: true,
+            dateFormat: "Y-m-d",
+            onOpen: function (selectedDates, dateStr, instance) {
+                if (selectedExpirationDate) {
+                    instance.setDate(selectedExpirationDate, false);
+                }
+            },
+            onChange: function (selectedDates, dateStr, instance) {
+                if (selectedDates.length > 0) {
+                    selectedExpirationDate = dateStr;
+                    console.log("선택된 날짜:", selectedExpirationDate);
+                }
+            },
+        });
 
-        // 달력이 열릴 때마다 실행되는 함수
-        onOpen: function (selectedDates, dateStr, instance) {
-            // 이전에 선택한 날짜가 있으면, 그 날짜를 달력에 표시
-            if (selectedExpirationDate) {
-                instance.setDate(selectedExpirationDate, false); // false 옵션으로 onChange 이벤트 방지
-            }
-        },
-        // 날짜를 선택했을 때 실행되는 함수
-        onChange: function (selectedDates, dateStr, instance) {
-            // 선택된 날짜를 selectedExpirationDate 변수에 저장
-            if (selectedDates.length > 0) {
-                selectedExpirationDate = dateStr;
-                // selectedExpirationDate = selectedDates[0];
-                console.log("선택된 날짜:", selectedExpirationDate); // 정상적으로 저장되는지 확인용
-            }
-        },
-    });
+        // 달력 아이콘 버튼 클릭 시 flatpickr 달력을 열도록 이벤트 리스너 추가
+        expirationDateBtn.addEventListener('click', () => {
+            flatpickrInstance.open();
+        });
 
-    // 달력 아이콘 버튼 클릭 시 flatpickr 달력을 열도록 이벤트 리스너 추가
-    expirationDateBtn.addEventListener('click', () => {
-        flatpickrInstance.open();
-    });
+    }
 
     if (!paintCanvas.getContext || !objectCanvas.getContext || !imageCanvas.getContext) {
         alert("canvas context 불러오기 실패");
@@ -213,17 +212,17 @@ export function setupTextAndDrawControls() {
 
 // --- 커스텀 색상 슬라이더 로직 (09.22 월 추가) ---
     const sliderColors = [
-        { c: [255, 255, 255], p: 0.0 }, // 0% White (#FFFFFF)
-        { c: [255, 0, 0],     p: 0.1 }, // 10% Red (#FF0000)
-        { c: [242, 255, 0],   p: 0.2 }, // 20% Yellow (#F2FF00)
-        { c: [255, 123, 0],   p: 0.3 }, // 30% Orange (#FF7B00)
-        { c: [0, 255, 221],   p: 0.4 }, // 40% Cyan (#00FFDD)
-        { c: [94, 255, 0],    p: 0.5 }, // 50% Green (#5EFF00)
-        { c: [0, 77, 255],    p: 0.6 }, // 60% Blue (#004DFF)
-        { c: [178, 0, 255],   p: 0.7 }, // 70% Purple (#B200FF)
-        { c: [229, 198, 116], p: 0.8 }, // 80% Tan (#E5C674)
-        { c: [103, 133, 80],  p: 0.9 }, // 90% Olive (#678550)
-        { c: [0, 0, 0],       p: 1.0 }  // 100% Black (#000000)
+        {c: [255, 255, 255], p: 0.0}, // 0% White (#FFFFFF)
+        {c: [255, 0, 0], p: 0.1}, // 10% Red (#FF0000)
+        {c: [242, 255, 0], p: 0.2}, // 20% Yellow (#F2FF00)
+        {c: [255, 123, 0], p: 0.3}, // 30% Orange (#FF7B00)
+        {c: [0, 255, 221], p: 0.4}, // 40% Cyan (#00FFDD)
+        {c: [94, 255, 0], p: 0.5}, // 50% Green (#5EFF00)
+        {c: [0, 77, 255], p: 0.6}, // 60% Blue (#004DFF)
+        {c: [178, 0, 255], p: 0.7}, // 70% Purple (#B200FF)
+        {c: [229, 198, 116], p: 0.8}, // 80% Tan (#E5C674)
+        {c: [103, 133, 80], p: 0.9}, // 90% Olive (#678550)
+        {c: [0, 0, 0], p: 1.0}  // 100% Black (#000000)
     ];
 
     function interpolateColor(c1, c2, factor) {
@@ -529,20 +528,8 @@ export function setupTextAndDrawControls() {
             editingToolsContainer.style.height = '';
         }
 
-
-
-        // 1. 텍스트 입력 오버레이의 위치와 크기를 보이는 영역에 맞춥니다.
-        //    이렇게 하면 flex 중앙 정렬이 보이는 영역의 중앙을 기준으로 동작합니다.
-        if (!textInputOverlay.classList.contains('hidden')) {
-
-        }
-
-        // 2. 편집 도구 컨테이너의 위치와 크기도 보이는 영역에 맞춥니다.
-        //    이렇게 하면 슬라이더가 키보드 위쪽에 위치하게 됩니다.
-        if (!editingToolsContainer.classList.contains('hidden')) {
-
-        }
     }
+
     // 키보드가 나타나거나 사라질 때(화면 크기가 변할 때)마다 핸들러 함수를 호출합니다.
     window.visualViewport.addEventListener('resize', handleViewportResize);
 
@@ -614,18 +601,16 @@ export function setupTextAndDrawControls() {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
 
-        // 2. 임시 캔버스를 생성하여 3개의 캔버스를 하나로 합칩니다.
+        // 2. 임시 캔버스 생성 및 병합
         const mergedCanvas = document.createElement('canvas');
         mergedCanvas.width = imageCanvas.width;
         mergedCanvas.height = imageCanvas.height;
         const mergedCtx = mergedCanvas.getContext('2d');
-
-        // 3. 캔버스를 순서대로 그립니다. (배경 -> 페인트 -> 텍스트/객체)
         mergedCtx.drawImage(imageCanvas, 0, 0);
         mergedCtx.drawImage(paintCanvas, 0, 0);
         mergedCtx.drawImage(objectCanvas, 0, 0);
 
-        // 4. 합쳐진 캔버스를 Blob 객체로 변환합니다.
+        // 3. Blob 객체로 변환
         mergedCanvas.toBlob(async (blob) => {
             if (!blob) {
                 alert('이미지 변환에 실패했습니다.');
@@ -637,12 +622,35 @@ export function setupTextAndDrawControls() {
             const formData = new FormData();
             formData.append('content_capture', blob, 'find-write.png');
 
-            if (selectedExpirationDate) {
+            // 'page-find-write' 페이지에서만 만료 날짜를 추가합니다.
+            if (selectedExpirationDate && document.body.id === 'page-find-write') {
                 formData.append('expiration_date', selectedExpirationDate);
             }
 
+            let submitUrl = '';
+            const body = document.body;
+
+            // 페이지 ID에 따라 URL 결정
+            if (body.id === 'page-find-write') {
+                submitUrl = '/find';
+            } else if (body.id === 'page-find-overwrite') {
+                const findNo = body.dataset.findNo;
+                submitUrl = `/find/${findNo}`;
+            } else if (body.id === 'page-park-write') {
+                const nickname = body.dataset.nickname;
+                submitUrl = `/profile/park/${nickname}`;
+            }
+
+            if (!submitUrl) {
+                alert('요청을 보낼 주소를 결정할 수 없습니다.');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'share';
+                return;
+            }
+
             try {
-                const response = await fetch('/find', {
+                // 결정된 URL로 fetch 요청
+                const response = await fetch(submitUrl, {
                     method: 'POST',
                     body: formData,
                 });
@@ -654,14 +662,11 @@ export function setupTextAndDrawControls() {
                 const result = await response.json();
                 console.log('서버 응답:', result);
 
-                // 저장 성공 시 페이지 이동 (리다이렉트)
                 window.location.href = '/map';
 
             } catch (error) {
                 console.error('전송 중 오류 발생:', error);
                 alert('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
-
-                // 오류 발생 시에는 버튼을 다시 활성화
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'share';
             }

@@ -1,7 +1,7 @@
 html {
     height: 100%;
 }
-body#page-find-write {
+body#page-find-write, #page-park-write {
     margin: 0;
     background-color: lightgray;
     width: 100%; /* html 태그의 width(360px)를 상속 */
@@ -12,7 +12,7 @@ body#page-find-write {
     justify-content: space-between;
     background-color: #404040;
 }
-body#page-find-overwrite {
+body#page-find-overwrite, #page-park-overwrite {
     margin: 0;
     background-color: lightgray;
     width: 100%; /* html 태그의 width(360px)를 상속 */
@@ -60,8 +60,8 @@ body#page-find-overwrite {
     height: 35px;
     box-sizing: content-box;
 }
-/* 2 - 2. */
-#tool-draw .hidden {
+/* 2 - 2 */
+#tool-draw .hidden, #tool-draw .hidden {
     display: none;
 }
 /* 2 - 4. */
@@ -296,9 +296,7 @@ body#page-find-overwrite {
     background: #FFFFFF; /* 배경색 */
     border-radius: 16px; /* 둥근 모서리 */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* 그림자 효과 */
-    border: none;
-    width: 320px; /* 너비 */
-    padding: 15px;
+    border: none !important;
     box-sizing: border-box;
 }
 /* 달력 상단 (월, 년도, 화살표) */
@@ -306,7 +304,6 @@ body#page-find-overwrite {
     color: #000000;
     fill: #000000;
     font-weight: 600;
-    /*font-size: 20px;*/
     padding-bottom: 15px;
 }
 .flatpickr-prev-month svg, .flatpickr-next-month svg {
@@ -322,9 +319,7 @@ body#page-find-overwrite {
 }
 /* 날짜(숫자) 기본 스타일 */
 .flatpickr-day {
-    /*color: #333333;*/
     border-width: 0px !important;
-    /*border-radius: 0px !important;*/
     font-weight: 500;
     font-size: 15px;
 }

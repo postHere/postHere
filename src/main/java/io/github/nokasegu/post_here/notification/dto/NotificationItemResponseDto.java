@@ -97,6 +97,20 @@ public class NotificationItemResponseDto {
                     .build();
         }
 
+        // ===================== [분기: COMMENT] =====================
+        if (code == NotificationCode.FIND_FOUND) {
+
+            String text = e.getMessageForFind();
+
+            // 링크 규칙: GET /map
+            String link = "/map";
+
+            return b.actor(NotificationActorDto.of(null))
+                    .text(text)
+                    .link(link)
+                    .build();
+        }
+
         // ===================== [기타 타입 기본 처리] =====================
         // [변경] 기존에 NotificationActorDto.empty()를 호출했으나, 현재 프로젝트에는 empty() 정적 메서드가 없음.
         //        → null을 넘기면 of(...) 내부에서 대체값을 보장하므로 of(null) 사용.

@@ -5,6 +5,8 @@ import io.github.nokasegu.post_here.common.exception.Code;
 import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
 import io.github.nokasegu.post_here.find.service.FindService;
 import io.github.nokasegu.post_here.location.dto.LocationRequestDto;
+import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
+import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -20,6 +22,7 @@ import java.util.List;
 public class FindController {
 
     private final FindService findService;
+    private final UserInfoService userInfoService;
 
     @GetMapping("/find")
     public String findController(Model model) {
@@ -30,7 +33,8 @@ public class FindController {
     @GetMapping("/around-finds")
     public WrapperDTO<List<FindNearbyResponseDto>> whereAmI(@RequestBody LocationRequestDto location) {
 
-        List<FindNearbyResponseDto> findList = findService.getFindsInArea(location.getLng(), location.getLat());
+        UserInfoEntity user = userInfoService.getUserInfoByEmail(location.getUser());
+        List<FindNearbyResponseDto> findList = findService.getFindsInArea(location.getLng(), location.getLat(), user.getId());
 
         return WrapperDTO.<List<FindNearbyResponseDto>>builder()
                 .status(Code.OK.getCode())

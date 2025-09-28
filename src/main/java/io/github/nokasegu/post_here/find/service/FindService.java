@@ -34,15 +34,13 @@ public class FindService {
     private final UserInfoRepository userInfoRepository;
     private final FcmSenderService fcmSenderService;
     private final UserInfoService userInfoService;
-    // 👇 [추가] 1. 알림 발송 기록을 저장할 메모리 내 캐시
-    //    key: userId, value: (key: findId, value: 마지막 알림 발송 시간)
 
 
     private final Map<Long, Map<Long, Instant>> userNotificationTimestamps = new ConcurrentHashMap<>();
 
-    public List<FindNearbyResponseDto> getFindsInArea(double lng, double lat) {
+    public List<FindNearbyResponseDto> getFindsInArea(double lng, double lat, Long userId) {
 
-        List<FindNearbyDto> nearbyAll = findRepository.findNearby(lng, lat);
+        List<FindNearbyDto> nearbyAll = findRepository.findNearby(lng, lat, userId);
 
         return nearbyAll.stream()
                 .map(dto -> {
@@ -63,11 +61,12 @@ public class FindService {
     }
 
     public void checkFindReadable(double lng, double lat, String userEmail) {
+
         UserInfoEntity user = userInfoService.getUserInfoByEmail(userEmail);
-        List<FindNearbyReadableOnlyDto> nearbyFinds = findRepository.findNearbyReadableOnly(lng, lat);
+        List<FindNearbyReadableOnlyDto> nearbyFinds = findRepository.findNearbyReadableOnly(lng, lat, user.getId());
 
         if (nearbyFinds.isEmpty()) {
-            log.info("사용자 {} 주변에 새로운 Fin'd가 없습니다.", user.getId());
+            log.info("사용자 {} 주변에 새로운 Fin'd가 없습니다.", user.getNickname());
             return;
         }
 
@@ -82,7 +81,7 @@ public class FindService {
                 nickname = find.getNickname();
                 recordNotification(user.getId(), find.getFind_pk());
             } else {
-                log.info("{}에게 {}번 알림은 이미 보냄.", user.getId(), find.getFind_pk());
+                log.info("{}에게 {}번 알림은 이미 보냄.", user.getNickname(), find.getFind_pk());
             }
         }
 

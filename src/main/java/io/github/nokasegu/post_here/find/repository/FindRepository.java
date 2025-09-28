@@ -20,36 +20,43 @@ public interface FindRepository extends JpaRepository<FindEntity, Long> {
     @Query(
             value = """
                     SELECT
-                    	f.find_pk AS find_pk,
-                    	u.nickname AS nickname,
+                        f.find_pk AS find_pk,
+                        u.nickname AS nickname,
                         u.profile_photo_url AS profile_image_url,
                         ST_Y(f.coordinates) AS lat,
-                        ST_X(coordinates) AS lng,
-                    	ST_Distance_Sphere(f.coordinates, ST_SRID(POINT(:lng, :lat), 4326)) AS distanceInMeters
+                        ST_X(f.coordinates) AS lng,
+                        ST_Distance_Sphere(f.coordinates, ST_SRID(POINT(:lng, :lat), 4326)) AS distanceInMeters
                     FROM
-                    	find f
+                        find f
                     JOIN user_info u ON f.writer_id = u.user_info_pk
+                    JOIN following fw ON f.writer_id = fw.followed_id
+                    WHERE
+                        fw.follower_id = :userId
                     HAVING
-                    	distanceInMeters <= 500
-                    ORDER BY distanceInMeters ASC;
+                        distanceInMeters <= 500
+                    ORDER BY
+                        distanceInMeters ASC
                     """, nativeQuery = true)
-    List<FindNearbyDto> findNearby(@Param("lng") double lng, @Param("lat") double lat);
+    List<FindNearbyDto> findNearby(@Param("lng") double lng, @Param("lat") double lat, @Param("userId") Long userId);
 
     @Query(
             value = """
                     SELECT
                     	f.find_pk AS find_pk,
-                    	u.nickname AS nickname,
-                        u.profile_photo_url AS profile_image_url,
+                        u.nickname AS nickname,
+                    	u.profile_photo_url AS profile_image_url,
                     	ST_Distance_Sphere(f.coordinates, ST_SRID(POINT(:lon, :lat), 4326)) AS distanceInMeters
                     FROM
                     	find f
                     JOIN user_info u ON f.writer_id = u.user_info_pk
+                    JOIN following fw ON f.writer_id = fw.followed_id
+                    WHERE
+                    	fw.follower_id = :userId
                     HAVING
                     	distanceInMeters <= 50
                     ORDER BY distanceInMeters ASC;
                     """, nativeQuery = true)
-    List<FindNearbyReadableOnlyDto> findNearbyReadableOnly(@Param("lon") double lon, @Param("lat") double lat);
+    List<FindNearbyReadableOnlyDto> findNearbyReadableOnly(@Param("lon") double lon, @Param("lat") double lat, @Param("userId") Long userId);
 
     Page<FindEntity> findByWriterOrderByIdDesc(UserInfoEntity writer, Pageable pageable);
 }

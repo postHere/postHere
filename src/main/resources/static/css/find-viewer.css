@@ -1,0 +1,230 @@
+/* ===== 공통 기본 ===== */
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: #f0f2f5;
+}
+
+.page-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px 16px 40px;
+    box-sizing: border-box;
+}
+
+/* ===== 스택 컨테이너 ===== */
+.stack {
+    position: relative;
+    height: calc(100vh - 140px); /* 상단 여백/하단 네비를 고려해 적당히 조절 */
+    min-height: 520px; /* 너무 작아지지 않도록 */
+    max-height: 820px;
+    will-change: transform;
+}
+
+/* ===== 카드 기본 ===== */
+.card {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: min(92vw, 560px);
+    height: calc(100% - 12px);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, .18);
+    overflow: hidden;
+    transform-origin: center;
+    transition: transform .28s ease, opacity .28s ease, box-shadow .28s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 이미지가 있는 경우 카드 상단 이미지 */
+.card > img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+}
+
+/* 텍스트(이미지 없는 Forum 대응용 – JS에서 .post-item__text로 생성) */
+.post-item__text {
+    background: #fff;
+}
+
+/* ===== 메타(작성자/장소/날짜/남은시간, 삭제 버튼 등) ===== */
+.meta {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    padding: 10px 12px 12px;
+}
+
+.meta .top-row {
+    grid-column: 1 / 3;
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.meta .top-left {
+    display: grid;
+    gap: 2px;
+}
+
+.meta .title {
+    font-weight: 700;
+    font-size: 15px;
+    color: #111;
+}
+
+.meta .place {
+    font-size: 13px;
+    color: #666;
+}
+
+.meta .bottom-right {
+    margin-left: auto;
+    text-align: right;
+    font-size: 12px;
+    color: #8e8e8e;
+    display: grid;
+    gap: 2px;
+}
+
+/* 삭제 버튼 (작성자만 노출) */
+.del-btn {
+    border: 0;
+    background: rgba(255, 255, 255, .92);
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    font-size: 18px;
+    line-height: 36px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+}
+
+.del-btn:hover {
+    background: #fff;
+}
+
+/* 만료 임박 뱃지 */
+.badge {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    font-size: 18px;
+    background: rgba(255, 255, 255, .95);
+    border-radius: 12px;
+    padding: 6px 8px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .14);
+}
+
+/* ===== 스택 배치(겹쳐 보이기) =====
+   JS에서 data-pos="0|1|2" 로 상단/중간/뒤쪽 카드 지정 */
+.card[data-pos="0"] {
+    z-index: 30;
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+.card[data-pos="1"] {
+    z-index: 20;
+    transform: translate3d(0, 18px, -1px) scale(.96);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, .12);
+}
+
+.card[data-pos="2"] {
+    z-index: 10;
+    transform: translate3d(0, 34px, -2px) scale(.92);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .1);
+}
+
+/* 그 뒤 카드들(있다면) 숨김 */
+.card:not([data-pos]) {
+    display: none;
+}
+
+/* ===== 드래그 중 효과 ===== */
+.card.dragging {
+    transition: none;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .22);
+}
+
+/* ===== 작은 화면 보정 ===== */
+@media (max-width: 360px) {
+    .card {
+        border-radius: 12px;
+    }
+
+    .meta {
+        padding: 8px 10px 10px;
+    }
+
+    .del-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 17px;
+    }
+
+    .badge {
+        right: 10px;
+        top: 10px;
+        font-size: 16px;
+    }
+}
+
+/* ===== (옵션) 기존 수평 캐러셀 마크업과 공존 대비 =====
+   JS 비활성/오류 시 기존 header/image/footer 카드 구조도 자연스럽게 보이게 */
+.header, .image-container, .footer {
+    display: block;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid #ececec;
+}
+
+.writer-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.writer-info img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+}
+
+.writer-info .nickname {
+    font-weight: 600;
+}
+
+.image-container img {
+    width: 100%;
+    display: block;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px 14px;
+    font-size: 12px;
+    color: #8e8e8e;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #8e8e8e;
+}

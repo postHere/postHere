@@ -88,6 +88,12 @@
         <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
     </div>
 
+    <!-- ▼▼▼ [추가됨] 로그아웃 버튼 섹션 ▼▼▼ -->
+    <section class="logout-section" th:if="${isMyProfile}">
+        <button class="logout-button" id="logout-btn">로그아웃</button>
+    </section>
+    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
+
     <!-- Edit Profile Modal -->
     <div class="modal-overlay" id="edit-profile-modal">
         <div class="modal-content">

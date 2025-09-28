@@ -25,7 +25,8 @@ export function initProfile() {
     const followBtn = document.querySelector('.follow-btn');
     const profileImageInput = document.getElementById('profile-image-upload');
     const profileImage = document.querySelector('.profile-info__pic');
-    const isMyProfile = profileBody.dataset.isMyProfile === 'true';
+    const isMyProfile = (profileBody.dataset.isMyProfile === 'true'); // 없으면 false
+    const logoutBtn = document.getElementById('logout-btn');
 
     console.log("Is this my profile?", isMyProfile)
     // 상태 관리 변수
@@ -41,6 +42,21 @@ export function initProfile() {
         find: {content: [], page: 0, totalPages: 1, isLoading: false},
         forum: {content: [], page: 0, totalPages: 1, isLoading: false}
     };
+
+    // ===== 유틸 =====
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[m]));
+    const hasImg = (u) => !!u && String(u).trim() !== '' && String(u).trim().toLowerCase() !== 'null';
+    const snippet = (raw, max = 120) => {
+        const text = String(raw ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        return text.length <= max ? text : text.slice(0, max) + '…';
+    };
+    const SNIPPET_STYLE = 'padding:8px 10px;font-size:14px;line-height:1.45;color:#111;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;';
 
     // --- 2. 데이터 로딩 (API 호출) ---
     async function loadPosts(tab, page) {
@@ -62,12 +78,11 @@ export function initProfile() {
             tabState.totalPages = data.totalPages;
             tabState.page = page; // 현재 로드된 백엔드 페이지 번호 저장
 
-
+            renderCarousel();
         } catch (error) {
             console.error(`Error loading ${tab} posts:`, error);
         } finally {
             tabState.isLoading = false;
-            renderCarousel();
         }
     }
 
@@ -114,8 +129,6 @@ export function initProfile() {
             return;
         }
 
-        //carousel.style.width = `${totalCarouselPages * 100}%`;
-
         for (let i = 0; i < totalCarouselPages; i++) {
             const pageElement = document.createElement('div');
             pageElement.className = 'content-page';
@@ -123,16 +136,58 @@ export function initProfile() {
 
             const pageData = data.slice(i * postsPerPage, (i + 1) * postsPerPage);
             pageData.forEach(post => {
-                const link = currentTab === 'find' ? `/find-detail/${post.id}` : `/forum-detail/${post.id}`;
-                const statusIcon = post.isExpiring ? '<div class="post-item__status-icon">⏰</div>' : '';
+                let link = '';
 
-                pageHTML += `
-                    <a href="${link}" class="post-item">
-                        <img class="post-item__image" src="${post.imageUrl}" alt="Post image">
-                        ${statusIcon}
-                        <p class="post-item__location">📍 ${post.location}</p>
-                    </a>`;
+                if (currentTab === 'forum') {
+                    // ✅ 컨트롤러가 /forum/feed 만 있으니, 피드로 보내고 앵커로 해당 글 위치
+                    link = `/forum/feed#post-${post.id}`;
+                } else {
+                    // ✅ 네가 새로 추가한 매핑에 맞춤: /find/original/{id}
+                    link = `/find/original/${post.id}`;
+                }
+
+
+                // 나머지 렌더링 로직은 그대로
+                const statusIcon = (currentTab === 'find' && post.isExpiring)
+                    ? '<div class="post-item__status-icon">⏰</div>' : '';
+
+                // --- Forum 전용: 이미지가 없으면 텍스트로 렌더, 이미지 깨지면 onerror로 텍스트 대체 ---
+                if (currentTab === 'forum') {
+                    const imgOk = hasImg(post.imageUrl);
+                    const snip = snippet(post.contentsText, 120);
+
+                    const imgHtml = imgOk
+                        ? `<img class="post-item__image"
+                                src="${esc(post.imageUrl)}"
+                                alt="Post image"
+                                loading="lazy"
+                                data-snippet="${esc(snip)}"
+                                onerror="
+                                  this.style.display='none';
+                                  var p=document.createElement('div');
+                                  p.className='post-item__text';
+                                  p.setAttribute('style','${SNIPPET_STYLE}');
+                                  p.textContent=this.getAttribute('data-snippet')||'';
+                                  this.parentElement.appendChild(p);
+                                ">`
+                        : `<div class="post-item__text" style="${SNIPPET_STYLE}">${esc(snip)}</div>`;
+
+                    pageHTML += `
+                        <a href="${link}" class="post-item">
+                            ${imgHtml}
+                            <p class="post-item__location">📍 ${esc(post.location || '위치 정보 없음')}</p>
+                        </a>`;
+                } else {
+                    // 기존 Fin'd 렌더 (이미지 전제)
+                    pageHTML += `
+                        <a href="${link}" class="post-item">
+                            <img class="post-item__image" src="${esc(post.imageUrl)}" alt="Post image" loading="lazy">
+                            ${statusIcon}
+                            <p class="post-item__location">📍 ${esc(post.location || '')}</p>
+                        </a>`;
+                }
             });
+
             pageElement.innerHTML = pageHTML;
             carousel.appendChild(pageElement);
         }
@@ -155,10 +210,9 @@ export function initProfile() {
         const tabState = state[currentTab];
         const totalCarouselPages = Math.ceil(tabState.content.length / postsPerPage) || 1;
 
-        if (!force) { // 일반 스와이프/클릭 시
+        if (!force) {
             if (pageIndex < 0) pageIndex = 0;
             if (pageIndex >= totalCarouselPages) {
-                // 마지막 페이지에 도달했고, 더 불러올 데이터가 있다면 다음 페이지 로드
                 if (tabState.page < tabState.totalPages - 1) {
                     loadPosts(currentTab, tabState.page + 1);
                 }
@@ -175,27 +229,12 @@ export function initProfile() {
         if (currentTab === tab) return;
         currentTab = tab;
 
-        if (carousel) {
-            carousel.innerHTML = `<div style="text-align:center;width:100%;color:grey;">로딩 중...</div>`;
-        }
+        if (tabFind) tabFind.classList.toggle('active', tab === 'find');
+        if (tabForum) tabForum.classList.toggle('active', tab === 'forum');
 
-        if (tabFind) {
-            tabFind.classList.toggle('active', tab === 'find');
-        }
-        tabForum.classList.toggle('active', tab === 'forum');
+        currentPageIndex = 0;
 
-        currentPageIndex = 0; // 탭 전환 시 첫 페이지로
-
-        const tabState = state[tab];
-
-        // 이미 비어있는 탭이라고 확인된 경우(totalPages가 0),
-        // 불필요한 API 호출 없이 즉시 '게시물이 없습니다'를 렌더링합니다.
-        if (tabState.totalPages === 0) {
-            renderCarousel();
-            return;
-        }
-
-        if (tabState.content.length === 0) {
+        if (state[tab].content.length === 0) {
             loadPosts(tab, 0);
         } else {
             renderCarousel();
@@ -257,24 +296,35 @@ export function initProfile() {
             isNicknameAvailable = false;
             console.error("Nickname check failed:", error);
         }
+
+        setTimeout(() => {
+            if (nickname.toLowerCase() === 'admin') {
+                nicknameFeedback.textContent = '닉네임 변경 불가!';
+                nicknameFeedback.style.color = 'red';
+                isNicknameAvailable = false;
+            } else {
+                nicknameFeedback.textContent = '닉네임 변경 가능!';
+                nicknameFeedback.style.color = 'green';
+                isNicknameAvailable = true;
+            }
+        }, 500);
     });
 
     if (newPasswordInput) newPasswordInput.addEventListener('input', validatePassword);
     if (confirmPasswordInput) confirmPasswordInput.addEventListener('input', validatePassword);
 
+    // (버그 수정) submit 리스너 중첩 제거
     if (changePasswordForm) changePasswordForm.addEventListener('submit', (e) => {
-        if (changePasswordForm) changePasswordForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            newPassword = newPasswordInput.value;
-            alert('비밀번호가 임시 저장되었습니다. Update 버튼을 눌러 최종 적용하세요.');
-            closeModal(changePasswordModal);
-            openModal(editProfileModal);
-        });
+        e.preventDefault();
+        newPassword = newPasswordInput.value;
+        alert('비밀번호가 임시 저장되었습니다. Update 버튼을 눌러 최종 적용하세요.');
+        closeModal(changePasswordModal);
+        openModal(editProfileModal);
     });
 
     if (editProfileForm) editProfileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
+        let updateMessage = '프로필 업데이트:';
         if (isNicknameAvailable && nicknameInput.value) {
             // CSRF 토큰 헤더 준비
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
@@ -324,51 +374,42 @@ export function initProfile() {
 
     let isMouseDown = false;
     if (carouselWrapper) {
-        // 드래그를 종료하는 로직을 하나의 함수로 통합 (mouseup, mouseleave 공통 사용)
         const endDrag = (e) => {
             if (!isMouseDown) return;
             isMouseDown = false;
             carouselWrapper.classList.remove('dragging');
-            // 애니메이션 효과를 다시 켭니다.
             carousel.style.transition = 'transform 0.3s ease-in-out';
 
             const touchEndX = e.clientX;
             const swipeDistance = touchEndX - touchStartX;
 
-            // 드래그 거리를 판정하여 페이지 이동 또는 원위치를 결정합니다.
-            if (swipeDistance < -50) { // 왼쪽으로 충분히 스와이프
+            if (swipeDistance < -50) {
                 goToPage(currentPageIndex + 1);
-            } else if (swipeDistance > 50) { // 오른쪽으로 충분히 스와이프
+            } else if (swipeDistance > 50) {
                 goToPage(currentPageIndex - 1);
             } else {
-                // 드래그 거리가 짧으면 원래 페이지로 부드럽게 복귀
                 goToPage(currentPageIndex, true);
             }
         };
 
-        // 1. 마우스를 누르기 시작할 때
         carouselWrapper.addEventListener('mousedown', (e) => {
             isMouseDown = true;
             touchStartX = e.clientX;
             carouselWrapper.classList.add('dragging');
-            e.preventDefault(); // 브라우저 기본 드래그 동작 방지
+            e.preventDefault();
         });
 
-        // 2. 마우스를 움직일 때 (실시간 드래그 효과)
         carouselWrapper.addEventListener('mousemove', (e) => {
             if (!isMouseDown) return;
             const currentX = e.clientX;
             const distance = currentX - touchStartX;
 
             const baseOffset = -currentPageIndex * 100;
-            carousel.style.transition = 'none'; // 실시간 이동 중에는 애니메이션 효과를 끔
+            carousel.style.transition = 'none';
             carousel.style.transform = `translateX(calc(${baseOffset}% + ${distance}px))`;
         });
 
-        // 3. 마우스 버튼을 뗄 때 드래그 종료
         carouselWrapper.addEventListener('mouseup', endDrag);
-
-        // 4. 마우스가 영역 밖으로 나갔을 때도 드래그 종료로 처리 (오류 수정)
         carouselWrapper.addEventListener('mouseleave', endDrag);
     }
 
@@ -381,13 +422,10 @@ export function initProfile() {
             const url = isFollowing ? '/friend/unfollowing' : '/friend/addfollowing';
             const method = isFollowing ? 'DELETE' : 'POST';
 
-            // CSRF 토큰 헤더 준비 (Spring Security 사용 시 필요)
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
             const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
             const headers = {'Content-Type': 'application/json'};
-            if (csrfToken && csrfHeader) {
-                headers[csrfHeader] = csrfToken;
-            }
+            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
             try {
                 const response = await fetch(url, {
@@ -397,7 +435,6 @@ export function initProfile() {
                 });
 
                 if (response.ok) {
-                    // 성공 시 버튼 모양과 텍스트를 즉시 변경
                     if (isFollowing) {
                         button.classList.replace('unfollow', 'follow');
                         button.textContent = 'Follow';
@@ -405,8 +442,6 @@ export function initProfile() {
                         button.classList.replace('follow', 'unfollow');
                         button.textContent = 'Following';
                     }
-                    // (선택) 팔로워 수 실시간 변경이 필요하면 페이지를 새로고침 할 수도 있습니다.
-                    // location.reload();
                 } else {
                     alert('요청 처리 중 오류가 발생했습니다.');
                 }
@@ -420,25 +455,18 @@ export function initProfile() {
         console.log("Attaching image upload event listener.");
         profileImageInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
-            if (!file) {
-                return; // 파일 선택을 취소한 경우
-            }
+            if (!file) return;
 
-            // 1. FormData 객체를 만들어 선택한 파일을 담습니다.
             const formData = new FormData();
-            formData.append('profileImage', file); // Controller의 @RequestParam("profileImage")와 이름이 같아야 합니다.
+            formData.append('profileImage', file);
 
-            // CSRF 토큰 헤더 준비
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
             const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
             const headers = {};
-            if (csrfToken && csrfHeader) {
-                headers[csrfHeader] = csrfToken;
-            }
+            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
             try {
-                // 2. FormData를 body에 담아 /api/profile/image로 POST 요청을 보냅니다.
-                const response = await fetch('/profile/image', {
+                const response = await fetch('/api/profile/image', {
                     method: 'POST',
                     headers: headers, // FormData 전송 시 Content-Type은 브라우저가 자동으로 설정하므로 넣지 않습니다.
                     body: formData
@@ -446,20 +474,31 @@ export function initProfile() {
 
                 if (response.ok) {
                     const result = await response.json();
-
-                    // 3. 성공 시, 응답으로 받은 새 이미지 URL을 <img> 태그의 src에 적용합니다.
-                    // 캐시 문제를 피하기 위해 타임스탬프를 추가합니다.
                     profileImage.src = result.imageUrl + '?t=' + new Date().getTime();
-
                     alert('프로필 이미지가 성공적으로 변경되었습니다.');
                 } else {
-                    // 서버에서 오류 응답이 온 경우
                     const errorResult = await response.json();
                     alert('이미지 변경에 실패했습니다: ' + (errorResult.message || '서버 오류'));
                 }
             } catch (error) {
                 console.error('Error uploading profile image:', error);
                 alert('이미지 업로드 중 오류가 발생했습니다.');
+            }
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/logout', {method: 'POST'});
+                if (response.ok && response.redirected) {
+                    window.location.href = '/login';
+                } else if (response.ok) {
+                    // 일부 설정에서는 redirected가 false일 수 있음
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
             }
         });
     }

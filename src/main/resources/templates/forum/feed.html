@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <title>Forum Feed</title>
+    <style>
+        /* 기본 피드 페이지 스타일 */
+        body {
+            background-color: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .feed-container {
+            padding: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .post-card {
+            background-color: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        /* 카드 헤더 */
+        .post-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+        }
+
+        .post-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .post-author .profile-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .post-author-info .name {
+            font-weight: 600;
+        }
+
+        .post-author-info .time {
+            color: #8e8e8e;
+            font-size: 12px;
+        }
+
+        .post-options-container {
+            position: relative;
+        }
+
+        .post-options-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* 카드 본문 및 이미지 캐러셀 */
+        .post-content {
+            padding: 0 16px 12px;
+        }
+
+        .post-image-carousel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .carousel-images-container {
+            display: flex;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .post-image {
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .carousel-prev-btn, .carousel-next-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.4);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .post-image-carousel:hover .carousel-prev-btn, .post-image-carousel:hover .carousel-next-btn {
+            opacity: 1;
+        }
+
+        .carousel-prev-btn {
+            left: 10px;
+        }
+
+        .carousel-next-btn {
+            right: 10px;
+        }
+
+        .prev-icon::before {
+            content: '<';
+        }
+
+        .next-icon::before {
+            content: '>';
+        }
+
+        .carousel-indicators {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+
+        .indicator {
+            width: 6px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+        }
+
+        .indicator.active {
+            background-color: white;
+        }
+
+        /* 카드 푸터 (좋아요/댓글) */
+        .post-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #8e8e8e;
+        }
+
+        .like-button, .comment-trigger {
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: none;
+            border: none;
+        }
+
+        /* 기본 하트 아이콘 스타일 (테두리만 있는 상태) */
+        .like-icon {
+            font-size: 22px; /* 하트 크기를 살짝 키우면 더 잘 보입니다 */
+            color: transparent; /* 글자의 내부 색을 투명하게 만듭니다 */
+            -webkit-text-stroke: 1.5px #262626; /* 1.5px 두께의 검은색 테두리를 추가합니다 */
+            text-stroke: 1.5px #262626;
+        }
+
+        /* 좋아요를 눌렀을 때의 스타일 (.liked 클래스가 추가됐을 때) */
+        .like-button.liked .like-icon {
+            color: red; /* 글자의 내부 색을 빨간색으로 채웁니다 */
+            -webkit-text-stroke-width: 0; /* 테두리 두께를 0으로 만들어 없애줍니다 */
+            text-stroke-width: 0;
+        }
+
+        .liker-photos {
+            display: flex;
+            padding: 0 15px 15px;
+        }
+
+        .liker-photos img {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            margin-left: -5px;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .liker-photos img:first-child {
+            margin-left: 0;
+        }
+
+        /* 더보기 메뉴 및 모달 스타일 */
+        .options-menu {
+            position: absolute;
+            top: 50px;
+            right: 15px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 10;
+            list-style: none;
+            padding: 5px 0;
+            margin: 0;
+        }
+
+        .options-menu li button {
+            display: block;
+            width: 100%;
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .options-menu li button:hover {
+            background: #f9f9f9;
+        }
+
+        .options-menu li button.delete {
+            color: red;
+        }
+
+        .options-menu.show {
+            display: block;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dbdbdb;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close-btn {
+            font-size: 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .comment-list {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .comment-list .comment {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .comment-list img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .comment-text .nickname {
+            font-weight: 600;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+<div class="mobile-container">
+    <main class="main-content">
+        <div class="feed-container">
+            <div class="post-card" th:attr="data-post-id=${post.id}" th:each="post : ${posts}"
+                 th:id="'post-' + ${post.id}">
+                <div class="post-header">
+                    <div class="post-author">
+                        <a class="profile-link" th:href="'/profile/' + ${post.writerNickname}">
+                            <img alt="작성자 프로필" class="profile-img" th:src="${post.writerProfilePhotoUrl}">
+                        </a>
+                        <div class="post-author-info">
+                            <a class="profile-link name" th:href="'/profile/' + ${post.writerNickname}"
+                               th:text="${post.writerNickname}"></a>
+                            <div class="time" th:attr="data-created-at=${post.createdAt}"></div>
+                        </div>
+                    </div>
+                    <div class="post-options-container" th:if="${post.author}">
+                        <button class="post-options-button">...</button>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <p th:text="${post.contentsText}"></p>
+                    <div class="post-image-carousel" th:if="${!post.imageUrls.isEmpty()}">
+                        <div class="carousel-images-container">
+                            <img alt="게시물 사진" class="post-image" th:each="url : ${post.imageUrls}" th:src="${url}">
+                        </div>
+                        <div class="carousel-indicators" th:if="${#lists.size(post.imageUrls) > 1}">
+                            <span class="indicator"
+                                  th:classappend="${i == 0} ? 'active'"
+                                  th:each="i : ${#numbers.sequence(0, #lists.size(post.imageUrls) - 1)}"></span>
+                        </div>
+                        <button class="carousel-prev-btn prev-icon" th:if="${#lists.size(post.imageUrls) > 1}"></button>
+                        <button class="carousel-next-btn next-icon" th:if="${#lists.size(post.imageUrls) > 1}"></button>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <div>
+                        <button class="like-button" th:classappend="${post.isLiked} ? 'liked'">
+                            <span class="like-icon" th:text="${post.isLiked} ? '♥' : '♥'"></span>
+                            <span class="like-count" th:text="${post.totalLikes}"></span> likes
+                        </button>
+                        <button class="comment-trigger">
+                            💬 <span class="comment-count" th:text="${post.totalComments}"></span> comments
+                        </button>
+                    </div>
+                </div>
+                <div class="liker-photos" th:id="'liker-photos-' + ${post.id}">
+                    <img alt="Liker photo" th:each="photoUrl : ${post.recentLikerPhotos}" th:src="${photoUrl}">
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="comment-modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>댓글</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="comment-list" id="comment-list-container"></div>
+    </div>
+</div>
+
+<ul class="options-menu" id="options-menu">
+    <li>
+        <button id="edit-post-btn">수정</button>
+    </li>
+    <li>
+        <button class="delete" id="delete-post-btn">삭제</button>
+    </li>
+</ul>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 유틸리티 함수들 ---
+        function calculateTimeAgo(dateString) {
+            const now = new Date();
+            const postDate = new Date(dateString);
+            const seconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
+            if (seconds < 0) return "방금 전";
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + "년 전";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + "개월 전";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + "일 전";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + "시간 전";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + "분 전";
+            return "방금 전";
+        }
+
+        function updateLikeStatus(likeButton, likeData) {
+            const likeIcon = likeButton.querySelector('.like-icon');
+            const likeCount = likeButton.querySelector('.like-count');
+            const postCard = likeButton.closest('.post-card');
+            const likerPhotosContainer = postCard.querySelector('.liker-photos');
+
+            likeButton.classList.toggle('liked', likeData.isLiked);
+            likeIcon.textContent = '♥'; // 항상 '♥'를 사용하고, 모양은 CSS가 제어하도록 변경
+            likeCount.textContent = likeData.totalLikes;
+
+            likerPhotosContainer.innerHTML = '';
+            if (likeData.recentLikerPhotos && likeData.recentLikerPhotos.length > 0) {
+                const photosHtml = likeData.recentLikerPhotos.map(photo => `<img src="${photo}" class="liker-profile-img">`).join('');
+                likerPhotosContainer.innerHTML = photosHtml;
+            }
+        }
+
+        // --- 초기 렌더링 시 시간 변환 ---
+        document.querySelectorAll('.time[data-created-at]').forEach(timeEl => {
+            timeEl.textContent = calculateTimeAgo(timeEl.dataset.createdAt);
+        });
+
+        const commentModal = document.getElementById('comment-modal');
+        const commentListContainer = document.getElementById('comment-list-container');
+        const closeCommentModalBtn = commentModal.querySelector('.close-btn');
+        const optionsMenu = document.getElementById('options-menu');
+        let currentPostIdForOptions = null;
+        const csrfToken = document.querySelector("meta[name='_csrf']")?.content;
+        const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.content;
+        const fetchHeaders = {'Content-Type': 'application/json'};
+        if (csrfToken && csrfHeader) fetchHeaders[csrfHeader] = csrfToken;
+
+        // --- 이벤트 위임 ---
+        document.querySelector('.feed-container').addEventListener('click', async (event) => {
+            const target = event.target;
+            const postCard = target.closest('.post-card');
+            if (!postCard) return;
+            const postId = postCard.dataset.postId;
+
+            // 좋아요 버튼
+            if (target.closest('.like-button')) {
+                try {
+                    const response = await fetch(`/forum/like/${postId}`, {method: 'POST', headers: fetchHeaders});
+                    if (!response.ok) throw new Error('Failed to toggle like.');
+                    const result = await response.json();
+                    updateLikeStatus(target.closest('.like-button'), result.data);
+                } catch (error) {
+                    console.error('Like error:', error);
+                }
+            }
+
+            // 댓글 버튼
+            if (target.closest('.comment-trigger')) {
+                try {
+                    const response = await fetch(`/api/forum/${postId}/comments`);
+                    if (!response.ok) throw new Error('Failed to fetch comments.');
+                    const comments = await response.json();
+
+                    commentListContainer.innerHTML = '';
+                    if (comments && comments.length > 0) {
+                        comments.forEach(comment => {
+                            const commentEl = document.createElement('div');
+                            commentEl.className = 'comment';
+                            commentEl.innerHTML = `<img src="${comment.authorProfilePhotoUrl}" alt=""><div class="comment-text"><p><span class="nickname">${comment.authorNickname}</span><span>${comment.content}</span></p></div>`;
+                            commentListContainer.appendChild(commentEl);
+                        });
+                    } else {
+                        commentListContainer.innerHTML = '<p>아직 댓글이 없습니다.</p>';
+                    }
+                    commentModal.classList.add('show');
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            // 더보기 버튼
+            if (target.closest('.post-options-button')) {
+                event.stopPropagation();
+                currentPostIdForOptions = postId;
+                optionsMenu.classList.toggle('show');
+                const rect = target.closest('.post-options-button').getBoundingClientRect();
+                optionsMenu.style.top = `${rect.bottom + window.scrollY}px`;
+                optionsMenu.style.right = `${window.innerWidth - rect.right - 10}px`;
+            }
+
+            // 이미지 캐러셀
+            const carouselContainer = postCard.querySelector('.carousel-images-container');
+            if (carouselContainer) {
+                let currentIndex = parseInt(carouselContainer.dataset.index || '0');
+                const totalImages = carouselContainer.children.length;
+                if (target.closest('.carousel-next-btn')) {
+                    currentIndex = (currentIndex + 1) % totalImages;
+                }
+                if (target.closest('.carousel-prev-btn')) {
+                    currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+                }
+                carouselContainer.style.transform = `translateX(-${currentIndex * 100}%)`;
+                carouselContainer.dataset.index = currentIndex;
+                postCard.querySelectorAll('.indicator').forEach((ind, i) => ind.classList.toggle('active', i === currentIndex));
+            }
+        });
+
+        // --- 모달 및 메뉴 닫기 ---
+        closeCommentModalBtn.addEventListener('click', () => commentModal.classList.remove('show'));
+        commentModal.addEventListener('click', (event) => {
+            if (event.target === commentModal) commentModal.classList.remove('show');
+        });
+        document.getElementById('edit-post-btn').addEventListener('click', () => {
+            if (currentPostIdForOptions) window.location.href = `/forum/${currentPostIdForOptions}/edit`;
+        });
+        document.getElementById('delete-post-btn').addEventListener('click', async () => {
+            if (currentPostIdForOptions && confirm('정말로 이 게시물을 삭제하시겠습니까?')) {
+                try {
+                    const response = await fetch(`/forum/${currentPostIdForOptions}`, {
+                        method: 'DELETE',
+                        headers: fetchHeaders
+                    });
+                    if (response.ok) document.getElementById(`post-${currentPostIdForOptions}`).remove();
+                } catch (error) {
+                    console.error('Delete error:', error);
+                }
+            }
+            optionsMenu.classList.remove('show');
+        });
+        document.addEventListener('click', (e) => {
+            if (!optionsMenu.contains(e.target) && !e.target.closest('.post-options-button')) optionsMenu.classList.remove('show');
+        });
+    });
+</script>
+</body>
+</html>

@@ -9,4 +9,5 @@ public class ForumPostSummaryDto {
     private Long id;
     private String imageUrl;
     private String location;
+    private String contentsText;
 }

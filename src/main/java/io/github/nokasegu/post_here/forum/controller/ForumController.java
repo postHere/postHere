@@ -216,4 +216,26 @@ public class ForumController {
         Page<ForumPostSummaryDto> result = forumService.getForumsByNickname(nickname, pageable);
         return ResponseEntity.ok(result);
     }
+
+    /**
+     * Forum 피드 페이지를 보여줍니다.
+     *
+     * @param userDetails 현재 로그인한 사용자 정보 (좋아요, 작성자 여부 확인용)
+     * @param model       HTML로 데이터를 전달하는 객체
+     * @return 보여줄 HTML 파일의 경로
+     */
+    @GetMapping("/forum/feed")
+    public String getForumFeedPage(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+        // 현재 로그인한 사용자의 ID를 가져옵니다. 비로그인 상태면 null이 됩니다.
+        Long currentUserId = (userDetails != null) ? userDetails.getUserInfo().getId() : null;
+
+        // Service를 호출하여 피드에 필요한 모든 게시물 목록을 가져옵니다.
+        List<ForumPostListResponseDto> posts = forumService.getAllForumPostsForFeed(currentUserId);
+
+        // "posts"라는 이름으로 HTML에게 게시물 목록을 전달합니다.
+        model.addAttribute("posts", posts);
+
+        // "resources/templates/forum/feed.html" 파일을 찾아 화면에 보여줍니다.
+        return "forum/feed";
+    }
 }

@@ -26,11 +26,12 @@ import {initForumAreaSearch} from './pages/forum-area-search.js';
 import {initParkWrite} from './pages/park-write.js';
 import {initNotification} from './pages/notification.js';
 import {initFindOnMap} from "./pages/find-on-map";
-import {initForumEdit} from './pages/forum-edit'
+import {initForumEdit} from './pages/forum-edit';
 //[PUSH] 네이티브 푸시 초기화 (컨벤션: init+파일명)
 import {initPush} from './pages/push.js';
 import {initFindOverwrite} from "./pages/find-overwrite";
 import {initBackgroundGeolocation} from './modules/location-tracker';
+import {initFindViewer} from './pages/find-viewer';
 
 // --- 3. 초기 경로 설정 ---
 // 앱이 처음 로드되었을 때(경로가 '/') 시작 페이지로 이동시킵니다.
@@ -128,6 +129,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             break;
         case 'page-forum-edit':
             initForumEdit();
+            break;
+        case 'page-find-viewer':
+            initFindViewer()
             break;
         default:
             console.log('이 페이지에 해당하는 초기화 스크립트가 없습니다.');

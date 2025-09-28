@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -59,4 +60,11 @@ public interface FindRepository extends JpaRepository<FindEntity, Long> {
     List<FindNearbyReadableOnlyDto> findNearbyReadableOnly(@Param("lon") double lon, @Param("lat") double lat, @Param("userId") Long userId);
 
     Page<FindEntity> findByWriterOrderByIdDesc(UserInfoEntity writer, Pageable pageable);
+
+    // ▼▼▼ [스와이프 뷰어용] 새로운 메소드를 여기에 추가했습니다. ▼▼▼
+    @Query("SELECT f FROM FindEntity f JOIN FETCH f.writer WHERE f.writer = :writer ORDER BY f.createdAt DESC")
+    List<FindEntity> findAllByWriterWithDetails(@Param("writer") UserInfoEntity writer);
+
+    // ▼▼▼ [추가됨] 자동 삭제를 위해 만료 시간이 지난 게시물을 찾는 메소드 ▼▼▼
+    List<FindEntity> findAllByExpirationDateBefore(LocalDateTime now);
 }

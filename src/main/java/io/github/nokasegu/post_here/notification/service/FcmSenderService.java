@@ -200,9 +200,8 @@ public class FcmSenderService {
         sendToTokens(tokens, title, body, data);
     }
 
-    public void sendFindNotification(UserInfoEntity targetUser, String writer, String amount) {
+    public void sendFindNotification(UserInfoEntity targetUser, String body) {
         String title = "fin'd";
-        String body = writer + "님 외 " + amount + "명의 fin'd가 존재합니다";
 
         List<String> tokens = resolveFcmTokens(targetUser);
         if (tokens.isEmpty()) {

@@ -337,4 +337,16 @@ public class NotificationService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
         return notificationRepository.countByTargetUserAndCheckStatusIsFalse(target);
     }
+
+    public void createFind(UserInfoEntity target, String message) {
+
+        NotificationEntity notification = NotificationEntity.builder()
+                .notificationCode(NotificationCode.FIND_FOUND)
+                .targetUser(target)
+                .messageForFind(message)
+                .checkStatus(false)
+                .build();
+
+        notificationRepository.save(notification);
+    }
 }

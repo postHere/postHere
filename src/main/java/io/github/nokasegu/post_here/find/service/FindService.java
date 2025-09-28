@@ -7,6 +7,7 @@ import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
 import io.github.nokasegu.post_here.find.dto.FindPostSummaryDto;
 import io.github.nokasegu.post_here.find.repository.FindRepository;
 import io.github.nokasegu.post_here.notification.service.FcmSenderService;
+import io.github.nokasegu.post_here.notification.service.NotificationService;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
@@ -34,6 +35,7 @@ public class FindService {
     private final UserInfoRepository userInfoRepository;
     private final FcmSenderService fcmSenderService;
     private final UserInfoService userInfoService;
+    private final NotificationService notificationService;
 
 
     private final Map<Long, Map<Long, Instant>> userNotificationTimestamps = new ConcurrentHashMap<>();
@@ -86,7 +88,9 @@ public class FindService {
         }
 
         if (count > 0) {
-            fcmSenderService.sendFindNotification(user, nickname, String.valueOf(count));
+            String message = nickname + "님 외 " + count + "명의 fin'd가 존재합니다";
+            notificationService.createFind(user, message);
+            fcmSenderService.sendFindNotification(user, message);
         }
     }
 

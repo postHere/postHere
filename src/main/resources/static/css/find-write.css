@@ -296,9 +296,7 @@ body#page-find-overwrite, #page-park-overwrite {
     background: #FFFFFF; /* 배경색 */
     border-radius: 16px; /* 둥근 모서리 */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* 그림자 효과 */
-    border: none;
-    width: 320px; /* 너비 */
-    padding: 15px;
+    border: none !important;
     box-sizing: border-box;
 }
 /* 달력 상단 (월, 년도, 화살표) */

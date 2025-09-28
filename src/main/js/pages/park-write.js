@@ -1,7 +1,7 @@
 // 로컬 테스트용
-import {setAndDrawBackgroundImage, setupTextAndDrawControls} from "../find-in-progress/find-write.js";
+// import {setAndDrawBackgroundImage, setupTextAndDrawControls} from "../find-in-progress/find-write.js";
 // 실제 서비스용
-// import {setAndDrawBackgroundImage, setupTextAndDrawControls} from "./find-write.js";
+import {setAndDrawBackgroundImage, setupTextAndDrawControls} from "./find-write.js";
 
 async function setInitialBackgroundImage({imageCtx, rect, updateSaveBtnState, scale}) {
     const parkUrl = document.body.getAttribute('data-park-url');
@@ -40,4 +40,4 @@ export function initParkWrite() {
 }
 
 // 로컬 테스트용 코드
-initParkWrite();
+// initParkWrite();

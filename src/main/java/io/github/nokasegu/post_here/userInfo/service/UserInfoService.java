@@ -185,5 +185,9 @@ public class UserInfoService {
                 .build();
     }
 
+    public UserInfoEntity getUserInfoByEmail(String email) {
+        return userInfoRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+    }
 
 }

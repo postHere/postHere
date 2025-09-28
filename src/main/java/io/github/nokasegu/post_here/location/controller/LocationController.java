@@ -30,10 +30,10 @@ public class LocationController {
     public WrapperDTO<LocationResponseDto> whereAmI(@RequestBody LocationRequestDto location) {
 
         String address = geocodingUtil.getAddressFromCoordinates(location.getLng(), location.getLat());
-        log.info("address: {} {} {}", location.getLng(), location.getLat(), address);
-        
+        log.info("address: {} {} {}", location.getLng(), location.getLat(), location.getUser());
+
         ForumAreaEntity area = locationService.getForumArea(address);
-        findService.checkFindReadable(location.getLng(), location.getLat());
+        findService.checkFindReadable(location.getLng(), location.getLat(), location.getUser());
 
         return WrapperDTO.<LocationResponseDto>builder()
                 .status(Code.OK.getCode())

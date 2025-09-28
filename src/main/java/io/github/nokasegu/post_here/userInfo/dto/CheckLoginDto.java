@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CheckLoginDto {
+    String username;
     boolean isAuthenticated;
 }

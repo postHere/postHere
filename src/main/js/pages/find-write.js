@@ -528,19 +528,6 @@ export function setupTextAndDrawControls() {
             editingToolsContainer.style.height = '';
         }
 
-
-
-        // 1. 텍스트 입력 오버레이의 위치와 크기를 보이는 영역에 맞춥니다.
-        //    이렇게 하면 flex 중앙 정렬이 보이는 영역의 중앙을 기준으로 동작합니다.
-        if (!textInputOverlay.classList.contains('hidden')) {
-
-        }
-
-        // 2. 편집 도구 컨테이너의 위치와 크기도 보이는 영역에 맞춥니다.
-        //    이렇게 하면 슬라이더가 키보드 위쪽에 위치하게 됩니다.
-        if (!editingToolsContainer.classList.contains('hidden')) {
-
-        }
     }
 
     // 키보드가 나타나거나 사라질 때(화면 크기가 변할 때)마다 핸들러 함수를 호출합니다.

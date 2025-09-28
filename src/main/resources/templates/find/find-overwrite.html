@@ -16,10 +16,10 @@
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
 <!-- 로컬 테스트용 -->
-<!--<body id="page-find-write" data-find-url="https://posthere-s3.s3.ap-northeast-2.amazonaws.com/default_profile.jpg">-->
-<!--<body id="page-find-overwrite" data-find-url="http://127.0.0.1:8080/icons/'25%20%EB%A7%90%EC%94%80%EC%B9%B4%EB%93%9C%20%ED%8C%8C%EB%9E%91.png">-->
+<!--<body id="page-find-overwrite"-->
+<!--      data-find-url="http://127.0.0.1:8080/icons/'25%20%EB%A7%90%EC%94%80%EC%B9%B4%EB%93%9C%20%ED%8C%8C%EB%9E%91.png">-->
 <!-- 실제 서비스용 -->
-<body id="page-find-overwrite" data-find-url="${find_url}">
+<body id="page-find-overwrite" th:data-find-no="${find_no}" th:data-find-url="${find_url}">
     <div id="header-container">
         <button id="back-btn" class="svg-container">
             <svg width="35" height="35" viewBox="0 0 35 35" xmlns="http://www.w3.org/2000/svg">

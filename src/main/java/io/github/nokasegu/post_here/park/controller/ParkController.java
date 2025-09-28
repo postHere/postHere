@@ -20,7 +20,7 @@ public class ParkController {
     private final ParkService parkService;
     private final UserInfoRepository userInfoRepository;
 
-    @GetMapping("/park-write")
+    @GetMapping("/park")
     public String parkWrite(Model model,
                             @AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {

@@ -47,3 +47,8 @@ html, body {
 #page-signup #app-container {
     justify-content: center;
 }
+
+#page-profile #app-container {
+    padding: 0;
+    max-width: 432px;
+}

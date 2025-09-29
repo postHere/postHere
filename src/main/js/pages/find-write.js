@@ -187,12 +187,16 @@ export function setupTextAndDrawControls() {
         selectedExpirationDate = null;
         selectedDateContainer.classList.add("hidden");
 
-        const daySpans = document.getElementsByClassName("dayContainer")[0].children;
-        Array.from(daySpans).forEach(daySpan => {
-            if (daySpan.classList.contains("selected")) {
-                daySpan.classList.remove("selected");
-            }
-        })
+        // 달력 요소가 존재할 때만 내부 코드를 실행하도록 변경
+        const dayContainer = document.getElementsByClassName("dayContainer")[0];
+        if (dayContainer) {
+            const daySpans = dayContainer.children;
+            Array.from(daySpans).forEach(daySpan => {
+                if (daySpan.classList.contains("selected")) {
+                    daySpan.classList.remove("selected");
+                }
+            });
+        }
 
         if (interactionManager.selectedObject) {
             interactionManager.selectedObject = null;

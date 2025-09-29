@@ -55,15 +55,15 @@ public class FindService {
         return nearbyAll.stream()
                 .map(dto -> {
                     // 거리에 따라 region 값을 결정합니다 (삼항 연산자 사용).
-                    String regionValue = (dto.getDistanceInMeters() <= 50) ? "1" : "2";
+                    int regionValue = (dto.getDistanceInMeters() <= 50) ? 1 : 2;
 
                     // FindNearbyDto를 FindNearbyResponseDto로 변환하여 반환합니다.
                     return FindNearbyResponseDto.builder()
-                            .find_pk(dto.getFind_pk().toString())
+                            .find_pk(dto.getFind_pk())
                             .profile_image_url(dto.getProfile_image_url())
                             .nickname(dto.getNickname())
-                            .lat(dto.getLat().toString())
-                            .lng(dto.getLng().toString())
+                            .lat(dto.getLat())
+                            .lng(dto.getLng())
                             .region(regionValue)
                             .build();
                 })

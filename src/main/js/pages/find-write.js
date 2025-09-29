@@ -1,7 +1,6 @@
 import {drawTextObjects} from "./common-find_park.js";
 import {CanvasInteractionManager} from "./canvas-interaction.js";
-// 로컬 테스트용 코드
-// initFindWrite();
+// 로컬 환경 테스트 시 하단 코드 주석 처리 필요
 import {Geolocation} from "@capacitor/geolocation";
 
 /**
@@ -75,6 +74,8 @@ export function setupTextAndDrawControls() {
     // --- 달력 관련 UI 요소 ---
     const expirationDateBtn = document.getElementById("tool-expiration-date");
     const datePickerInput = document.getElementById("date-picker-input"); // flatpickr를 연결할 숨겨진 input
+    const selectedDateContainer = document.getElementById("selected-date-container");
+    const selectedDateSpan = document.getElementById("selected-date");
 
     // flatpickr 인스턴스 생성 및 설정
     // 👇 if문으로 감싸서 해당 요소들이 존재할 때만 flatpickr를 실행
@@ -93,6 +94,9 @@ export function setupTextAndDrawControls() {
             onChange: function (selectedDates, dateStr, instance) {
                 if (selectedDates.length > 0) {
                     selectedExpirationDate = dateStr;
+                    selectedDateContainer.classList.remove("hidden");
+                    selectedDateSpan.innerText = `만료일자: ${selectedExpirationDate}`;
+                    updateClearAndSaveBtnState();
                     console.log("선택된 날짜:", selectedExpirationDate);
                 }
             },
@@ -147,18 +151,22 @@ export function setupTextAndDrawControls() {
 
         // '저장' 버튼은 콘텐츠 유무로 활성화 여부를 결정.
         const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
-        if (hasContent) {
-            saveBtn.classList.remove("inactive");
-            saveBtn.classList.add("active");
-            saveBtn.disabled = false;
-        } else {
+
+        if (!hasContent) {
             saveBtn.classList.add("inactive");
             saveBtn.classList.remove("active");
-            saveBtn.disabled = true;
+            // saveBtn.disabled = true;
+        } else if (!selectedExpirationDate) {
+            saveBtn.classList.add("inactive");
+            saveBtn.classList.remove("active");
+        } else {
+            saveBtn.classList.remove("inactive");
+            saveBtn.classList.add("active");
+            // saveBtn.disabled = false;
         }
 
         // '초기화' 버튼은 사용자가 직접 수정한 경우에만 보이도록 변경.
-        if (isUserModified) {
+        if (isUserModified || selectedExpirationDate) {
             clearBtn.classList.remove("hidden");
         } else {
             clearBtn.classList.add("hidden");
@@ -175,6 +183,16 @@ export function setupTextAndDrawControls() {
         objects.length = 0;
         lastSelectedTextObject = null;
         isUserModified = false;
+
+        selectedExpirationDate = null;
+        selectedDateContainer.classList.add("hidden");
+
+        const daySpans = document.getElementsByClassName("dayContainer")[0].children;
+        Array.from(daySpans).forEach(daySpan => {
+            if (daySpan.classList.contains("selected")) {
+                daySpan.classList.remove("selected");
+            }
+        })
 
         if (interactionManager.selectedObject) {
             interactionManager.selectedObject = null;
@@ -601,87 +619,106 @@ export function setupTextAndDrawControls() {
      */
     async function saveCanvasAsImage() {
         // 1. 버튼 비활성화 (중복 클릭 방지)
+        saveBtn.classList.add("saving");
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
 
         // 2. 임시 캔버스 생성 및 병합
-        const mergedCanvas = document.createElement('canvas');
-        mergedCanvas.width = imageCanvas.width;
-        mergedCanvas.height = imageCanvas.height;
-        const mergedCtx = mergedCanvas.getContext('2d');
-        mergedCtx.drawImage(imageCanvas, 0, 0);
-        mergedCtx.drawImage(paintCanvas, 0, 0);
-        mergedCtx.drawImage(objectCanvas, 0, 0);
+        setTimeout(() => {
+            const mergedCanvas = document.createElement('canvas');
+            mergedCanvas.width = imageCanvas.width;
+            mergedCanvas.height = imageCanvas.height;
+            const mergedCtx = mergedCanvas.getContext('2d');
+            mergedCtx.drawImage(imageCanvas, 0, 0);
+            mergedCtx.drawImage(paintCanvas, 0, 0);
+            mergedCtx.drawImage(objectCanvas, 0, 0);
 
-        // 3. Blob 객체로 변환
-        mergedCanvas.toBlob(async (blob) => {
-            if (!blob) {
-                alert('이미지 변환에 실패했습니다.');
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'share';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('content_capture', blob, 'find-write.png');
-
-            // 'page-find-write' 페이지에서만 만료 날짜를 추가합니다.
-            if (selectedExpirationDate && document.body.id === 'page-find-write') {
-                formData.append('expiration_date', selectedExpirationDate);
-            }
-            let coords = await getCurrentCoordinates();
-            formData.append('lat', coords.latitude);
-            formData.append('lng', coords.longitude);
-            console.log("formData : ", [...formData.entries()]);
-
-            let submitUrl = '';
-            const body = document.body;
-
-            // 페이지 ID에 따라 URL 결정
-            if (body.id === 'page-find-write') {
-                submitUrl = '/find';
-            } else if (body.id === 'page-find-overwrite') {
-                const findNo = body.dataset.findNo;
-                submitUrl = `/find/${findNo}`;
-            } else if (body.id === 'page-park-write') {
-                const nickname = body.dataset.nickname;
-                submitUrl = `/profile/park/${nickname}`;
-            }
-
-            if (!submitUrl) {
-                alert('요청을 보낼 주소를 결정할 수 없습니다.');
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'share';
-                return;
-            }
-
-            try {
-                // 결정된 URL로 fetch 요청
-                const response = await fetch(submitUrl, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+            // 3. Blob 객체로 변환
+            mergedCanvas.toBlob(async (blob) => {
+                if (!blob) {
+                    alert('이미지 변환에 실패했습니다.');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'share';
+                    return;
                 }
 
-                // const result = await response.json();
-                // console.log('서버 응답:', result);
+                const formData = new FormData();
+                formData.append('content_capture', blob, 'find-write.png');
 
-                window.location.href = '/map';
+                // 'page-find-write' 페이지에서만 만료 날짜를 추가합니다.
+                if (selectedExpirationDate && document.body.id === 'page-find-write') {
+                    formData.append('expiration_date', selectedExpirationDate);
+                }
+                let coords = await getCurrentCoordinates();
+                formData.append('lat', coords.latitude);
+                formData.append('lng', coords.longitude);
+                console.log("formData : ", [...formData.entries()]);
 
-            } catch (error) {
-                console.error('전송 중 오류 발생:', error);
-                alert('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'share';
-            }
+                let submitUrl = '';
+                const body = document.body;
 
-        }, 'image/png', 0.95);
+                // 페이지 ID에 따라 URL 결정
+                if (body.id === 'page-find-write') {
+                    submitUrl = '/find';
+                } else if (body.id === 'page-find-overwrite') {
+                    const findNo = body.dataset.findNo;
+                    submitUrl = `/find/${findNo}`;
+                } else if (body.id === 'page-park-write') {
+                    const nickname = body.dataset.nickname;
+                    submitUrl = `/profile/park/${nickname}`;
+                }
+
+                if (!submitUrl) {
+                    alert('요청을 보낼 주소를 결정할 수 없습니다.');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'share';
+                    return;
+                }
+
+                try {
+                    // 결정된 URL로 fetch 요청
+                    const response = await fetch(submitUrl, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                    }
+
+                    // const result = await response.json();
+                    // console.log('서버 응답:', result);
+
+                    saveBtn.classList.remove("saving");
+
+                    window.location.href = '/map';
+
+                } catch (error) {
+                    console.error('전송 중 오류 발생:', error);
+                    alert('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'share';
+                }
+
+            }, 'image/png', 0.95);
+        }, 0); // 딜레이를 0으로 설정
     }
 
-    saveBtn.addEventListener('click', saveCanvasAsImage);
+    saveBtn.addEventListener('click', () => {
+
+        const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
+
+        if (!hasContent) {
+            alert('내용을 작성하세요');
+            return;
+        } else if (!selectedExpirationDate) {
+            alert('만료일자를 선택하세요');
+            return;
+        }
+
+        saveCanvasAsImage();
+
+    });
 
     // --- 초기 실행 ---
     initializeCanvases();
@@ -833,3 +870,6 @@ async function getCurrentCoordinates() {
         console.log(error);
     }
 }
+
+// 로컬 테스트용 코드
+// initFindWrite();

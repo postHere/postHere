@@ -74,6 +74,8 @@ export function setupTextAndDrawControls() {
     // --- 달력 관련 UI 요소 ---
     const expirationDateBtn = document.getElementById("tool-expiration-date");
     const datePickerInput = document.getElementById("date-picker-input"); // flatpickr를 연결할 숨겨진 input
+    const selectedDateContainer = document.getElementById("selected-date-container");
+    const selectedDateSpan = document.getElementById("selected-date");
 
     // flatpickr 인스턴스 생성 및 설정
     // 👇 if문으로 감싸서 해당 요소들이 존재할 때만 flatpickr를 실행
@@ -92,6 +94,9 @@ export function setupTextAndDrawControls() {
             onChange: function (selectedDates, dateStr, instance) {
                 if (selectedDates.length > 0) {
                     selectedExpirationDate = dateStr;
+                    selectedDateContainer.classList.remove("hidden");
+                    selectedDateSpan.innerText = `만료일자: ${selectedExpirationDate}`;
+                    updateClearAndSaveBtnState();
                     console.log("선택된 날짜:", selectedExpirationDate);
                 }
             },
@@ -146,18 +151,22 @@ export function setupTextAndDrawControls() {
 
         // '저장' 버튼은 콘텐츠 유무로 활성화 여부를 결정.
         const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
-        if (hasContent) {
-            saveBtn.classList.remove("inactive");
-            saveBtn.classList.add("active");
-            saveBtn.disabled = false;
-        } else {
+
+        if (!hasContent) {
             saveBtn.classList.add("inactive");
             saveBtn.classList.remove("active");
-            saveBtn.disabled = true;
+            // saveBtn.disabled = true;
+        } else if (!selectedExpirationDate) {
+            saveBtn.classList.add("inactive");
+            saveBtn.classList.remove("active");
+        } else {
+            saveBtn.classList.remove("inactive");
+            saveBtn.classList.add("active");
+            // saveBtn.disabled = false;
         }
 
         // '초기화' 버튼은 사용자가 직접 수정한 경우에만 보이도록 변경.
-        if (isUserModified) {
+        if (isUserModified || selectedExpirationDate) {
             clearBtn.classList.remove("hidden");
         } else {
             clearBtn.classList.add("hidden");
@@ -174,6 +183,8 @@ export function setupTextAndDrawControls() {
         objects.length = 0;
         lastSelectedTextObject = null;
         isUserModified = false;
+        selectedExpirationDate = null;
+        selectedDateContainer.classList.add("hidden");
 
         if (interactionManager.selectedObject) {
             interactionManager.selectedObject = null;
@@ -600,6 +611,7 @@ export function setupTextAndDrawControls() {
      */
     async function saveCanvasAsImage() {
         // 1. 버튼 비활성화 (중복 클릭 방지)
+        saveBtn.classList.add("saving");
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
 
@@ -685,8 +697,19 @@ export function setupTextAndDrawControls() {
     }
 
     saveBtn.addEventListener('click', () => {
-        saveBtn.classList.add("saving");
+
+        const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
+
+        if (!hasContent) {
+            alert('내용을 작성하세요');
+            return;
+        } else if (!selectedExpirationDate) {
+            alert('만료일자를 선택하세요');
+            return;
+        }
+
         saveCanvasAsImage();
+
     });
 
     // --- 초기 실행 ---

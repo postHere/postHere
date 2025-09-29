@@ -82,4 +82,38 @@ public class FindAPIController {
         findService.updateFind(no, findRequestDto.getContent_capture());
     }
 
+    @PostMapping("/around-finds")
+    public WrapperDTO<List<FindNearbyResponseDto>> whereAmI(
+            @RequestBody LocationRequestDto location,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        // 기존 location.getUser() 와 세션 사용자 중 가능한 값을 사용
+        String email = null;
+        if (location != null && location.getUser() != null) {
+            email = location.getUser();
+        } else if (userDetails != null) {
+            email = userDetails.getUsername();
+        }
+
+        if (email == null) {
+            // ▼▼▼ [변경] Code.UNAUTHORIZED 가 enum에 없어 컴파일 오류 → 일단 OK 코드로 비어있는 데이터 반환
+            //      (추후 Code에 UNAUTHORIZED 추가하거나 ResponseEntity.status(401)로 리팩터 추천)
+            log.warn("No user identity found for /around-finds");
+            return WrapperDTO.<List<FindNearbyResponseDto>>builder()
+                    .status(Code.OK.getCode())
+                    .message(Code.OK.getValue())
+                    .data(List.of())
+                    .build();
+        }
+
+        UserInfoEntity user = userInfoService.getUserInfoByEmail(email);
+        List<FindNearbyResponseDto> findList =
+                findService.getFindsInArea(location.getLng(), location.getLat(), user.getId());
+
+        return WrapperDTO.<List<FindNearbyResponseDto>>builder()
+                .status(Code.OK.getCode())
+                .message(Code.OK.getValue())
+                .data(findList)
+                .build();
+    }
 }

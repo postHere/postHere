@@ -5,6 +5,7 @@ import io.github.nokasegu.post_here.find.service.FindService;
 import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,10 @@ public class FindController {
 
     private final FindService findService;
     private final UserInfoService userInfoService;
+
+    //구글 API 키 삽입
+    @Value("${google.maps.api.key:}")
+    private String googleMapsApiKey;
 
     @GetMapping("/find")
     public String find() {
@@ -31,5 +36,11 @@ public class FindController {
         model.addAttribute("find_url", find.getContentOverwriteUrl());
 
         return "find/find-overwrite";
+    }
+
+    @GetMapping("/find/on-map")
+    public String findOnMap(Model model) {
+        model.addAttribute("googleMapsApiKey", googleMapsApiKey);
+        return "/find/find-on-map";
     }
 }

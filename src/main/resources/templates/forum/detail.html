@@ -8,6 +8,7 @@
     <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
     <title th:text="${post.writerNickname} + '의 게시글'">Forum Detail</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/index.css}">
     <style>
         .detail-container { max-width: 600px; margin: 0 auto; padding: 12px; }
         .post-card { background:#fff; border:1px solid #dbdbdb; border-radius:8px; }
@@ -31,6 +32,7 @@
     </style>
 </head>
 <body>
+<div id="app-container">
 <main class="detail-container">
     <article class="post-card">
         <header class="post-header">
@@ -128,5 +130,6 @@
         }
     }
 </script>
+</div>
 </body>
 </html>

@@ -73,7 +73,7 @@ export async function initBackgroundGeolocation() {
 
             // 위치 추적 설정
             desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-            distanceFilter: 30,
+            distanceFilter: 0,
             elasticityMultiplier: 2.0,
 
             // 네이티브 HTTP 설정

@@ -187,12 +187,16 @@ export function setupTextAndDrawControls() {
         selectedExpirationDate = null;
         selectedDateContainer.classList.add("hidden");
 
-        const daySpans = document.getElementsByClassName("dayContainer")[0].children;
-        Array.from(daySpans).forEach(daySpan => {
-            if (daySpan.classList.contains("selected")) {
-                daySpan.classList.remove("selected");
-            }
-        })
+        // 달력 요소가 존재할 때만 내부 코드를 실행하도록 변경
+        const dayContainer = document.getElementsByClassName("dayContainer")[0];
+        if (dayContainer) {
+            const daySpans = dayContainer.children;
+            Array.from(daySpans).forEach(daySpan => {
+                if (daySpan.classList.contains("selected")) {
+                    daySpan.classList.remove("selected");
+                }
+            });
+        }
 
         if (interactionManager.selectedObject) {
             interactionManager.selectedObject = null;
@@ -457,7 +461,10 @@ export function setupTextAndDrawControls() {
     // --- 텍스트 모달 관련 종료 (09.22 월 추가) ---
     // 하기 함수 내 텍스트 모달 관련 변경사항 있음.
     const interactionConfig = {
+
         isInteractionDisabled: () => !textInputOverlay.classList.contains('hidden'),
+
+        isDrawingMode: () => isDrawingModeActive, // 현재 그리기 모드 활성화 상태인지 알려주는 함수
 
         getBackgroundImage: () => backgroundImage,
 
@@ -804,6 +811,12 @@ export function setupImageControls({interactionManager, imageCtx, rect, updateSa
     // 기존 상호작용 설정에 이미지 관련 로직을 '추가'합니다.
     const originalFindSelectableObject = interactionManager.config.findSelectableObject;
     interactionManager.config.findSelectableObject = (coord) => {
+        // 1단계에서 추가한 isDrawingMode() 함수를 호출해 그리기 모드인지 가장 먼저 확인합니다.
+        // 만약 그리기 모드가 맞다면, 다른 어떤 객체도 찾지 않고 즉시 종료합니다.
+        if (interactionManager.config.isDrawingMode()) {
+            return null;
+        }
+
         // 기존 로직(텍스트 객체 찾기)을 먼저 실행합니다.
         const foundObject = originalFindSelectableObject(coord);
         if (foundObject) return foundObject;

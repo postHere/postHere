@@ -2,17 +2,23 @@
 
 :root {
     --footer-height: 120px; /* JS가 실측으로 덮어씀 */
-    --pager-gap: 16px;
 
-    --pager-height: 40px;
-
-    /* [수정] 대칭 대신 좌/우 간격을 분리해 왼쪽만 좁힘 */
-    --dot-size: 8px; /* 빨간 점 지름 */
-    --dot-gap-left: 6px; /* [수정] 화면 왼쪽 ↔ 점 간격(더 좁게) */
-    --dot-gap-right: 12px; /* [수정] 점 ↔ 아바타 왼쪽 간격(기존 느낌 유지) */
+    /* [유지] 카드용 점/패딩 계산 값 */
+    --dot-size: 8px;
+    --dot-gap-left: 6px;
+    --dot-gap-right: 12px;
     --card-hpad: calc(var(--dot-size) + var(--dot-gap-left) + var(--dot-gap-right));
-    /* ↑ 카드 좌패딩 = 점지름 + (좌간격 + 우간격)
-       ⇒ (점→아바타왼쪽) = dot-size + dot-gap-right / (화면왼쪽→점) = dot-gap-left */
+
+    /* ===== 상태바/헤더 레이아웃 변수 ===== */
+    /* [중요 변경] safe-area를 '항상' 비워둔다.
+       - 지원 환경: env(safe-area-inset-top)가 실제 노치/상태바 높이 반환
+       - 미지원/0인 환경(안드/웹뷰 등): 최소 24px을 확보하여 겹침 방지
+       - 필요 시 --safe-top-min 값을 20~28px에서 조정 가능 */
+    --safe-top-min: 24px;
+    --safe-top: env(safe-area-inset-top, var(--safe-top-min));
+
+    --header-height: 52.8px; /* 시각적 헤더 고정 높이 */
+    --top-stack: calc(var(--safe-top) + var(--header-height)); /* safe + header 합 */
 }
 
 /* 페이지 배경을 흰색으로(양옆 띠 제거) */
@@ -29,31 +35,52 @@
     overflow-y: hidden;
 }
 
-/* [수정] index.css의 중앙정렬 상쇄: 이 페이지에서만 상단 정렬/가로 꽉 채움 */
+/* [중요] index.css의 #app-container padding:16px 제거(이 페이지 한정) */
 #page-notifications #app-container {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
+
     height: 100%;
     width: 100%;
     max-width: 400px;
     background: #fff;
+
+    padding: 0 !important; /* ★ 상단 16px 제거 (겹침 원인 차단) */
+    box-sizing: border-box;
 }
 
-/* ===== 상단바 ===== */
-.noti-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 56px;
+/* ===== safe-area 전용 스페이서(항상 공간을 먼저 차지) =====
+   - 실제 DOM 영역을 점유하므로 어떤 환경에서도 컨텐츠가 상태바와 겹치지 않음
+   - sticky로 상단에 달라붙지만 높이만큼 레이아웃 공간을 미리 확보 */
+.safe-top-spacer {
+    height: var(--safe-top);
     background: #fff;
-    border-bottom: 1px solid #e9e9e9;
     position: sticky;
     top: 0;
     z-index: 1000;
+    pointer-events: none;
+}
+
+/* ===== 시각적 헤더(52.8px 고정) ===== */
+.noti-topbar {
+    position: sticky;
+    top: 0; /* safe-top-spacer 바로 아래(스페이서가 이미 공간을 차지함) */
+    z-index: 1001;
     width: 100%;
+    background: #fff;
+    border-bottom: 1px solid #e9e9e9;
+    box-sizing: border-box;
+}
+
+.noti-topbar-inner {
+    height: var(--header-height);
+    display: flex;
+    align-items: center; /* 세로 중앙 */
+    justify-content: center; /* 가로 중앙 */
     padding: 0 16px;
+    position: relative;
 }
 
 .noti-title {
@@ -61,8 +88,12 @@
     font-size: 18px;
     font-weight: 700;
     line-height: 1;
+    text-align: center;
+    width: 100%;
+    pointer-events: none;
 }
 
+/* (옵션) 뒤로가기 버튼 */
 .noti-back-btn {
     position: absolute;
     left: 8px;
@@ -85,10 +116,11 @@
     max-width: 360px;
     margin: 0 auto;
 
-    height: calc(100svh - 56px - var(--footer-height)); /* topbar 56 */
+    /* 상태바+헤더+푸터 제외 높이만큼 스크롤 영역 확보 */
+    height: calc(100svh - var(--top-stack) - var(--footer-height));
     min-height: 0;
 
-    padding: 0; /* [유지] 바깥 패딩 없음 */
+    padding: 0;
     box-sizing: border-box;
     background: #fff;
 
@@ -115,7 +147,7 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    padding: 10px var(--card-hpad); /* [수정] 좌우 패딩은 계산식 적용 */
+    padding: 10px var(--card-hpad);
     border-bottom: 1px solid #eee;
     text-decoration: none;
     color: inherit;
@@ -131,11 +163,11 @@ a.noti-card:active {
     text-decoration: none;
 }
 
-/* [수정] 점 위치: 화면왼쪽→점 간격만 more tight */
+/* 빨간 점 */
 .noti-card::before {
     content: "";
     position: absolute;
-    left: var(--dot-gap-left); /* [수정] 6px (필요 시 4~8px로 미세조정) */
+    left: var(--dot-gap-left);
     top: 24px;
     width: var(--dot-size);
     height: var(--dot-size);
@@ -160,7 +192,7 @@ a.noti-card:active {
     aspect-ratio: 1 / 1;
 }
 
-/* 본문 래퍼 */
+/* 본문 */
 .noti-main {
     display: flex;
     flex-direction: column;
@@ -169,7 +201,6 @@ a.noti-card:active {
     flex: 1 1 auto;
 }
 
-/* 1줄: 닉네임 + 시간 */
 .noti-head {
     display: flex;
     align-items: baseline;
@@ -179,7 +210,7 @@ a.noti-card:active {
 
 .noti-nick {
     font-weight: 700;
-    color: #111; /* 닉네임은 진한색 유지 */
+    color: #111;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -188,20 +219,18 @@ a.noti-card:active {
 .noti-time {
     flex: none;
     font-size: 12px;
-    color: #9ca3af; /* 회색 톤 */
+    color: #9ca3af;
 }
 
-/* 2줄: 메시지 (1줄로 보이되 넘치면 …) */
 .noti-text {
-    color: #9ca3af; /* 회색 톤 */
+    color: #9ca3af;
     line-height: 1.28;
-    font-size: 0.95rem; /* 약 1~2px 줄인 느낌 */
+    font-size: 0.95rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 댓글 미리보기(있을 때만): 검정 유지 */
 .noti-preview {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -212,5 +241,5 @@ a.noti-card:active {
     font-size: 0.94rem;
     line-height: 1.30;
     opacity: 0.95;
-    color: #111; /* 검정 유지 */
+    color: #111;
 }

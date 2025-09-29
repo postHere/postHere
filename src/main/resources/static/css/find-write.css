@@ -98,11 +98,15 @@ body#page-find-overwrite, #page-park-overwrite { /* 기존 선택자는 그대�
 #selected-date-container {
     position: absolute;
     /* bottom: -(height + 15)px */
-    bottom: -40px;
-    right: 0px;
+    left: 0px;
+    top: -30px;
+    /*bottom: -40px;*/
+    /*right: 0px;*/
     height: 25px;
     padding: 3px 5px;
-    background-color: #D9D9D9;
+    color: #8C8C8C;
+    /*background-color: #D9D9D9;*/
+    /*background-color: none;*/
     border-radius: 10px;
     display: flex;
     justify-content: right;

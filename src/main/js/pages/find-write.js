@@ -1,7 +1,6 @@
 import {drawTextObjects} from "./common-find_park.js";
 import {CanvasInteractionManager} from "./canvas-interaction.js";
-// 로컬 테스트용 코드
-// initFindWrite();
+// 로컬 환경 테스트 시 하단 코드 주석 처리 필요
 import {Geolocation} from "@capacitor/geolocation";
 
 /**

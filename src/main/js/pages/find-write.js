@@ -833,3 +833,6 @@ async function getCurrentCoordinates() {
         console.log(error);
     }
 }
+
+// 로컬 테스트용 코드
+// initFindWrite();

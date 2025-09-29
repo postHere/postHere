@@ -41,7 +41,7 @@ public class ParkAPIController {
     @ResponseBody
     public ResponseEntity<String> createPark(
             @PathVariable String nickname,
-            @RequestParam("image") MultipartFile imageFile) {
+            @RequestParam("content_capture") MultipartFile imageFile) {
 
         // 이미지 파일이 비어있는지 확인
         if (imageFile.isEmpty()) {

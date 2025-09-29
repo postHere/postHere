@@ -1,0 +1,304 @@
+/* 기본 피드 페이지 스타일 */
+body {
+    background-color: #fafafa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.feed-container {
+    padding: 10px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.post-card {
+    background-color: white;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+/* 카드 헤더 */
+.post-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+}
+
+.post-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.post-author .profile-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.post-author-info .name {
+    font-weight: 600;
+}
+
+.post-author-info .time {
+    color: #8e8e8e;
+    font-size: 12px;
+}
+
+.post-options-container {
+    position: relative;
+}
+
+.post-options-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+/* 카드 본문 및 이미지 캐러셀 */
+.post-content {
+    padding: 0 16px 12px;
+}
+
+.post-image-carousel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.carousel-images-container {
+    display: flex;
+    transition: transform 0.3s ease-in-out;
+}
+
+.post-image {
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.carousel-prev-btn, .carousel-next-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.post-image-carousel:hover .carousel-prev-btn, .post-image-carousel:hover .carousel-next-btn {
+    opacity: 1;
+}
+
+.carousel-prev-btn {
+    left: 10px;
+}
+
+.carousel-next-btn {
+    right: 10px;
+}
+
+.prev-icon::before {
+    content: '<';
+}
+
+.next-icon::before {
+    content: '>';
+}
+
+.carousel-indicators {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+}
+
+.indicator {
+    width: 6px;
+    height: 6px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+}
+
+.indicator.active {
+    background-color: white;
+}
+
+/* 카드 푸터 (좋아요/댓글) */
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    font-size: 0.9em;
+    color: #8e8e8e;
+}
+
+.like-button, .comment-trigger {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+}
+
+/* 기본 하트 아이콘 스타일 (테두리만 있는 상태) */
+.like-icon {
+    font-size: 22px; /* 하트 크기를 살짝 키우면 더 잘 보입니다 */
+    color: transparent; /* 글자의 내부 색을 투명하게 만듭니다 */
+    -webkit-text-stroke: 1.5px #262626; /* 1.5px 두께의 검은색 테두리를 추가합니다 */
+    text-stroke: 1.5px #262626;
+}
+
+/* 좋아요를 눌렀을 때의 스타일 (.liked 클래스가 추가됐을 때) */
+.like-button.liked .like-icon {
+    color: red; /* 글자의 내부 색을 빨간색으로 채웁니다 */
+    -webkit-text-stroke-width: 0; /* 테두리 두께를 0으로 만들어 없애줍니다 */
+    text-stroke-width: 0;
+}
+
+.liker-photos {
+    display: flex;
+    padding: 0 15px 15px;
+}
+
+.liker-photos img {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 1px solid #fff;
+    margin-left: -5px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+}
+
+.liker-photos img:first-child {
+    margin-left: 0;
+}
+
+/* 더보기 메뉴 및 모달 스타일 */
+.options-menu {
+    position: absolute;
+    top: 50px;
+    right: 15px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    z-index: 10;
+    list-style: none;
+    padding: 5px 0;
+    margin: 0;
+}
+
+.options-menu li button {
+    display: block;
+    width: 100%;
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.options-menu li button:hover {
+    background: #f9f9f9;
+}
+
+.options-menu li button.delete {
+    color: red;
+}
+
+.options-menu.show {
+    display: block;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dbdbdb;
+}
+
+.modal-header h2 {
+    margin: 0;
+}
+
+.close-btn {
+    font-size: 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.comment-list {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.comment-list .comment {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.comment-list img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.comment-text .nickname {
+    font-weight: 600;
+}
+
+.modal-overlay.show {
+    display: flex;
+}

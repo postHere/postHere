@@ -1,25 +1,31 @@
 package io.github.nokasegu.post_here.find.service;
 
+import io.github.nokasegu.post_here.common.util.S3UploaderService;
 import io.github.nokasegu.post_here.find.domain.FindEntity;
-import io.github.nokasegu.post_here.find.dto.FindNearbyDto;
-import io.github.nokasegu.post_here.find.dto.FindNearbyReadableOnlyDto;
-import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
-import io.github.nokasegu.post_here.find.dto.FindPostSummaryDto;
+import io.github.nokasegu.post_here.find.dto.*;
 import io.github.nokasegu.post_here.find.repository.FindRepository;
 import io.github.nokasegu.post_here.notification.service.FcmSenderService;
 import io.github.nokasegu.post_here.notification.service.NotificationService;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +42,8 @@ public class FindService {
     private final FcmSenderService fcmSenderService;
     private final UserInfoService userInfoService;
     private final NotificationService notificationService;
+    private final S3UploaderService s3UploaderService;
+    private final GeometryFactory geometryFactory;
 
 
     private final Map<Long, Map<Long, Instant>> userNotificationTimestamps = new ConcurrentHashMap<>();
@@ -156,5 +164,59 @@ public class FindService {
         userNotificationTimestamps
                 .computeIfAbsent(userId, k -> new ConcurrentHashMap<>())
                 .put(findId, Instant.now());
+    }
+
+    public void saveFind(FindRequestDto findRequestDto, String email) throws IOException {
+
+        UserInfoEntity user = userInfoService.getUserInfoByEmail(email);
+
+        String dirName = "/find/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
+        String originUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName);
+        String overwriteUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName);
+
+        Point point = geometryFactory.createPoint(new Coordinate(findRequestDto.getLng(), findRequestDto.getLat()));
+
+        findRepository.save(
+                FindEntity.builder()
+                        .writer(user)
+                        .coordinates(point)
+                        .contentCaptureUrl(originUrl)
+                        .contentOverwriteUrl(overwriteUrl)
+                        .expirationDate(makeTime(findRequestDto.getExpiration_date()))
+                        .build()
+        );
+    }
+
+    private LocalDateTime makeTime(String expiredDate) {
+
+        LocalDate datePart = LocalDate.parse(expiredDate);
+        LocalTime timePart = LocalTime.of(23, 59, 59);
+        return datePart.atTime(timePart);
+    }
+
+    public void deleteFind(Long findId) {
+        findRepository.deleteById(findId);
+    }
+
+    public FindEntity getFindById(Long findId) {
+        return findRepository.findById(findId).orElseThrow(
+                () -> new EntityNotFoundException("Find NOT FOUND")
+        );
+    }
+
+    @Transactional
+    public void updateFind(Long findId, MultipartFile image) throws IOException {
+
+        FindEntity find = getFindById(findId);
+
+        String dirName = getDirname(find.getContentOverwriteUrl());
+        s3UploaderService.delete(find.getContentOverwriteUrl());
+
+        String newUrl = s3UploaderService.upload(image, dirName);
+        find.setContentOverwriteUrl(newUrl);
+    }
+
+    private String getDirname(String url) {
+        return url.substring(0, url.lastIndexOf("/"));
     }
 }

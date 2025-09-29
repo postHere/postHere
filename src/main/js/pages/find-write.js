@@ -151,12 +151,13 @@ export function setupTextAndDrawControls() {
 
         // '저장' 버튼은 콘텐츠 유무로 활성화 여부를 결정.
         const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
+        const isFindWritePage = document.body.id === 'page-find-write';
 
         if (!hasContent) {
             saveBtn.classList.add("inactive");
             saveBtn.classList.remove("active");
             // saveBtn.disabled = true;
-        } else if (!selectedExpirationDate) {
+        } else if (isFindWritePage && !selectedExpirationDate) {
             saveBtn.classList.add("inactive");
             saveBtn.classList.remove("active");
         } else {

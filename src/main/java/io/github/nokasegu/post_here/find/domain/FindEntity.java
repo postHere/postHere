@@ -12,13 +12,15 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "find")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 public class FindEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "find_pk")
     private Long id;
 
@@ -37,16 +39,8 @@ public class FindEntity {
     private String contentCaptureUrl;
 
 
-    @Column(name = "music_api_url", length = 500)
-    private String musicApiUrl;
-
-
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
-
-
-    @Column(name = "readonly")
-    private Boolean readOnly;
 
 
     @Column(name = "content_overwrite_url", length = 500)

@@ -1,5 +1,8 @@
 import {drawTextObjects} from "./common-find_park.js";
 import {CanvasInteractionManager} from "./canvas-interaction.js";
+// 로컬 테스트용 코드
+// initFindWrite();
+import {Geolocation} from "@capacitor/geolocation";
 
 /**
  * 이미지 기능을 제외한 캔버스의 핵심 기능(그리기, 텍스트 추가/수정)을 초기화합니다.
@@ -626,6 +629,10 @@ export function setupTextAndDrawControls() {
             if (selectedExpirationDate && document.body.id === 'page-find-write') {
                 formData.append('expiration_date', selectedExpirationDate);
             }
+            let coords = await getCurrentCoordinates();
+            formData.append('lat', coords.latitude);
+            formData.append('lng', coords.longitude);
+            console.log("formData : ", [...formData.entries()]);
 
             let submitUrl = '';
             const body = document.body;
@@ -659,8 +666,8 @@ export function setupTextAndDrawControls() {
                     throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
                 }
 
-                const result = await response.json();
-                console.log('서버 응답:', result);
+                // const result = await response.json();
+                // console.log('서버 응답:', result);
 
                 window.location.href = '/map';
 
@@ -812,5 +819,17 @@ export function initFindWrite() {
     setupImageControls(dependencies);
 }
 
-// 로컬 테스트용 코드
-// initFindWrite();
+async function getCurrentCoordinates() {
+
+    try {
+        const coordinates = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true, // 더 정확한 위치를 요청합니다 (GPS 사용).
+            timeout: 10000,           // 위치 정보를 기다리는 최대 시간 (10초).
+            maximumAge: 0             // 캐시된 위치 정보를 사용하지 않고 항상 새로 가져옵니다.
+        });
+        console.log("write - 위도 경도 : ", coordinates.coords.latitude, coordinates.coords.longitude);
+        return coordinates.coords;
+    } catch (error) {
+        console.log(error);
+    }
+}

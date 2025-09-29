@@ -716,13 +716,13 @@ export function setupTextAndDrawControls() {
     saveBtn.addEventListener('click', () => {
 
         const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
-        const isParkWritePage = document.body.id === 'page-park-write';
+        const isFindWritePage = document.body.id === 'page-find-write';
 
 
         if (!hasContent) {
             alert('내용을 작성하세요');
             return;
-        } else if (!selectedExpirationDate && !isParkWritePage) {
+        } else if (isFindWritePage && !selectedExpirationDate) {
             alert('만료일자를 선택하세요');
             return;
         }

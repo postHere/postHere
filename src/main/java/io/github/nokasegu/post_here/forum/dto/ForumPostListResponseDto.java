@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
@@ -56,35 +54,5 @@ public class ForumPostListResponseDto {
         this.isLiked = isLiked;
         this.recentLikerPhotos = recentLikerPhotos;
         this.author = author;
-
-        // writer null 안전 처리
-        if (forumEntity.getWriter() != null) {
-            this.writerNickname = forumEntity.getWriter().getNickname();
-            this.writerId = forumEntity.getWriter().getId();
-            this.writerProfilePhotoUrl = forumEntity.getWriter().getProfilePhotoUrl();
-        } else {
-            this.writerNickname = "알 수 없는 사용자";
-            this.writerId = -1L;
-            this.writerProfilePhotoUrl = "/images/default-profile.png";
-        }
-
-        // location null 안전 처리 (현행 로직 유지: 주소 전체 사용)
-        if (forumEntity.getLocation() != null) {
-            this.location = forumEntity.getLocation().getAddress();
-        } else {
-            this.location = "위치 정보 없음";
-        }
-
-        // 🔧 핵심 수정: 이미지 URL에서 null/빈 문자열 제거 → 텍스트만 있는 글이면 빈 리스트가 되어 캐러셀 미표시
-        List<String> urls = (forumEntity.getImages() == null) ? Collections.emptyList()
-                : forumEntity.getImages().stream()
-                .map(ForumImageEntity::getImgUrl)
-                .filter(Objects::nonNull)                 // 진짜 null 제거
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())                // 빈 문자열 제거
-                .filter(s -> !"null".equalsIgnoreCase(s)) // 문자열 "null" 제거 ★
-                .collect(Collectors.toList());
-
-        this.imageUrls = urls.isEmpty() ? Collections.emptyList() : urls;
     }
 }

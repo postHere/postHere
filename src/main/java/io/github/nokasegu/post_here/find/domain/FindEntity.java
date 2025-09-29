@@ -2,7 +2,10 @@ package io.github.nokasegu.post_here.find.domain;
 
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -18,7 +21,8 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class FindEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "find_pk")
     private Long id;
 
@@ -37,16 +41,8 @@ public class FindEntity {
     private String contentCaptureUrl;
 
 
-    @Column(name = "music_api_url", length = 500)
-    private String musicApiUrl;
-
-
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
-
-
-    @Column(name = "readonly")
-    private Boolean readOnly;
 
 
     @Column(name = "content_overwrite_url", length = 500)

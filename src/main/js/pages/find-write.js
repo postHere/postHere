@@ -183,8 +183,16 @@ export function setupTextAndDrawControls() {
         objects.length = 0;
         lastSelectedTextObject = null;
         isUserModified = false;
+
         selectedExpirationDate = null;
         selectedDateContainer.classList.add("hidden");
+
+        const daySpans = document.getElementsByClassName("dayContainer")[0].children;
+        Array.from(daySpans).forEach(daySpan => {
+            if (daySpan.classList.contains("selected")) {
+                daySpan.classList.remove("selected");
+            }
+        })
 
         if (interactionManager.selectedObject) {
             interactionManager.selectedObject = null;

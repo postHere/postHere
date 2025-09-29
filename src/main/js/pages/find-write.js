@@ -185,7 +185,9 @@ export function setupTextAndDrawControls() {
         isUserModified = false;
 
         selectedExpirationDate = null;
-        selectedDateContainer.classList.add("hidden");
+        if (selectedDateContainer) {
+            selectedDateContainer.classList.add("hidden");
+        }
 
         // 달력 요소가 존재할 때만 내부 코드를 실행하도록 변경
         const dayContainer = document.getElementsByClassName("dayContainer")[0];

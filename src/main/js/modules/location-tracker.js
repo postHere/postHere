@@ -66,7 +66,7 @@ export async function initBackgroundGeolocation() {
     try {
 
         const {value: user} = await Preferences.get({key: 'user'});
-        console.log('location : ', user);
+        console.log('user : ', user);
 
         // 3. ready() 메소드로 플러그인의 모든 설정을 한 번에 구성합니다.
         const state = await BackgroundGeolocation.ready({

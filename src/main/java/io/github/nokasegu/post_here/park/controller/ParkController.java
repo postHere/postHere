@@ -21,11 +21,7 @@ public class ParkController {
     private final UserInfoRepository userInfoRepository;
 
     @GetMapping("/park")
-    public String parkWrite(Model model,
-                            @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return "redirect:/login";
-        }
+    public String parkWrite(@AuthenticationPrincipal UserDetails userDetails, Model model) {
 
         // 4. getUsername()으로 이메일 가져오기
         String userEmail = userDetails.getUsername();
@@ -39,17 +35,13 @@ public class ParkController {
 
         // 7. 모델에 최종 닉네임 담기
         model.addAttribute("nickname", nickname);
+        
         // 기존 Park 데이터 조회를 시도
-        try {
-            // ParkService를 통해 기존 Park 정보(URL)를 가져옴
-            ParkResponseDto parkDto = parkService.findParkByOwnerNickname(nickname);
-            // 모델에 기존 이미지 URL 추가
-            model.addAttribute("existingImageUrl", parkDto.getContentCaptureUrl());
-        } catch (IllegalArgumentException e) {
-            // 기존 Park가 없는 경우 (처음 작성하는 경우)
-            // 모델에 빈 값을 추가
-            model.addAttribute("existingImageUrl", "");
-        }
+        // ParkService를 통해 기존 Park 정보(URL)를 가져옴
+        ParkResponseDto parkDto = parkService.findParkByOwnerNickname(nickname);
+
+        // 모델에 기존 이미지 URL 추가
+        model.addAttribute("park_url", parkDto.getContentCaptureUrl());
 
         return "/park/park-write";
     }

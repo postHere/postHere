@@ -185,7 +185,9 @@ export function setupTextAndDrawControls() {
         isUserModified = false;
 
         selectedExpirationDate = null;
-        selectedDateContainer.classList.add("hidden");
+        if (selectedDateContainer) {
+            selectedDateContainer.classList.add("hidden");
+        }
 
         // 달력 요소가 존재할 때만 내부 코드를 실행하도록 변경
         const dayContainer = document.getElementsByClassName("dayContainer")[0];
@@ -202,8 +204,8 @@ export function setupTextAndDrawControls() {
             interactionManager.selectedObject = null;
         }
 
-        const isOverwritePage = document.body.id === 'page-find-overwrite';
-        if (!isOverwritePage) {
+        const isFindOverwritePage = document.body.id === 'page-find-write';
+        if (isFindOverwritePage) {
             imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
             backgroundImage = null;
         }
@@ -714,11 +716,13 @@ export function setupTextAndDrawControls() {
     saveBtn.addEventListener('click', () => {
 
         const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
+        const isParkWritePage = document.body.id === 'page-park-write';
+
 
         if (!hasContent) {
             alert('내용을 작성하세요');
             return;
-        } else if (!selectedExpirationDate) {
+        } else if (!selectedExpirationDate && !isParkWritePage) {
             alert('만료일자를 선택하세요');
             return;
         }

@@ -503,3 +503,61 @@ a {
     padding-top: 40px;
     padding-bottom: 40px;
 }
+
+/* --- 로그아웃 섹션 스타일 --- */
+.logout-section {
+    /* 섹션 전체에 여백을 주어 다른 콘텐츠와 구분합니다. */
+    padding: 24px 16px;
+    border-top: 1px solid #e9ecef; /* 상단에 얇은 구분선 추가 */
+}
+
+.logout-button {
+    /* 버튼 너비를 부모 요소에 꽉 채웁니다. */
+    width: 100%;
+    /* 버튼 내부에 여백을 줍니다. (상하 12px, 좌우 16px) */
+    padding: 12px 16px;
+
+    /* 배경색과 테두리 설정 */
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px; /* 모서리를 둥글게 만듭니다. */
+
+    /* Flexbox를 사용하여 아이콘과 텍스트를 정렬합니다. */
+    display: flex;
+    align-items: center; /* 세로 중앙 정렬 */
+
+    /* 텍스트 스타일 */
+    font-size: 16px;
+    font-weight: 500;
+    color: #495057;
+    text-align: left; /* 텍스트를 왼쪽 정렬합니다. */
+
+    cursor: pointer; /* 마우스를 올렸을 때 손가락 모양으로 변경 */
+
+    /* 클릭 시 기본 테두리가 생기지 않도록 설정 */
+    outline: none;
+
+    /* 부드러운 전환 효과 */
+    transition: background-color 0.2s;
+}
+
+/* 마우스를 올렸을 때 버튼 색상을 살짝 어둡게 변경 */
+.logout-button:hover {
+    background-color: #e9ecef;
+}
+
+/* 아이콘 추가 (가상 요소 ::before 사용) */
+.logout-button::before {
+    /* 아이콘으로 사용할 SVG 이미지를 삽입합니다. */
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 12px; /* 아이콘과 텍스트 사이의 간격 */
+
+    /* SVG 아이콘 (파일에서 나가는 모양) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'%3E%3C/path%3E%3Cpolyline points='16 17 21 12 16 7'%3E%3C/polyline%3E%3Cline x1='21' y1='12' x2='9' y2='12'%3E%3C/line%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}

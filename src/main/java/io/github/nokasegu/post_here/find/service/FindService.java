@@ -22,15 +22,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 
 @Slf4j
 @Service
@@ -44,7 +44,6 @@ public class FindService {
     private final NotificationService notificationService;
     private final S3UploaderService s3UploaderService;
     private final GeometryFactory geometryFactory;
-
 
     private final Map<Long, Map<Long, Instant>> userNotificationTimestamps = new ConcurrentHashMap<>();
 
@@ -115,9 +114,7 @@ public class FindService {
         return findsPage.map(find -> FindPostSummaryDto.builder()
                 .id(find.getId())
                 .imageUrl(find.getContentCaptureUrl())
-                // TODO: 현재 좌표만 저장되어 있으므로, 위치 이름은 일단 "Unknown"으로 처리합니다.
-                //       좌표->주소 변환 서비스(Reverse Geocoding)가 있다면 여기서 호출합니다.
-                .location("Unknown")
+                .location("Unknown") // TODO: 좌표->주소 변환 로직 필요
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
                 .build());
     }
@@ -135,9 +132,7 @@ public class FindService {
         return findsPage.map(find -> FindPostSummaryDto.builder()
                 .id(find.getId())
                 .imageUrl(find.getContentCaptureUrl())
-                // TODO: 현재 좌표만 저장되어 있으므로, 위치 이름은 일단 "Unknown"으로 처리합니다.
-                //       좌표->주소 변환 서비스(Reverse Geocoding)가 있다면 여기서 호출합니다.
-                .location("Unknown")
+                .location("Unknown") // TODO: 좌표->주소 변환 로직 필요
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
                 .build());
     }
@@ -218,5 +213,62 @@ public class FindService {
 
     private String getDirname(String url) {
         return url.substring(0, url.lastIndexOf("/"));
+    }
+
+    @Transactional(readOnly = true)
+    public FindViewerDto getFindsForViewer(Long startFindId, Long currentUserId) {
+        FindEntity startFind = findRepository.findById(startFindId)
+                .orElseThrow(() -> new EntityNotFoundException("Fin'd 게시물을 찾을 수 없습니다."));
+        UserInfoEntity writer = startFind.getWriter();
+
+        List<FindEntity> allFindsByWriter = findRepository.findAllByWriterWithDetails(writer);
+
+        List<FindDetailDto> detailDtos = allFindsByWriter.stream()
+                .map(findEntity -> {
+                    boolean isAuthor = currentUserId != null && findEntity.getWriter().getId().equals(currentUserId);
+
+                    LocalDateTime expirationTime = findEntity.getExpirationDate() != null ? findEntity.getExpirationDate() : findEntity.getCreatedAt().plusHours(24);
+                    Duration duration = Duration.between(LocalDateTime.now(), expirationTime);
+                    String remainingTimeStr;
+
+                    if (duration.isNegative()) {
+                        remainingTimeStr = "만료됨";
+                    } else {
+                        long hours = duration.toHours();
+                        long minutes = duration.toMinutesPart();
+                        remainingTimeStr = String.format("%02d:%02d 남음", hours, minutes);
+                    }
+
+                    return FindDetailDto.builder()
+                            .findId(findEntity.getId())
+                            .writerNickname(findEntity.getWriter().getNickname())
+                            .writerProfilePhotoUrl(findEntity.getWriter().getProfilePhotoUrl())
+                            .contentCaptureUrl(findEntity.getContentCaptureUrl())
+                            .locationName("서울시 강남구") // TODO: 좌표->주소 변환
+                            .isAuthor(isAuthor)
+                            .createdAt(findEntity.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")))
+                            .remainingTime(remainingTimeStr)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        int startIndex = IntStream.range(0, detailDtos.size())
+                .filter(i -> detailDtos.get(i).getFindId().equals(startFindId))
+                .findFirst()
+                .orElse(0);
+
+        return new FindViewerDto(detailDtos, startIndex);
+    }
+
+    @Transactional
+    public void deleteFind(Long findId, Long currentUserId) {
+        FindEntity findEntity = findRepository.findById(findId)
+                .orElseThrow(() -> new EntityNotFoundException("Fin'd 게시물을 찾을 수 없습니다."));
+
+        if (currentUserId == null || !findEntity.getWriter().getId().equals(currentUserId)) {
+            throw new IllegalStateException("삭제 권한이 없습니다.");
+        }
+
+        findRepository.delete(findEntity);
     }
 }

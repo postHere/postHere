@@ -32,7 +32,7 @@ public interface FindRepository extends JpaRepository<FindEntity, Long> {
                     JOIN user_info u ON f.writer_id = u.user_info_pk
                     JOIN following fw ON f.writer_id = fw.followed_id
                     WHERE
-                        fw.follower_id = :userId
+                        fw.follower_id = :userId AND f.expiration_date >= NOW()
                     HAVING
                         distanceInMeters <= 200
                     ORDER BY
@@ -53,7 +53,7 @@ public interface FindRepository extends JpaRepository<FindEntity, Long> {
                     JOIN user_info u ON f.writer_id = u.user_info_pk
                     JOIN following fw ON f.writer_id = fw.followed_id
                     WHERE
-                    	fw.follower_id = :userId
+                    	fw.follower_id = :userId AND f.expiration_date >= NOW()
                     HAVING
                     	distanceInMeters <= 50
                     ORDER BY distanceInMeters ASC;

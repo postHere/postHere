@@ -116,6 +116,8 @@ public class FindService {
                 .imageUrl(find.getContentCaptureUrl())
                 .location("Unknown") // TODO: 좌표->주소 변환 로직 필요
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
+                .createdAt(find.getCreatedAt())
+                .expiresAt(find.getExpirationDate())
                 .build());
     }
 
@@ -134,6 +136,8 @@ public class FindService {
                 .imageUrl(find.getContentCaptureUrl())
                 .location("Unknown") // TODO: 좌표->주소 변환 로직 필요
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
+                .createdAt(find.getCreatedAt())
+                .expiresAt(find.getExpirationDate())
                 .build());
     }
 

@@ -10,6 +10,14 @@ import {Geolocation} from "@capacitor/geolocation";
  */
 export function setupTextAndDrawControls() {
 
+    // 현재 페이지 식별
+    const isFindWritePage = document.body.id === 'page-find-write';
+    const isParkWritePage = document.body.id === 'page-park-write';
+    let nickname = null;
+    if (isParkWritePage) {
+        nickname = document.body.getAttribute('data-nickname');
+    }
+
     // 캔버스 설정
     const imageCanvas = document.getElementById("image-canvas");
     const paintCanvas = document.getElementById("paint-canvas");
@@ -156,7 +164,7 @@ export function setupTextAndDrawControls() {
             saveBtn.classList.add("inactive");
             saveBtn.classList.remove("active");
             // saveBtn.disabled = true;
-        } else if (!selectedExpirationDate) {
+        } else if (isFindWritePage && !selectedExpirationDate) {
             saveBtn.classList.add("inactive");
             saveBtn.classList.remove("active");
         } else {
@@ -630,7 +638,7 @@ export function setupTextAndDrawControls() {
         // 1. 버튼 비활성화 (중복 클릭 방지)
         saveBtn.classList.add("saving");
         saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
+        saveBtn.textContent = '공유하는 중...';
 
         // 2. 임시 캔버스 생성 및 병합
         setTimeout(() => {
@@ -673,7 +681,6 @@ export function setupTextAndDrawControls() {
                     const findNo = body.dataset.findNo;
                     submitUrl = `/find/${findNo}`;
                 } else if (body.id === 'page-park-write') {
-                    const nickname = body.dataset.nickname;
                     submitUrl = `/profile/park/${nickname}`;
                 }
 
@@ -700,7 +707,11 @@ export function setupTextAndDrawControls() {
 
                     saveBtn.classList.remove("saving");
 
-                    window.location.href = '/map';
+                    if (isFindWritePage) {
+                        window.location.href = '/map';
+                    } else if (isParkWritePage) {
+                        window.location.href = `/profile/${nickname}`;
+                    }
 
                 } catch (error) {
                     console.error('전송 중 오류 발생:', error);
@@ -716,13 +727,11 @@ export function setupTextAndDrawControls() {
     saveBtn.addEventListener('click', () => {
 
         const hasContent = backgroundImage !== null || objects.length > 0 || hasDrawing;
-        const isParkWritePage = document.body.id === 'page-park-write';
-
 
         if (!hasContent) {
             alert('내용을 작성하세요');
             return;
-        } else if (!selectedExpirationDate && !isParkWritePage) {
+        } else if (isFindWritePage && !selectedExpirationDate) {
             alert('만료일자를 선택하세요');
             return;
         }

@@ -28,7 +28,7 @@ public class FindController {
         return "/find/find-write";
     }
 
-    @GetMapping("/find/{no}/edit")
+    @GetMapping("/find/{no}")
     public String findUpdate(@PathVariable Long no, Model model) {
 
         FindEntity find = findService.getFindById(no);

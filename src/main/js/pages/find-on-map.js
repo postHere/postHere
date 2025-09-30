@@ -167,6 +167,7 @@ export function initFindOnMap() {
 
             // 모달 보이기
             modalOverlay.style.display = 'flex';
+            console.log('FIND IS CLICKED END');
         });
     }
 

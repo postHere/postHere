@@ -25,32 +25,19 @@
     <!-- [유지] 상단 주소 칩(동 · 도로명) -->
     <div aria-live="polite" id="address-chip">주소를 불러오는 중…</div>
 
-    <!-- [변경 설명] 기존 전면 모달 오버레이는 더 이상 사용하지 않습니다(InfoWindow로 대체).
-         - 남겨두되, JS에서 열지 않습니다(향후 회귀 대비). -->
-    <div aria-hidden="true" class="modal-overlay" id="marker-modal">
+    <div class="modal-overlay" id="marker-modal">
         <div class="modal-content">
             <img alt="Profile" id="modal-profile-image" src="">
             <span id="modal-nickname"></span>
             <button id="modal-find-button">Fin'd로 이동</button>
-            <button aria-label="닫기" id="modal-close-button">&times;</button>
+            <button id="modal-close-button">&times;</button>
         </div>
     </div>
 
-    <!-- ▼▼▼ [유지] 구글 콜백 안전장치: 전역 initFindOnMap이 호출되면 번들의 __initFindOnMap 실행 -->
-    <script>
-        window.initFindOnMap = function () {
-            if (typeof window.__initFindOnMap === 'function') {
-                window.__initFindOnMap();
-            }
-        };
-    </script>
 
-    <!-- ▼▼▼ [중요: Google Maps는 콜백으로만 시작] -->
-    <!-- [변경 없음] v=weekly + loading=async 그대로 유지. libraries는 불필요해 제외 -->
     <script async
             th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&callback=initFindOnMap&loading=async&v=weekly'}"></script>
 
-    <!-- ▼▼▼ [유지] 하단 내비 -->
     <div th:replace="~{fragment/main-nav :: mainNavFragment(active='message')}"></div>
 </div>
 </body>

@@ -1,203 +1,113 @@
-/* 전체 페이지 레이아웃을 모바일 앱 비율로 고정 (기존 index.css 규칙과 공존) */
+/* 화면 스크롤을 방지하고 전체 영역을 사용하도록 설정 */
 html, body {
-    height: 100svh;
+    height: 100%;
     width: 100%;
-    min-height: 100svh;
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: stretch;
-    background-color: #f0f2f5;
-    overflow-y: auto;
-    font-family: Pretendard, sans-serif;
-    -webkit-tap-highlight-color: transparent;
+    overflow: hidden; /* 스크롤바가 생기지 않도록 함 */
+    font-family: sans-serif;
 }
 
-/* 앱 화면 컨테이너 */
-#app-container {
-    height: 100%;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    background-color: #fff;
-    padding: 0; /* [변경] 지도는 꽉 채움 */
-    position: relative;
-    overflow: hidden; /* [변경] 지도와 오버레이가 컨테이너를 넘치지 않도록 */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-}
-
-/* 지도 영역은 컨테이너를 가득 채움 */
+/* 지도가 body를 가득 채우도록 설정 */
 #map {
-    flex: 1 1 auto;
-    width: 100%;
     height: 100%;
+    width: 100%;
 }
 
-/* index.css의 페이지별 보정(원본 유지) */
-#page-main #app-container {
-    align-items: stretch;
-}
-
-#page-main-nav #app-container {
-    padding: 16px;
-}
-
-/* 이 페이지엔 영향 없음 */
-#page-login #app-container, #page-signup #app-container {
-    justify-content: center;
-}
-
-/* 상단 주소 칩 */
-#address-chip {
+/* --- 모달 및 커스텀 마커 스타일은 이전과 동일 --- */
+.custom-marker {
     position: absolute;
-    top: env(safe-area-inset-top, 12px);
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: calc(100% - 24px);
-    background: rgba(255, 255, 255, 0.96);
-    color: #2f3c2f;
-    border-radius: 999px;
-    padding: 8px 14px;
-    margin: 12px;
-    font-size: 14px;
-    line-height: 18px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    pointer-events: none;
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease-in-out;
 }
 
-/* ───────────────────────── 기존 전면 모달(미사용) ───────────────────────── */
+.custom-marker:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    z-index: 10;
+}
+
+.custom-marker img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    object-fit: cover;
+}
+
+.custom-marker .nickname {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    margin: 0 8px 0 6px;
+}
+
 .modal-overlay {
     display: none;
-}
-
-/* ───────────────────────── DOM 오버레이 (원/마커) ───────────────────────── */
-/* [유지] OverlayView가 넣는 루트 컨테이너 */
-#dom-center-overlay {
-    position: absolute;
-    pointer-events: none; /* 지도 제스처 방해하지 않도록 */
-    z-index: 2; /* 지도 위, 마커 아래(InfoWindow는 마커 위) */
-    will-change: transform, width, height;
-}
-
-/* [유지] 공통: 원/마커는 컨테이너(중심) 기준으로 중앙 정렬 */
-#dom-center-overlay .o-item {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-}
-
-/* 50m 원 – 흐릿한 가장자리, “시각적으로 1개” 느낌(기존 유지) */
-.o-ring-50 {
-    border-radius: 50%;
-    background: radial-gradient(ellipse at center,
-    rgba(61, 121, 78, 0.35) 0%,
-    rgba(61, 121, 78, 0.22) 45%,
-    rgba(61, 121, 78, 0.10) 70%,
-    rgba(61, 121, 78, 0.00) 100%);
-}
-
-/* [변경] 200m 원 – 50m와 구분되도록 약간 더 진하게(센터/중간 투명도 상향) */
-.o-ring-200 {
-    border-radius: 50%;
-    background: radial-gradient(ellipse at center,
-    rgba(61, 121, 78, 0.26) 0%,
-    rgba(61, 121, 78, 0.13) 55%,
-    rgba(61, 121, 78, 0.00) 100%);
-}
-
-/* 유저 마커: 초록 바탕 + 매우 얇은 흰 테두리 */
-.o-user-dot {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: #2f5b3d; /* 진한 그린 */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-    border: 3px solid #ffffff;
-}
-
-/* [삭제됨] 진행방향 화살표 관련 스타일(o-heading) — 요구사항에 따라 완전 제거 */
-
-/* ───────────────────────── InfoWindow(툴팁형 카드 → 직사각형 카드로 변경) ───────────────────────── */
-/* [변경] Figma 스펙: 말풍선 꼬리 제거, 굵은 그린 보더, 내부 그리드(아바타/닉네임/진행버튼) */
-.info-card {
-    display: grid;
-    grid-template-columns: 44px 1fr auto; /* 아바타 / 닉네임 / 버튼 */
-    gap: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
     align-items: center;
-    background: #fff;
-    padding: 12px 14px;
-    border-radius: 14px;
-    border: 3px solid #3d794e; /* 굵은 초록 테두리 */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.20);
-    min-width: 230px;
+    z-index: 1000;
 }
 
-.info-card .avatar {
-    width: 44px;
-    height: 44px;
+.modal-content {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    gap: 12px;
+    position: relative;
+}
+
+.modal-content img {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
 }
 
-.info-card .nickname {
-    font-weight: 700;
-    color: #2f3c2f;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.modal-content span {
+    font-weight: bold;
+    color: #333;
 }
 
-/* [추가] 둥근 ">>" 버튼을 감싸는 링(50/200m 그라데이션 느낌) */
-.info-card .go-wrap {
-    width: 52px;
-    height: 52px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(ellipse at center,
-    rgba(61, 121, 78, 0.22) 0%,
-    rgba(61, 121, 78, 0.10) 55%,
-    rgba(61, 121, 78, 0.00) 100%);
-}
-
-/* 실제 이동 버튼 */
-.info-card .go-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.modal-content button {
+    padding: 8px 12px;
     border: none;
-    background: #3d794e;
-    color: #fff;
-    font-size: 18px;
+    border-radius: 5px;
+    background-color: #4285F4;
+    color: white;
+    font-weight: bold;
     cursor: pointer;
 }
 
-.info-card .go-btn[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
-    filter: grayscale(0.2);
+#modal-close-button {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #333;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    line-height: 24px;
+    text-align: center;
 }
 
-/* [추가] 선택 마커 오른쪽-위 빨간점 (OverlayView에서 쓰는 DOM) */
-.dot-badge {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border-radius: 999px;
-    background: #e74c3c;
-    box-shadow: 0 0 0 2px #fff; /* 흰 테두리 */
-    pointer-events: none; /* 클릭 방해 X */
-    z-index: 30;
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

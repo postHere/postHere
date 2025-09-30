@@ -13,7 +13,7 @@ async function setInitialBackgroundImage({imageCtx, rect, updateSaveBtnState, sc
         updateSaveBtnState();
     } catch (error) {
         console.error("배경 이미지 로딩 실패:", error);
-        alert(`이미지 로딩 실패 원인: ${error.message}`);
+        alert(`박명록을 작성해보세요`);
         // alert("이미지를 불러오는 데 실패했습니다.");
     }
 }

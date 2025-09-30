@@ -2,10 +2,13 @@ package io.github.nokasegu.post_here.userInfo.service;
 
 import io.github.nokasegu.post_here.common.util.S3UploaderService;
 import io.github.nokasegu.post_here.follow.service.FollowingService;
+import io.github.nokasegu.post_here.park.domain.ParkEntity;
+import io.github.nokasegu.post_here.park.repository.ParkRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.dto.UserInfoDto;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,12 +25,15 @@ import java.util.List;
 public class UserInfoService {
 
     private final UserInfoRepository userInfoRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final S3UploaderService s3UploaderService;
-
     private final FollowingService followingService;
+    private final ParkRepository parkRepository;
+
+
+    @Value("${custom.aws.s3.default-park}")
+    private String DEFAULT_PARK;
+
 
     /**
      * 회원가입 로직
@@ -57,6 +63,13 @@ public class UserInfoService {
                 .build();
 
         userInfoRepository.save(user);
+
+        ParkEntity park = ParkEntity.builder()
+                .owner(user)
+                .contentCaptureUrl(DEFAULT_PARK)
+                .build();
+
+        parkRepository.save(park);
     }
 
     /**

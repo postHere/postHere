@@ -267,7 +267,12 @@ public class ForumService {
 
     @Transactional(readOnly = true)
     public List<ForumPostListResponseDto> getAllForumPostsForFeed(Long currentUserId) {
-        List<ForumEntity> forumEntities = forumRepository.findAllByOrderByCreatedAtDesc();
+
+        UserInfoEntity user = userInfoRepository.findById(currentUserId)
+                .orElseThrow(() -> new EntityNotFoundException("USER NOT FOUND"));
+
+        List<ForumEntity> forumEntities = forumRepository.findAllByOrderByCreatedAtDesc(user);
+        
         return forumEntities.stream()
                 .map(forumEntity -> convertToPostListDto(forumEntity, currentUserId))
                 .collect(Collectors.toList());

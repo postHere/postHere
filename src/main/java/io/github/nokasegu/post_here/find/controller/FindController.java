@@ -3,8 +3,8 @@ package io.github.nokasegu.post_here.find.controller;
 import io.github.nokasegu.post_here.common.dto.WrapperDTO;
 import io.github.nokasegu.post_here.common.exception.Code;
 import io.github.nokasegu.post_here.common.security.CustomUserDetails;
+import io.github.nokasegu.post_here.find.dto.FindDetailViewDto;
 import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
-import io.github.nokasegu.post_here.find.dto.FindViewerDto;
 import io.github.nokasegu.post_here.find.service.FindService;
 import io.github.nokasegu.post_here.location.dto.LocationRequestDto;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
@@ -47,14 +47,20 @@ public class FindController {
                 .build();
     }
 
-    // FindController.java
-    @GetMapping("/find/original/{startFindId}")
-    public String getFindOriginalPage(@PathVariable Long startFindId,
-                                      @AuthenticationPrincipal CustomUserDetails userDetails,
-                                      Model model) {
-        Long currentUserId = userDetails.getUserInfo().getId();
-        FindViewerDto viewerData = findService.getFindsForViewer(startFindId, currentUserId);
-        model.addAttribute("viewerData", viewerData);
+    @GetMapping("/find/feed/{startFindId}")
+    public String getFindFeedPage(@PathVariable Long startFindId,
+                                  @AuthenticationPrincipal CustomUserDetails userDetails,
+                                  Model model) {
+        // 1. 현재 로그인한 사용자의 ID를 확인합니다. (비로그인 시 null)
+        Long currentUserId = (userDetails != null) ? userDetails.getUserInfo().getId() : null;
+
+        // 2. 서비스 로직을 호출하여 피드에 필요한 모든 데이터를 가져옵니다.
+        List<FindDetailViewDto> posts = findService.getFindFeed(startFindId, currentUserId);
+
+        // 3. 서비스로부터 받은 데이터를 "posts"라는 이름으로 HTML에게 전달합니다.
+        model.addAttribute("posts", posts);
+
+        // 4. "resources/templates/find/feed.html" 파일을 찾아 화면에 보여줍니다.
         return "find/find-viewer";
     }
 }

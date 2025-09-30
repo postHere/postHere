@@ -143,7 +143,7 @@ export function initProfile() {
                     link = `/forum/feed#post-${post.id}`;
                 } else {
                     // ✅ 네가 새로 추가한 매핑에 맞춤: /find/original/{id}
-                    link = `/find/original/${post.id}`;
+                    link = `/find/feed/${post.id}`;
                 }
 
 

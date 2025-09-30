@@ -22,6 +22,12 @@
 
 
 <div class="mobile-container">
+    <!-- ▼▼▼ [추가됨] 새 헤더 HTML ▼▼▼ -->
+    <header class="feed-header">
+        <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+        <h1 class="title">Forum</h1>
+    </header>
+    <!-- ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ -->
     <main class="main-content">
         <div class="feed-container">
             <div class="post-card" th:attr="data-post-id=${post.id}" th:each="post : ${posts}"
@@ -244,6 +250,17 @@
             if (!optionsMenu.contains(e.target) && !e.target.closest('.post-options-button')) optionsMenu.classList.remove('show');
         });
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // ▼▼▼ [추가됨] 새 헤더의 뒤로가기 버튼 기능 ▼▼▼
+        const backBtn = document.querySelector('.feed-header .back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                history.back(); // 브라우저의 '뒤로가기' 기능 실행
+            });
+        }
+    });
+
 </script>
 </body>
 </html>

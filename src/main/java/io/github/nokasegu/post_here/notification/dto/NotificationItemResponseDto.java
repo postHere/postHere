@@ -65,7 +65,7 @@ public class NotificationItemResponseDto {
         String text = switch (code) {
             case FOLLOW -> "회원님을 팔로우하기 시작했습니다";
             case COMMENT -> "회원님의 Forum에 댓글을 남겼습니다";
-            case FIND_FOUND -> "습득물이 발견되었습니다.";
+            case FIND_FOUND -> n.getMessageForFind();
             default -> "알림";
         };
 

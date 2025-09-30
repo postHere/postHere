@@ -708,7 +708,7 @@ export function setupTextAndDrawControls() {
                     saveBtn.classList.remove("saving");
 
                     if (isFindWritePage) {
-                        window.location.href = '/map';
+                        window.location.href = '/find/on-map';
                     } else if (isParkWritePage) {
                         window.location.href = `/profile/${nickname}`;
                     }

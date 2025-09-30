@@ -13,22 +13,21 @@ import java.util.stream.Collectors;
 @Setter
 public class ForumPostListResponseDto {
 
-    private Long id;
-    private String location;
-    private String contentsText;
-    private String writerNickname;
-    private Long writerId;
-    private List<String> imageUrls;
-    private String writerProfilePhotoUrl;
-    private int totalComments;
-    private boolean author;
-
-    private LocalDateTime createdAt;
+    private final Long id;
+    private final String location;
+    private final String contentsText;
+    private final String writerNickname;
+    private final Long writerId;
+    private final List<String> imageUrls;
+    private final String writerProfilePhotoUrl;
+    private final int totalComments;
+    private final boolean author;
+    private final LocalDateTime createdAt;
 
     // 좋아요 관련 필드
-    private int totalLikes;
-    private boolean isLiked;
-    private List<String> recentLikerPhotos;
+    private final int totalLikes;
+    private final boolean isLiked;
+    private final List<String> recentLikerPhotos;
 
     public ForumPostListResponseDto(
             ForumEntity forumEntity,

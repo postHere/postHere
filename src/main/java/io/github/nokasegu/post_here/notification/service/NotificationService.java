@@ -275,9 +275,7 @@ public class NotificationService {
                 Long commentId = n.getComment().getId();
 
                 if (forumId != null) {
-                    String link = "/forum/" + forumId +
-                            (commentId != null ? ("?open=comments&commentId=" + commentId + "#comment-" + commentId)
-                                    : "?open=comments");
+                    String link = "/forum/" + forumId;
                     dto.setLink(link);
                 }
 
@@ -289,8 +287,7 @@ public class NotificationService {
                     dto.setCommentPreview(prev);
                 }
             } else if (n.getNotificationCode() == NotificationCode.FIND_FOUND) {
-                // FIND_FOUND는 서버 정책상 별도의 링크가 있을 수 있음(있다면 세팅)
-                // dto.setLink("/find/on-map"); // 필요 시
+                dto.setLink("/find/on-map");
             }
 
             items.add(dto);

@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>내 위치 주변 Fin'd 찾기</title>
+
+    <!-- [추가] CSRF 메타 (POST /around-finds 호출을 위한 헤더 구성에 사용) -->
+    <meta name="_csrf" th:attr="content=${_csrf?.token}">
+    <meta name="_csrf_header" th:attr="content=${_csrf?.headerName}">
+
+    <!-- 기존 로딩 순서 유지 -->
     <link rel="stylesheet" th:href="@{/css/find-on-map.css}">
     <script defer th:src="@{/js/bundle.js}"></script>
     <link rel="stylesheet" th:href="@{/css/index.css}">
@@ -13,22 +19,26 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body id="page-on-map">
-<div id="map"></div>
+<div id="app-container">
+    <div id="map"></div>
 
-<div class="modal-overlay" id="marker-modal">
-    <div class="modal-content">
-        <img alt="Profile" id="modal-profile-image" src="">
-        <span id="modal-nickname"></span>
-        <button id="modal-find-button">Fin'd로 이동</button>
-        <button id="modal-close-button">&times;</button>
+    <!-- [유지] 상단 주소 칩(동 · 도로명) -->
+    <div aria-live="polite" id="address-chip">주소를 불러오는 중…</div>
+
+    <div class="modal-overlay" id="marker-modal">
+        <div class="modal-content">
+            <img alt="Profile" id="modal-profile-image" src="">
+            <span id="modal-nickname"></span>
+            <button id="modal-find-button">Fin'd로 이동</button>
+            <button id="modal-close-button">&times;</button>
+        </div>
     </div>
+
+
+    <script async
+            th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&callback=initFindOnMap&loading=async&v=weekly'}"></script>
+
+    <div th:replace="~{fragment/main-nav :: mainNavFragment(active='message')}"></div>
 </div>
-
-
-<script async
-        th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&callback=initMap&libraries=&v=weekly'}"></script>
-
-<div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
-
 </body>
 </html>

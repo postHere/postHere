@@ -1,6 +1,7 @@
 package io.github.nokasegu.post_here.forum.service;
 
 import io.github.nokasegu.post_here.forum.domain.ForumAreaEntity;
+import io.github.nokasegu.post_here.forum.domain.ForumCommentEntity;
 import io.github.nokasegu.post_here.forum.domain.ForumEntity;
 import io.github.nokasegu.post_here.forum.dto.*;
 import io.github.nokasegu.post_here.forum.repository.ForumAreaRepository;
@@ -10,7 +11,9 @@ import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -34,14 +38,10 @@ public class ForumService {
     private final ForumLikeRepository forumLikeRepository;
 
     public ForumCreateResponseDto createForum(ForumCreateRequestDto requestDto) throws IOException {
-
         UserInfoEntity writer = userInfoRepository.findByEmail(requestDto.getUserEmail())
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다."));
-
         ForumAreaEntity area = forumAreaRepository.findById(requestDto.getLocation())
                 .orElseThrow(() -> new EntityNotFoundException("유효하지 않은 지역입니다."));
-
-        // 1. ForumEntity를 먼저 저장하여 forum_pk를 발급받습니다.
         ForumEntity forum = ForumEntity.builder()
                 .writer(writer)
                 .location(area)
@@ -56,7 +56,6 @@ public class ForumService {
                 forumImageService.saveImage(imageUrl, savedForum);
             }
         }
-
         return new ForumCreateResponseDto(savedForum.getId());
     }
 
@@ -69,15 +68,11 @@ public class ForumService {
      */
     public void updateForum(Long forumId, ForumUpdateRequestDto requestDto, Long userId) {
         ForumEntity forum = getForumEntityAndCheckPermission(forumId, userId);
-
         forum.setContentsText(requestDto.getContent());
         forum.setUpdatedAt(LocalDateTime.now());
-
-        // deletedImageIds 목록을 기반으로 삭제 로직을 ForumImageService에 위임
         if (requestDto.getDeletedImageIds() != null && !requestDto.getDeletedImageIds().isEmpty()) {
             forumImageService.deleteImagesByIds(requestDto.getDeletedImageIds(), userId);
         }
-
         forumRepository.save(forum);
     }
 
@@ -89,9 +84,7 @@ public class ForumService {
      */
     public void deleteForum(Long forumId, Long userId) {
         ForumEntity forum = getForumEntityAndCheckPermission(forumId, userId);
-
         forumImageService.deleteImages(forum);
-
         forumRepository.delete(forum);
     }
 
@@ -105,7 +98,6 @@ public class ForumService {
      */
     public ForumDetailResponseDto getForumDetail(Long forumId, Long currentUserId) {
         ForumEntity forum = getForumEntityAndCheckPermission(forumId, currentUserId);
-
         return new ForumDetailResponseDto(forum, true);
     }
 
@@ -119,8 +111,7 @@ public class ForumService {
     private ForumEntity getForumEntityAndCheckPermission(Long forumId, Long userId) {
         ForumEntity forum = forumRepository.findById(forumId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 게시글입니다."));
-
-        if (!forum.getWriter().getId().equals(userId)) {
+        if (userId != null && forum.getWriter() != null && !forum.getWriter().getId().equals(userId)) {
             throw new IllegalArgumentException("해당 게시글에 대한 수정/삭제 권한이 없습니다.");
         }
         return forum;
@@ -135,6 +126,36 @@ public class ForumService {
     public ForumAreaEntity getAreaByAddress(String address) {
         return forumAreaRepository.findByAddress(address)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역 정보입니다."));
+    }
+
+    /**
+     * 사용자가 선택한 지역을 세션에 저장하고, 해당 지역의 ID를 반환하는 메서드
+     *
+     * @param requestDto 클라이언트로부터 받은 지역 정보 DTO
+     * @param session    현재 HTTP 세션
+     * @return 세션에 저장된 지역의 PK (ID)
+     */
+    public Long setForumArea(ForumAreaRequestDto requestDto, HttpSession session) {
+
+        String newLocationAddress = requestDto.getLocation();
+        ForumAreaEntity area = forumAreaRepository.findByAddress(newLocationAddress)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역 정보입니다."));
+        // 세션에 지역 주소(address)를 저장
+        session.setAttribute("selectedForumAreaAddress", area.getAddress());
+        // 지역의 PK를 반환하여 컨트롤러가 리다이렉트 URL을 구성
+        return area.getId();
+    }
+
+    /**
+     * 주소 문자열을 사용하여 지역의 PK (ID)를 조회합니다.
+     *
+     * @param address 조회할 지역의 주소 문자열
+     * @return 해당 지역의 PK (ID)
+     */
+    public Long getAreaKeyByAddress(String address) {
+        ForumAreaEntity area = forumAreaRepository.findByAddress(address)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역 정보입니다."));
+        return area.getId();
     }
 
     /**
@@ -215,39 +236,83 @@ public class ForumService {
     public Page<ForumPostSummaryDto> getMyForums(String userEmail, Pageable pageable) {
         UserInfoEntity user = userInfoRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        Page<ForumEntity> forumsPage = forumRepository.findByWriterOrderByIdDesc(user, pageable);
-
+        Page<ForumEntity> forumsPage = forumRepository.findByWriterForProfile(user, pageable);
         return forumsPage.map(forum -> {
-            String imageUrl = forum.getImages().isEmpty()
-                    ? "https://placehold.co/400x400/E2E8F0/4A5568?text=No+Image" // 이미지가 없을 경우 기본 이미지
-                    : forum.getImages().get(0).getImgUrl(); // 첫 번째 이미지를 대표 이미지로 사용
-
+            String imageUrl = forum.getImages().isEmpty() ? null : forum.getImages().get(0).getImgUrl();
             return ForumPostSummaryDto.builder()
                     .id(forum.getId())
                     .imageUrl(imageUrl)
-                    .location(forum.getLocation().getAddress())
+                    .location(forum.getLocation() != null ? forum.getLocation().getAddress() : "위치 정보 없음")
+                    .contentsText(forum.getContentsText())
                     .build();
         });
     }
+
 
     @Transactional(readOnly = true)
     public Page<ForumPostSummaryDto> getForumsByNickname(String nickname, Pageable pageable) {
         UserInfoEntity user = userInfoRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        Page<ForumEntity> forumsPage = forumRepository.findByWriterOrderByIdDesc(user, pageable);
-
+        Page<ForumEntity> forumsPage = forumRepository.findByWriterForProfile(user, pageable);
         return forumsPage.map(forum -> {
-            String imageUrl = forum.getImages().isEmpty()
-                    ? "https://placehold.co/400x400/E2E8F0/4A5568?text=No+Image" // 이미지가 없을 경우 기본 이미지
-                    : forum.getImages().get(0).getImgUrl(); // 첫 번째 이미지를 대표 이미지로 사용
-
+            String imageUrl = forum.getImages().isEmpty() ? null : forum.getImages().get(0).getImgUrl();
             return ForumPostSummaryDto.builder()
                     .id(forum.getId())
                     .imageUrl(imageUrl)
-                    .location(forum.getLocation().getAddress())
+                    .location(forum.getLocation() != null ? forum.getLocation().getAddress() : "위치 정보 없음")
+                    .contentsText(forum.getContentsText())
                     .build();
         });
+    }
+
+    @Transactional(readOnly = true)
+    public List<ForumPostListResponseDto> getAllForumPostsForFeed(Long currentUserId) {
+        List<ForumEntity> forumEntities = forumRepository.findAllByOrderByCreatedAtDesc();
+        return forumEntities.stream()
+                .map(forumEntity -> convertToPostListDto(forumEntity, currentUserId))
+                .collect(Collectors.toList());
+    }
+
+    public ForumPostListResponseDto convertToPostListDto(ForumEntity forumEntity, Long currentUserId) {
+        int totalComments = forumCommentRepository.countByForumId(forumEntity.getId());
+        int totalLikes = forumLikeRepository.countByForumId(forumEntity.getId());
+        List<String> recentLikerPhotos = forumLikeRepository.findTop3ByForumIdOrderByCreatedAtDesc(forumEntity.getId())
+                .stream()
+                .map(like -> like.getLiker() != null ? like.getLiker().getProfilePhotoUrl() : null)
+                .collect(Collectors.toList());
+        boolean isLiked = false;
+        boolean isAuthor = false;
+        if (currentUserId != null && forumEntity.getWriter() != null) {
+            isLiked = forumLikeRepository.findByForumIdAndLikerId(forumEntity.getId(), currentUserId).isPresent();
+            isAuthor = forumEntity.getWriter().getId().equals(currentUserId);
+        }
+        return new ForumPostListResponseDto(
+                forumEntity,
+                totalComments,
+                forumEntity.getCreatedAt(),
+                totalLikes,
+                isLiked,
+                recentLikerPhotos,
+                isAuthor
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ForumDetailViewDto getForumPostDetail(Long forumId, Long currentUserId) {
+        ForumEntity forum = forumRepository.findByIdWithDetails(forumId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 게시물을 찾을 수 없습니다. id=" + forumId));
+
+        int totalLikes = forumLikeRepository.countByForumId(forumId);
+        boolean isLiked = false;
+        if (currentUserId != null) {
+            isLiked = forumLikeRepository.findByForumIdAndLikerId(forumId, currentUserId).isPresent();
+        }
+
+        List<ForumCommentEntity> comments = forumCommentRepository.findAllByForumIdOrderByCreatedAtAsc(forumId);
+        List<ForumCommentDto> commentDtos = comments.stream()
+                .map(comment -> new ForumCommentDto(comment, currentUserId))
+                .collect(Collectors.toList());
+
+        return new ForumDetailViewDto(forum, totalLikes, isLiked, commentDtos, currentUserId);
     }
 }

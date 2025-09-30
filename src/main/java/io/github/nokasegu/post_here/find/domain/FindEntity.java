@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "find")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

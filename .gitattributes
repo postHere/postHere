@@ -2,3 +2,4 @@
 *.bat text eol=crlf
 *.jar binary
 * text=auto
+*.gradle text eol=crlf

@@ -125,7 +125,7 @@ export function initProfile() {
 
         carousel.innerHTML = '';
         if (totalPosts === 0 && !tabState.isLoading) {
-            carousel.innerHTML = `<div style="text-align:center;width:100%;color:grey;">게시물이 없습니다.</div>`;
+            carousel.innerHTML = `<div class="empty-posts-message">게시물이 없습니다.</div>`;
             return;
         }
 

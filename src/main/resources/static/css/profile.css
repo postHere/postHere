@@ -56,8 +56,8 @@ a {
     padding-bottom: 3rem;
     position: relative;
     z-index: 1;
-    flex-basis: 135px;
-    flex-grow: 135;
+    flex-basis: 130px;
+    flex-grow: 130;
     flex-shrink: 0;
 }
 
@@ -80,6 +80,7 @@ a {
     align-items: center;
     gap: 1rem;
     margin-left: 29px;
+    margin-bottom: 50px;
 }
 
 .profile-info__pic-label {
@@ -99,7 +100,7 @@ a {
 }
 
 .profile-info__name {
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.3rem;
     font-size: 1.25rem;
     font-weight: 600;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
@@ -107,14 +108,15 @@ a {
 
 .profile-stats {
     display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
+    gap: 0.9rem;
+    font-size: 1.1rem;
     opacity: 0.9;
 }
 
 .profile-action-btn {
     border-radius: 50%;
     margin-right: 30px;
+    margin-bottom: 50px;
     width: 37px;
     height: 37px;
     display: flex;
@@ -140,7 +142,7 @@ a {
 /* --- Park 명록 영역 --- */
 .guestbook-wrapper {
     padding: 0;
-    margin-top: -7rem;
+    margin-top: -8rem;
     margin-bottom: 20px;
     position: relative;
     z-index: 2;
@@ -210,6 +212,19 @@ a {
 .content-tabs__button.active {
     color: white;
     background: var(--tab-active-bg);
+}
+
+/* --- Fin'd / Forum 탭 아이콘 수정 --- */
+.content-tabs__button::after {
+    content: "\f101";
+
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 0.8rem;
+
+    margin-left: 0.5rem;
+
+    line-height: 1;
 }
 
 .content-carousel-wrapper {

@@ -711,6 +711,8 @@ export function setupTextAndDrawControls() {
                         window.location.href = '/find/on-map';
                     } else if (isParkWritePage) {
                         window.location.href = `/profile/${nickname}`;
+                    } else {
+                        window.location.href = '/find/on-map';
                     }
 
                 } catch (error) {

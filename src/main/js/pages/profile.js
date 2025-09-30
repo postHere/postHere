@@ -58,6 +58,43 @@ export function initProfile() {
     };
     const SNIPPET_STYLE = 'padding:8px 10px;font-size:14px;line-height:1.45;color:#111;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;';
 
+    // 새로운 유틸리티 함수 시작
+    function formatTimeAgo(isoString) {
+        if (!isoString) return '';
+        const now = new Date();
+        const past = new Date(isoString);
+        const diffInSeconds = Math.floor((now - past) / 1000);
+
+        if (diffInSeconds < 60) return `${diffInSeconds}초 전`;
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+
+        // 날짜만 표시 (예: 10/01)
+        const year = past.getFullYear();
+        const month = String(past.getMonth() + 1).padStart(2, '0');
+        const day = String(past.getDate()).padStart(2, '0');
+
+        return `${year}년 ${month}월 ${day}일`;
+    }
+
+    function getRemainingTime(expiresAt) {
+        if (!expiresAt) return null;
+        const now = new Date().getTime();
+        const expiry = new Date(expiresAt).getTime();
+        const diffInSeconds = Math.floor((expiry - now) / 1000);
+
+        if (diffInSeconds <= 0) return {expired: true, text: '만료됨'};
+
+        const hours = Math.floor(diffInSeconds / 3600);
+        const minutes = Math.floor((diffInSeconds % 3600) / 60);
+
+        if (hours > 0) return {expired: false, text: `${hours}시간 남음`};
+        if (minutes > 0) return {expired: false, text: `${minutes}분 남음`};
+
+        // 1분 미만 남았을 경우
+        return {expired: false, text: `<1분 남음`};
+    }
+
     // --- 2. 데이터 로딩 (API 호출) ---
     async function loadPosts(tab, page) {
         const tabState = state[tab];
@@ -146,6 +183,7 @@ export function initProfile() {
                     link = `/find/original/${post.id}`;
                 }
 
+                console.log("Post ID:", post.id, "CreatedAt:", post.createdAt, "ExpiresAt:", post.expiresAt);
 
                 // 나머지 렌더링 로직은 그대로
                 const statusIcon = (currentTab === 'find' && post.isExpiring)
@@ -179,12 +217,41 @@ export function initProfile() {
                         </a>`;
                 } else {
                     // 기존 Fin'd 렌더 (이미지 전제)
+
+                    // Fin'd 탭: 작성 시간 및 유효 기간 표시 로직
+                    let timeInfoHTML = '';
+                    if (post.createdAt) {
+                        const postedTime = formatTimeAgo(post.createdAt);
+                        const remaining = getRemainingTime(post.expiresAt);
+
+                        let expiryDisplay = '';
+                        // 만료되지 않았을 때만 빨간색으로 남은 시간 표시
+                        if (remaining && !remaining.expired) {
+                            expiryDisplay = `<span class="expiry-time-remaining">${remaining.text}</span>`;
+                        }
+
+                        // post-item__time-info는 이미지 바깥에 위치해야 하므로,
+                        // post-item__location이 이미지 안에 위치하도록 HTML 구조를 다시 잡습니다.
+                        timeInfoHTML = `
+                            <div class="post-item-time-info-wrapper"> 
+                                <div class="post-item__time-info">
+                                    <span class="post-item__posted-time">${postedTime}</span>
+                                    ${expiryDisplay}
+                                </div>
+                            </div>
+                        `;
+                    }
+
                     pageHTML += `
-                        <a href="${link}" class="post-item">
-                            <img class="post-item__image" src="${esc(post.imageUrl)}" alt="Post image" loading="lazy">
-                            ${statusIcon}
-                            <p class="post-item__location">📍 ${esc(post.location || '')}</p>
-                        </a>`;
+                        <div class="post-item-container"> <div class="post-item-block"> 
+                                <a href="${link}" class="post-item">
+                                    <img class="post-item__image" src="${esc(post.imageUrl)}" alt="Post image" loading="lazy">
+                                    ${statusIcon}
+                                    <p class="post-item__location">📍 ${esc(post.location || '')}</p> 
+                                </a>
+                            </div>
+                            ${timeInfoHTML} 
+                        </div>`;
                 }
             });
 
@@ -233,6 +300,9 @@ export function initProfile() {
         if (tabForum) tabForum.classList.toggle('active', tab === 'forum');
 
         currentPageIndex = 0;
+
+        // 🌟🌟🌟 수정: 탭 전환 시 캐러셀 내용을 즉시 비웁니다. 🌟🌟🌟
+        if (carousel) carousel.innerHTML = '';
 
         if (state[tab].content.length === 0) {
             loadPosts(tab, 0);

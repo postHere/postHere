@@ -57,6 +57,7 @@ export function initLogin() {
 
                 const locationHeader = jqXHR.getResponseHeader('Location');
                 const username = data?.data?.username;
+                console.log("username : ", username);
 
                 await Preferences.set({
                     key: 'user',

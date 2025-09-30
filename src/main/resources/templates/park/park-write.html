@@ -22,7 +22,7 @@
 <!--<body id="page-park-write"-->
 <!--      data-park-url="http://127.0.0.1:8080/park/'25%20%EB%A7%90%EC%94%80%EC%B9%B4%EB%93%9C%20%ED%8C%8C%EB%9E%91.png">-->
 <!-- 실제 서비스용 -->
-<body id="page-park-write" th:data-nickname="${nickname}" th:data-park-url="${existingImageUrl}">
+<body id="page-park-write" th:data-nickname="${nickname}">
     <div id="header-container">
         <button id="back-btn" class="svg-container">
             <svg width="35" height="35" viewBox="0 0 35 35" xmlns="http://www.w3.org/2000/svg">
@@ -42,7 +42,7 @@
             </svg>
         </button>
         <button id="tool-draw" class="svg-container">
-            <svg id="tool-draw-unselected" class="hidden" width="35" height="35" viewBox="0 0 35 35" fill="none"
+            <svg id="tool-draw-unselected" width="35" height="35" viewBox="0 0 35 35" fill="none"
                  xmlns="http://www.w3.org/2000/svg">
                 <circle cx="17.5" cy="17.5" r="17.5" fill="#F5F5F5"/>
                 <g clip-path="url(#clip0_2939_4321)">
@@ -93,7 +93,7 @@
 
     </div>
     <div id="footer-container">
-        <button id="btn-save">share</button>
+        <button id="btn-save">공유</button>
     </div>
     <div id="text-input-overlay" class="hidden">
         <form id="text-input-form">

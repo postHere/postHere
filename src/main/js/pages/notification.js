@@ -21,6 +21,19 @@ export function initNotification() {
             const h = nav ? Math.ceil(nav.getBoundingClientRect().height) : 0;
             const px = (h && Number.isFinite(h)) ? `${h}px` : null;
             if (px) document.documentElement.style.setProperty('--footer-height', px);
+            // [참고] 하단 안전영역(env(safe-area-inset-bottom))은 CSS에서 calc에 포함하여 처리합니다.
+        } catch { /* ignore */
+        }
+    }
+
+    // [추가] 헤더 실제 높이를 측정해 CSS 변수로 반영(얇은 헤더/세로 중앙정렬 유지용)
+    function syncHeaderHeightVar() {
+        try {
+            // .noti-topbar 자체에 safe-area 상단 패딩이 포함되어 있으므로, 헤더의 '보이는 전체 높이'를 사용
+            const header = document.querySelector('.noti-topbar');
+            const h = header ? Math.ceil(header.getBoundingClientRect().height) : 56;
+            const px = (h && Number.isFinite(h)) ? `${h}px` : '56px';
+            document.documentElement.style.setProperty('--header-height', px);
         } catch { /* ignore */
         }
     }
@@ -29,6 +42,14 @@ export function initNotification() {
     setTimeout(syncFooterHeightVar, 300);
     window.addEventListener('resize', syncFooterHeightVar);
     window.addEventListener('orientationchange', syncFooterHeightVar);
+
+    // [추가] 헤더 높이도 초기/지연/반응형 시점에 동기화
+    syncHeaderHeightVar();
+    setTimeout(syncHeaderHeightVar, 300);
+    // [추가] 폰트 로딩/레이아웃 확정 이후 한 번 더 실측(타이틀 줄높이 반영)
+    window.addEventListener('load', syncHeaderHeightVar);
+    window.addEventListener('resize', syncHeaderHeightVar);
+    window.addEventListener('orientationchange', syncHeaderHeightVar);
 
     const API_BASE = '/api/notifications';
 

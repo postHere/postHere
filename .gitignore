@@ -52,3 +52,6 @@ node_modules/
 
 # firebase 관련
 src/main/resources/firebase-service-account.json
+
+# 줄 바꿈 방식 관련 (CRLF 등)
+/.editorconfig

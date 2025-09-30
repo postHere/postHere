@@ -4,14 +4,11 @@
 import {setAndDrawBackgroundImage, setupTextAndDrawControls} from "./find-write.js";
 
 async function setInitialBackgroundImage({imageCtx, rect, updateSaveBtnState, scale}) {
-    // const parkUrl = document.body.getAttribute('data-park-url');
-    const nickname = document.body.getAttribute('data-nickname');
-    if (!nickname) return;
+    const parkUrl = document.body.getAttribute('data-park-url');
 
     try {
         // 👇 loadImageFromS3가 Image 객체를 반환
-        const img = await loadImageFromS3(`/profile/park/${nickname}`);
-        alert(`await loadImageFromS3(/profile/park/${nickname} 결과: ${img}`);
+        const img = await loadImageFromS3(parkUrl);
         setAndDrawBackgroundImage(img, imageCtx, rect, scale);
         updateSaveBtnState();
     } catch (error) {
@@ -21,32 +18,8 @@ async function setInitialBackgroundImage({imageCtx, rect, updateSaveBtnState, sc
     }
 }
 
-async function loadImageFromS3(apiUrl) {
-    // 1. API 서버에 JSON 데이터 요청
-    console.log(`API 요청: ${apiUrl}`);
-    // const apiResponse = await fetch(apiUrl);
-    const apiResponse = await fetch(apiUrl, {
-        mode: 'cors'
-    });
-
-    if (!apiResponse.ok) {
-        throw new Error(`API 응답 실패: ${apiResponse.status} ${apiResponse.statusText}`);
-    }
-
-    // 2. JSON 응답을 객체로 변환하고 이미지 URL 추출
-    const data = await apiResponse.json();
-    const imageUrl = data.contentCaptureUrl;
-    // alert(imageUrl);
-
-    if (!imageUrl) {
-        throw new Error("JSON 응답에서 이미지 URL(contentCaptureUrl)을 찾을 수 없습니다.");
-    }
-
-    // 3. 추출한 URL로 실제 이미지 데이터 요청
-    alert(`실제 이미지 로딩: ${imageUrl}`);
+async function loadImageFromS3(imageUrl) {
     const imageResponse = await fetch(imageUrl);
-    alert(`await fetch(imageUrl) 결과: ${imageResponse}`);
-
     if (!imageResponse.ok) {
         throw new Error(`실제 이미지 로드 실패: ${imageResponse.status} ${imageResponse.statusText}`);
     }

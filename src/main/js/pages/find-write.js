@@ -669,7 +669,7 @@ export function setupTextAndDrawControls() {
                 // const result = await response.json();
                 // console.log('서버 응답:', result);
 
-                window.location.href = '/map';
+                window.location.href = '/find/on-map';
 
             } catch (error) {
                 console.error('전송 중 오류 발생:', error);

@@ -64,7 +64,7 @@ public class FindAPIController {
     }
 
     @PostMapping("/find/{no}")
-    public void update(@PathVariable Long no, @RequestBody FindRequestDto findRequestDto) throws IOException {
+    public void update(@PathVariable Long no, @ModelAttribute FindRequestDto findRequestDto) throws IOException {
 
         findService.updateFind(no, findRequestDto.getContent_capture());
     }

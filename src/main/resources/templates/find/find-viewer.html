@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Fin'd Viewer</title>
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport"/>
+
+    <!-- CSRF (삭제 요청 시 필요) -->
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+
+    <!-- 기존 번들/스타일은 그대로 유지 -->
+    <script defer th:src="@{/js/bundle.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
+
+    <!-- ⬇️ 스택형 뷰어 전용 CSS 추가 -->
+    <link rel="stylesheet" th:href="@{/css/find-viewer.css}">
+</head>
+<body id="page-find-viewer">
+
+<!-- JS가 렌더링할 스택 컨테이너 -->
+<div class="page-container">
+    <div class="stack" id="findStack"></div>
+</div>
+
+
+<div class="page-container">
+    <div class="swipe-wrapper">
+        <!-- ✅ 이 ID가 find-viewer.js에서 찾는 대상 -->
+        <div class="swipe-container" id="swipe-container"
+             th:attr="data-start-index=${viewerData.startIndex}">
+            <div class="card" th:attr="data-find-id=${post.findId}"
+                 th:each="post : ${viewerData.posts}">
+                <div class="header">
+                    <div class="writer-info">
+                        <img alt="Profile" th:src="${post.writerProfilePhotoUrl}">
+                        <span class="nickname" th:text="${post.writerNickname}"></span>
+                    </div>
+                    <button class="delete-btn" th:if="${post.isAuthor}">🗑️</button>
+                </div>
+                <div class="image-container">
+                    <img alt="Fin'd Image" th:src="${post.contentCaptureUrl}">
+                </div>
+                <div class="footer">
+                    <span th:text="${post.locationName}"></span>
+                    <div>
+                        <span th:text="${post.createdAt}"></span> |
+                        <span th:text="${post.remainingTime}"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ⬇️ 스택형/스와이프/삭제 로직 JS 추가 (module) -->
+
+</body>
+</html>

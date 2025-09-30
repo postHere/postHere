@@ -28,5 +28,4 @@ public class ForumDetailResponseDto {
                 .collect(Collectors.toList());
         this.isAuthor = isAuthor;
     }
-
 }

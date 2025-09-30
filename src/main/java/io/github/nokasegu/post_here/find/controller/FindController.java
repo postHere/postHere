@@ -1,10 +1,13 @@
 package io.github.nokasegu.post_here.find.controller;
 
+import io.github.nokasegu.post_here.common.security.CustomUserDetails;
 import io.github.nokasegu.post_here.find.domain.FindEntity;
+import io.github.nokasegu.post_here.find.dto.FindViewerDto;
 import io.github.nokasegu.post_here.find.service.FindService;
 import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,5 +34,16 @@ public class FindController {
         model.addAttribute("find_url", find.getContentOverwriteUrl());
 
         return "find/find-overwrite";
+    }
+
+    // FindController.java
+    @GetMapping("/find/original/{startFindId}")
+    public String getFindOriginalPage(@PathVariable Long startFindId,
+                                      @AuthenticationPrincipal CustomUserDetails userDetails,
+                                      Model model) {
+        Long currentUserId = userDetails.getUserInfo().getId();
+        FindViewerDto viewerData = findService.getFindsForViewer(startFindId, currentUserId);
+        model.addAttribute("viewerData", viewerData);
+        return "find/find-viewer";
     }
 }

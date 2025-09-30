@@ -97,7 +97,7 @@ public class FindService {
         return findsPage.map(find -> FindPostSummaryDto.builder()
                 .id(find.getId())
                 .imageUrl(find.getContentCaptureUrl())
-                .location("Unknown") // TODO: 좌표->주소 변환 로직 필요
+                .location("서울시 강남구") // TODO: 좌표->주소 변환 로직 필요
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
                 .build());
     }
@@ -110,7 +110,7 @@ public class FindService {
         return findsPage.map(find -> FindPostSummaryDto.builder()
                 .id(find.getId())
                 .imageUrl(find.getContentCaptureUrl())
-                .location("Unknown") // TODO: 좌표->주소 변환 로직 필요
+                .location("서울시 강남구") // TODO: 좌표->주소 변환 로직 필요
                 .isExpiring(find.getExpirationDate() != null && find.getExpirationDate().isAfter(LocalDateTime.now()))
                 .build());
     }

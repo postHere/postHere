@@ -51,7 +51,6 @@ export function initLogin() {
             type: "POST",
             url: "/login",
             data: loginData,
-            dataType: "json"
         })
             .done(async function (data, textStatus, jqXHR) {
 
@@ -67,7 +66,23 @@ export function initLogin() {
                 window.location.replace(locationHeader);
             })
             .fail(function (xhr, status, error) {
-                const message = xhr.responseJSON.message;
+                // const message = xhr.responseJSON.message;
+                // loginError.text(message);
+
+                console.error("AJAX Error Status:", status);
+                console.error("AJAX Error Object:", JSON.stringify(error, null, 2));
+                console.error("Full XHR Object:", JSON.stringify(xhr, null, 2))
+
+                let message = "알 수 없는 오류가 발생했습니다. 네트워크 연결을 확인해 주세요.";
+
+                // 서버에서 보낸 JSON 응답이 있을 경우에만 message를 파싱합니다.
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    // JSON이 아닌 다른 텍스트 응답이 있을 수도 있습니다.
+                    message = xhr.responseText;
+                }
+
                 loginError.text(message);
             });
     }

@@ -19,10 +19,10 @@ import lombok.NoArgsConstructor;
 @Builder
 public class FindNearbyResponseDto {
 
-    private String region;
+    private int region;
     private String nickname;
-    private String lat;
-    private String lng;
+    private double lat;
+    private double lng;
     private String profile_image_url;
-    private String find_pk;
+    private Long find_pk;
 }

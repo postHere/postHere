@@ -51,19 +51,6 @@ public class FindAPIController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/around-finds")
-    public WrapperDTO<List<FindNearbyResponseDto>> whereAmI(@RequestBody LocationRequestDto location) {
-
-        UserInfoEntity user = userInfoService.getUserInfoByEmail(location.getUser());
-        List<FindNearbyResponseDto> findList = findService.getFindsInArea(location.getLng(), location.getLat(), user.getId());
-
-        return WrapperDTO.<List<FindNearbyResponseDto>>builder()
-                .status(Code.OK.getCode())
-                .message(Code.OK.getValue())
-                .data(findList)
-                .build();
-    }
-
     @PostMapping("/find")
     public void find(@ModelAttribute FindRequestDto findRequestDto, @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
@@ -77,9 +64,21 @@ public class FindAPIController {
     }
 
     @PostMapping("/find/{no}")
-    public void update(@PathVariable Long no, @RequestBody FindRequestDto findRequestDto) throws IOException {
+    public void update(@PathVariable Long no, @ModelAttribute FindRequestDto findRequestDto) throws IOException {
 
         findService.updateFind(no, findRequestDto.getContent_capture());
     }
 
+    @PostMapping("/find/around")
+    public WrapperDTO<List<FindNearbyResponseDto>> whereAmI(@RequestBody LocationRequestDto location, @AuthenticationPrincipal UserDetails userDetails) {
+
+        UserInfoEntity user = userInfoService.getUserInfoByEmail(userDetails.getUsername());
+        List<FindNearbyResponseDto> findList = findService.getFindsInArea(location.getLng(), location.getLat(), user.getId());
+
+        return WrapperDTO.<List<FindNearbyResponseDto>>builder()
+                .status(Code.OK.getCode())
+                .message(Code.OK.getValue())
+                .data(findList)
+                .build();
+    }
 }

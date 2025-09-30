@@ -29,10 +29,16 @@
 
     <nav class="footer-nav">
         <a href="/forumMain">
-            <i class="fas fa-solid fa-home"></i> </a>
-        <a href="/find">
+            <i class="fas fa-solid fa-home"></i>
+        </a>
+
+        <!-- [고정 안내] 하단 '메시지(봉투)' 아이콘은 항상 /find 로 연결되어야 합니다. -->
+        <!-- [변경 사항] Find-on-map 페이지로 바로 이동해야 한다는 요구에 따라 href를 /find/on-map 으로 변경 -->
+        <!-- [추가] id 부여는 핫픽스를 위한 것으로 동작에 영향 없음 -->
+        <a href="/find/on-map" id="nav-find-compose">
             <i class="fas fa-solid fa-envelope"></i>
         </a>
+
         <a href="/#" id="toggle-button">
             <i class="fas fa-solid fa-plus"></i>
         </a>

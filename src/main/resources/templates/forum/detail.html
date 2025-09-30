@@ -33,103 +33,103 @@
 </head>
 <body>
 <div id="app-container">
-<main class="detail-container">
-    <article class="post-card">
-        <header class="post-header">
-            <div class="post-author">
-                <a th:href="'/profile/' + ${post.writerNickname}">
-                    <img class="profile-img" th:src="${post.writerProfilePhotoUrl ?: '/images/profile-default.png'}" alt="작성자 프로필">
-                </a>
-                <div class="post-author-info">
-                    <a th:href="'/profile/' + ${post.writerNickname}" th:text="${post.writerNickname}">nickname</a>
-                    <div class="time" th:text="${#temporals.format(post.createdAt, 'yyyy.MM.dd HH:mm')}"></div>
+    <main class="detail-container">
+        <article class="post-card">
+            <header class="post-header">
+                <div class="post-author">
+                    <a th:href="'/profile/' + ${post.writerNickname}">
+                        <img class="profile-img" th:src="${post.writerProfilePhotoUrl ?: '/images/profile-default.png'}" alt="작성자 프로필">
+                    </a>
+                    <div class="post-author-info">
+                        <a th:href="'/profile/' + ${post.writerNickname}" th:text="${post.writerNickname}">nickname</a>
+                        <div class="time" th:text="${#temporals.format(post.createdAt, 'yyyy.MM.dd HH:mm')}"></div>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <a th:if="${post.isAuthor}" th:href="'/forum/' + ${post.id} + '/edit'">수정</a>
-            </div>
-        </header>
-
-        <section class="post-content">
-            <p th:text="${post.contentsText}"></p>
-            <div th:if="${post.imageUrls != null and !post.imageUrls.isEmpty()}">
-                <img th:each="url : ${post.imageUrls}" th:src="${url}" alt="사진" style="width:100%; display:block; margin:8px 0;"/>
-            </div>
-        </section>
-
-        <footer style="padding:8px 16px 16px;">
-            <button id="open-comments" class="comment-open-btn">
-                💬 댓글 보기
-            </button>
-        </footer>
-    </article>
-</main>
-
-<!-- 댓글 모달 -->
-<div class="modal-overlay" id="comment-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>댓글</h2>
-            <button class="close-btn" id="close-comments">&times;</button>
-        </div>
-        <div class="comment-list" id="comment-list">
-            <!-- 서버 렌더(SSR)로 출력해도 되고, Ajax로 불러와도 됩니다. 여기선 SSR 예시 -->
-            <div th:each="c : ${post.comments}"
-                 th:id="'comment-' + ${c.id}"
-                 class="comment">
-                <img th:src="${c.writerProfilePhotoUrl ?: '/images/profile-default.png'}" alt="">
                 <div>
-                    <p><span class="nickname" th:text="${c.writerNickname}"></span>
-                        <span th:text="${c.contentsText}"></span></p>
+                    <a th:if="${post.isAuthor}" th:href="'/forum/' + ${post.id} + '/edit'">수정</a>
+                </div>
+            </header>
+
+            <section class="post-content">
+                <p th:text="${post.contentsText}"></p>
+                <div th:if="${post.imageUrls != null and !post.imageUrls.isEmpty()}">
+                    <img th:each="url : ${post.imageUrls}" th:src="${url}" alt="사진" style="width:100%; display:block; margin:8px 0;"/>
+                </div>
+            </section>
+
+            <footer style="padding:8px 16px 16px;">
+                <button id="open-comments" class="comment-open-btn">
+                    💬 댓글 보기
+                </button>
+            </footer>
+        </article>
+    </main>
+
+    <!-- 댓글 모달 -->
+    <div class="modal-overlay" id="comment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>댓글</h2>
+                <button class="close-btn" id="close-comments">&times;</button>
+            </div>
+            <div class="comment-list" id="comment-list">
+                <!-- 서버 렌더(SSR)로 출력해도 되고, Ajax로 불러와도 됩니다. 여기선 SSR 예시 -->
+                <div th:each="c : ${post.comments}"
+                     th:id="'comment-' + ${c.id}"
+                     class="comment">
+                    <img th:src="${c.writerProfilePhotoUrl ?: '/images/profile-default.png'}" alt="">
+                    <div>
+                        <p><span class="nickname" th:text="${c.writerNickname}"></span>
+                            <span th:text="${c.contentsText}"></span></p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script th:inline="javascript">
-    // 서버에서 내려준 힌트
-    const OPEN_COMMENTS = [[${openComments}]];
-    const TARGET_COMMENT_ID = /*[[${targetCommentId}]]*/ null;
+    <script th:inline="javascript">
+        // 서버에서 내려준 힌트
+        const OPEN_COMMENTS = [[${openComments}]];
+        const TARGET_COMMENT_ID = /*[[${targetCommentId}]]*/ null;
 
-    const modal = document.getElementById('comment-modal');
-    const openBtn = document.getElementById('open-comments');
-    const closeBtn = document.getElementById('close-comments');
-    const listEl = document.getElementById('comment-list');
+        const modal = document.getElementById('comment-modal');
+        const openBtn = document.getElementById('open-comments');
+        const closeBtn = document.getElementById('close-comments');
+        const listEl = document.getElementById('comment-list');
 
-    function openModal() {
-        modal.classList.add('show');
-    }
-    function closeModal() {
-        modal.classList.remove('show');
-    }
-
-    openBtn?.addEventListener('click', openModal);
-    closeBtn?.addEventListener('click', closeModal);
-    modal?.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    function scrollAndHighlight(commentId) {
-        const el = document.getElementById('comment-' + commentId);
-        if (!el) return;
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('highlight');
-        setTimeout(() => el.classList.remove('highlight'), 2000);
-    }
-
-    // 초기 진입 시 자동 오픈/스크롤
-    if (OPEN_COMMENTS) {
-        openModal();
-        if (TARGET_COMMENT_ID) {
-            // 약간의 지연 후 스크롤(모달 렌더 안정화)
-            setTimeout(() => scrollAndHighlight(TARGET_COMMENT_ID), 50);
-        } else if (location.hash && location.hash.startsWith('#comment-')) {
-            const idFromHash = location.hash.replace('#comment-', '');
-            if (idFromHash) setTimeout(() => scrollAndHighlight(idFromHash), 50);
+        function openModal() {
+            modal.classList.add('show');
         }
-    }
-</script>
+        function closeModal() {
+            modal.classList.remove('show');
+        }
+
+        openBtn?.addEventListener('click', openModal);
+        closeBtn?.addEventListener('click', closeModal);
+        modal?.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        function scrollAndHighlight(commentId) {
+            const el = document.getElementById('comment-' + commentId);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('highlight');
+            setTimeout(() => el.classList.remove('highlight'), 2000);
+        }
+
+        // 초기 진입 시 자동 오픈/스크롤
+        if (OPEN_COMMENTS) {
+            openModal();
+            if (TARGET_COMMENT_ID) {
+                // 약간의 지연 후 스크롤(모달 렌더 안정화)
+                setTimeout(() => scrollAndHighlight(TARGET_COMMENT_ID), 50);
+            } else if (location.hash && location.hash.startsWith('#comment-')) {
+                const idFromHash = location.hash.replace('#comment-', '');
+                if (idFromHash) setTimeout(() => scrollAndHighlight(idFromHash), 50);
+            }
+        }
+    </script>
 </div>
 </body>
 </html>

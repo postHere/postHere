@@ -10,6 +10,7 @@ import io.github.nokasegu.post_here.forum.repository.ForumCommentRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumLikeRepository;
 import io.github.nokasegu.post_here.forum.repository.ForumRepository;
 import io.github.nokasegu.post_here.forum.service.ForumService;
+import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -130,7 +131,7 @@ public class ForumController {
     }
 
     // ===== 상세 보기 (새 DTO 없이 Map으로 detail.html에 바인딩) =====
-    @GetMapping("/forum/{forumId}")
+    //@GetMapping("/forum/{forumId}")
     public String forumDetailPage(
             @PathVariable("forumId") Long forumId,
             @RequestParam(value = "open", required = false) String open,
@@ -188,6 +189,27 @@ public class ForumController {
         model.addAttribute("targetCommentId", commentId);
 
         return "forum/detail";
+    }
+
+    @GetMapping("/forum/{forumId}")
+    public String forumDetailPage(@PathVariable("forumId") Long forumId, @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+
+        UserInfoEntity u = userDetails.getUserInfo();
+
+        ForumEntity forum = forumRepository.findById(forumId)
+                .orElseThrow(() -> new EntityNotFoundException("FORUM NOT FOUND"));
+
+        ForumPostListResponseDto dto = forumService.convertToPostListDto(forum, u.getId());
+        model.addAttribute("posts", dto);
+
+
+        Map<String, Object> me = new HashMap<>();
+        me.put("id", u.getId());
+        me.put("nickname", u.getNickname());
+        me.put("profilePhotoUrl", u.getProfilePhotoUrl());
+        model.addAttribute("me", me);
+        
+        return "forum/feed";
     }
 
     @ResponseBody

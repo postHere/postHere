@@ -2,10 +2,7 @@ package io.github.nokasegu.post_here.find.domain;
 
 import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

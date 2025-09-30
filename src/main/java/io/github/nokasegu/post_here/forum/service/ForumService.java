@@ -273,7 +273,7 @@ public class ForumService {
                 .collect(Collectors.toList());
     }
 
-    private ForumPostListResponseDto convertToPostListDto(ForumEntity forumEntity, Long currentUserId) {
+    public ForumPostListResponseDto convertToPostListDto(ForumEntity forumEntity, Long currentUserId) {
         int totalComments = forumCommentRepository.countByForumId(forumEntity.getId());
         int totalLikes = forumLikeRepository.countByForumId(forumEntity.getId());
         List<String> recentLikerPhotos = forumLikeRepository.findTop3ByForumIdOrderByCreatedAtDesc(forumEntity.getId())

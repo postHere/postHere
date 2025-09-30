@@ -51,11 +51,13 @@ export function initLogin() {
             type: "POST",
             url: "/login",
             data: loginData,
+            datatype: "json",
         })
             .done(async function (data, textStatus, jqXHR) {
 
+                console.log("data : ", JSON.stringify(data, null, 2));
                 const locationHeader = jqXHR.getResponseHeader('Location');
-                const username = data?.data?.username;
+                const username = data.data.username;
                 console.log("username : ", username);
 
                 await Preferences.set({

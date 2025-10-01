@@ -30,16 +30,10 @@
                         <div class="profile-info__text">
                             <h2 class="profile-info__name" th:text="|${profileUser.nickname}|"></h2>
 
-                            <div class="follow-button-container" th:if="${!isMyProfile}">
-                                <button class="follow-btn follow"
-                                        th:data-userid="${profileUser.userId}"
-                                        th:if="${!profileUser.isFollowing}">Follow
-                                </button>
-                                <button class="follow-btn unfollow"
-                                        th:data-userid="${profileUser.userId}"
-                                        th:if="${profileUser.isFollowing}">Following
-                                </button>
-                            </div>
+                            <!-- [변경사항] 다른 사람 프로필일 때 왼쪽 정보 블록에서 팔로우 버튼을 제거합니다.
+                                 기존 마크업은 유지하되, 조건을 false로 고정하여 렌더링되지 않게 합니다.
+                                 팔로우 버튼은 우측 액션 영역으로 이동합니다. -->
+                            <div class="follow-button-container" th:if="${false}"></div>
 
                             <div class="profile-stats">
                                 <a th:href="@{/friends(nickname=${profileUser.nickname}, tab='followers')}">
@@ -51,7 +45,25 @@
                             </div>
                         </div>
                     </div>
-                    <button class="profile-action-btn" id="open-edit-modal-btn"></button>
+
+                    <!-- [추가사항] 헤더 우측 액션 영역:
+                         - 내 프로필이면 동그란 편집 버튼(#open-edit-modal-btn)을 표시
+                         - 다른 사람 프로필이면 같은 자리에 Follow/Following 버튼을 표시 -->
+                    <div class="profile-action">
+                        <button aria-label="프로필 편집 열기" class="profile-action-btn" id="open-edit-modal-btn"
+                                th:if="${isMyProfile}"></button>
+
+                        <div class="profile-action-follow" th:if="${!isMyProfile}">
+                            <button class="follow-btn follow"
+                                    th:data-userid="${profileUser.userId}"
+                                    th:if="${!profileUser.isFollowing}">Follow
+                            </button>
+                            <button class="follow-btn unfollow"
+                                    th:data-userid="${profileUser.userId}"
+                                    th:if="${profileUser.isFollowing}">Following
+                            </button>
+                        </div>
+                    </div>
                 </section>
             </div>
 
@@ -86,8 +98,10 @@
         <div th:replace="~{fragment/main-nav :: mainNavFragment}"></div>
     </div>
 
+    <!-- [변경사항] 편집/비밀번호 변경 모달은 내 프로필일 때만 DOM에 포함되도록 th:if 추가 -->
+
     <!-- Edit Profile Modal -->
-    <div class="modal-overlay" id="edit-profile-modal">
+    <div class="modal-overlay" id="edit-profile-modal" th:if="${isMyProfile}">
         <div class="modal-content">
             <h1 class="modal-logo">PostHere</h1>
             <p class="modal-title">Edit your profile</p>
@@ -115,7 +129,7 @@
     </div>
 
     <!-- Change Password Modal -->
-    <div class="modal-overlay" id="change-password-modal">
+    <div class="modal-overlay" id="change-password-modal" th:if="${isMyProfile}">
         <div class="modal-content">
             <h1 class="modal-logo">PostHere</h1>
             <p class="modal-title">Change your password</p>
@@ -141,4 +155,3 @@
 </div>
 </body>
 </html>
-

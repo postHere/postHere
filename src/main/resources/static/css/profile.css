@@ -112,6 +112,14 @@ a {
     opacity: 0.9;
 }
 
+/* [추가사항] 헤더 우측 액션 영역(편집 버튼 또는 팔로우 버튼 자리)을 위한 래퍼 */
+.profile-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px; /* 기존 profile-action-btn margin과 일관 유지 */
+}
+
 .profile-action-btn {
     border-radius: 50%;
     margin-right: 10px;
@@ -135,6 +143,20 @@ a {
     font-weight: 900;
     font-size: 1.2rem;
     line-height: 1;
+}
+
+/* [추가사항] 팔로우/언팔로우가 우측 액션 자리에 올 때의 치수/정렬 */
+.profile-action .profile-action-follow .follow-btn {
+    height: 37px; /* 동그란 편집 버튼 높이에 맞춤 */
+    padding: 0 14px;
+    border-radius: 18.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* --- Section 2: Park 명록 영역 --- */

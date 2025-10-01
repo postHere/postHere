@@ -46,6 +46,14 @@ pipeline {
             }
         }
 
+        stage('FE-Build') {
+            steps {
+
+                sh "npm install"
+                sh "npm run build"
+            }
+        }
+
         stage('BE-Build') {
             steps {
                 //dir("./${GIT_REPO_NAME}") {

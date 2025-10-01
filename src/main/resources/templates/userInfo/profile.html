@@ -57,7 +57,7 @@
 
             <!-- Section 2: PARK명록 -->
             <div class="guestbook-wrapper">
-                <a th:href="@{/park}">
+                <a th:href="@{/park/{nickname}(nickname=${profileUser.nickname})}">
                     <section class="guestbook">
                         <p class="guestbook__content">
                         </p>

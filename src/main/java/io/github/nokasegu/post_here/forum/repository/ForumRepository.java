@@ -27,7 +27,7 @@ public interface ForumRepository extends JpaRepository<ForumEntity, Long> {
 
     @Query("SELECT f FROM ForumEntity f WHERE f.writer = :writer")
         // 피드 페이지에서 모든 게시물을 최신순으로 가져오기 위해 필요합니다.
-    List<ForumEntity> findAllByOrderByCreatedAtDesc(@Param(":writer") UserInfoEntity writer);
+    List<ForumEntity> findAllByOrderByCreatedAtDesc(@Param("writer") UserInfoEntity writer);
 
     // 상세 보기(댓글 모달) 기능에 필요합니다.
     @Query("SELECT f FROM ForumEntity f LEFT JOIN FETCH f.writer LEFT JOIN FETCH f.images WHERE f.id = :id")

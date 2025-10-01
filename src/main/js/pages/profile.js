@@ -22,7 +22,12 @@ export function initProfile() {
     const carouselWrapper = document.getElementById('carousel-wrapper');
     const profileBody = document.getElementById('page-profile');
     const profileNickname = profileBody.dataset.profileNickname;
-    const followBtn = document.querySelector('.follow-btn');
+
+    // [변경사항] 팔로우 버튼이 헤더 우측으로 이동하며, DOM 내 여러 위치/조건에 존재할 수 있어
+    // querySelectorAll로 모두 바인딩하도록 수정했습니다.
+    const followBtns = document.querySelectorAll('.follow-btn'); // <-- 변경 포인트
+    // 기존: const followBtn = document.querySelector('.follow-btn');
+
     const profileImageInput = document.getElementById('profile-image-upload');
     const profileImage = document.querySelector('.profile-info__pic');
     const isMyProfile = (profileBody.dataset.isMyProfile === 'true'); // 없으면 false
@@ -180,7 +185,7 @@ export function initProfile() {
                     link = `/forum/feed#post-${post.id}`;
                 } else {
                     // ✅ 네가 새로 추가한 매핑에 맞춤: /find/original/{id}
-                    link = `/find/original/${post.id}`;
+                    link = `/find/feed/${post.id}`;
                 }
 
                 console.log("Post ID:", post.id, "CreatedAt:", post.createdAt, "ExpiresAt:", post.expiresAt);
@@ -211,10 +216,14 @@ export function initProfile() {
                         : `<div class="post-item__text" style="${SNIPPET_STYLE}">${esc(snip)}</div>`;
 
                     pageHTML += `
-                        <a href="${link}" class="post-item">
-                            ${imgHtml}
-                            <p class="post-item__location">📍 ${esc(post.location || '위치 정보 없음')}</p>
-                        </a>`;
+                        <div class="post-item-container"> 
+                            <div class="post-item-block"> 
+                                <a href="${link}" class="post-item">
+                                    ${imgHtml}
+                                    <p class="post-item__location">📍 ${esc(post.location || '위치 정보 없음')}</p>
+                                </a>
+                            </div>
+                        </div>`;
                 } else {
                     // 기존 Fin'd 렌더 (이미지 전제)
 
@@ -483,41 +492,44 @@ export function initProfile() {
         carouselWrapper.addEventListener('mouseleave', endDrag);
     }
 
-    if (followBtn) {
-        followBtn.addEventListener('click', async (event) => {
-            const button = event.currentTarget;
-            const userId = button.dataset.userid;
-            const isFollowing = button.classList.contains('unfollow');
+    // [변경사항] 여러 팔로우 버튼을 모두 바인딩합니다. (우측 액션 영역 등 위치가 변해도 동작)
+    if (followBtns && followBtns.length) {
+        followBtns.forEach((btn) => {
+            btn.addEventListener('click', async (event) => {
+                const button = event.currentTarget;
+                const userId = button.dataset.userid;
+                const isFollowing = button.classList.contains('unfollow');
 
-            const url = isFollowing ? '/friend/unfollowing' : '/friend/addfollowing';
-            const method = isFollowing ? 'DELETE' : 'POST';
+                const url = isFollowing ? '/friend/unfollowing' : '/friend/addfollowing';
+                const method = isFollowing ? 'DELETE' : 'POST';
 
-            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
-            const headers = {'Content-Type': 'application/json'};
-            if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+                const headers = {'Content-Type': 'application/json'};
+                if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: headers,
-                    body: JSON.stringify({userId: userId})
-                });
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: headers,
+                        body: JSON.stringify({userId: userId})
+                    });
 
-                if (response.ok) {
-                    if (isFollowing) {
-                        button.classList.replace('unfollow', 'follow');
-                        button.textContent = 'Follow';
+                    if (response.ok) {
+                        if (isFollowing) {
+                            button.classList.replace('unfollow', 'follow');
+                            button.textContent = 'Follow';
+                        } else {
+                            button.classList.replace('follow', 'unfollow');
+                            button.textContent = 'Following';
+                        }
                     } else {
-                        button.classList.replace('follow', 'unfollow');
-                        button.textContent = 'Following';
+                        alert('요청 처리 중 오류가 발생했습니다.');
                     }
-                } else {
-                    alert('요청 처리 중 오류가 발생했습니다.');
+                } catch (error) {
+                    console.error('Follow error:', error);
                 }
-            } catch (error) {
-                console.error('Follow error:', error);
-            }
+            });
         });
     }
 
@@ -536,9 +548,9 @@ export function initProfile() {
             if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
             try {
-                const response = await fetch('/api/profile/image', {
+                const response = await fetch('/profile/image', {
                     method: 'POST',
-                    headers: headers, // FormData 전송 시 Content-Type은 브라우저가 자동으로 설정하므로 넣지 않습니다.
+                    headers: headers, // FormData 전송 시 Content-Type은 브라우저가 자동으로 설정되므로 넣지 않습니다.
                     body: formData
                 });
 
@@ -577,4 +589,3 @@ export function initProfile() {
     loadMyPark();
     loadPosts(initialTab, 0);
 }
-

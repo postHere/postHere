@@ -1,60 +1,158 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8"/>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <title>Fin'd Viewer</title>
-    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport"/>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
 
-    <!-- CSRF (삭제 요청 시 필요) -->
-    <meta name="_csrf" th:content="${_csrf?.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+        body {
+            background-color: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-    <!-- 기존 번들/스타일은 그대로 유지 -->
-    <script defer th:src="@{/js/bundle.js}"></script>
-    <link rel="stylesheet" th:href="@{/css/index.css}">
-    <link rel="stylesheet" th:href="@{/css/main-nav.css}">
+        .mobile-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+        }
 
-    <!-- ⬇️ 스택형 뷰어 전용 CSS 추가 -->
-    <link rel="stylesheet" th:href="@{/css/find-viewer.css}">
+        .viewer-header {
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 70px;
+            background-color: white;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .viewer-header .back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 10px;
+            margin-left: -10px;
+        }
+
+        .viewer-header .title {
+            font-size: 18px;
+            font-weight: 600;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .feed-container {
+            padding: 10px;
+        }
+
+        .post-card {
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+        }
+
+        .post-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .post-author .profile-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .post-author-info .name {
+            font-weight: 600;
+        }
+
+        .post-author-info .time {
+            color: #8e8e8e;
+            font-size: 12px;
+        }
+
+        .post-content img {
+            width: 100%;
+            display: block;
+            border-radius: 0 0 8px 8px;
+        }
+    </style>
 </head>
-<body id="page-find-viewer">
-
-<!-- JS가 렌더링할 스택 컨테이너 -->
-<div class="page-container">
-    <div class="stack" id="findStack"></div>
-</div>
-
-
-<div class="page-container">
-    <div class="swipe-wrapper">
-        <!-- ✅ 이 ID가 find-viewer.js에서 찾는 대상 -->
-        <div class="swipe-container" id="swipe-container"
-             th:attr="data-start-index=${viewerData.startIndex}">
-            <div class="card" th:attr="data-find-id=${post.findId}"
-                 th:each="post : ${viewerData.posts}">
-                <div class="header">
-                    <div class="writer-info">
-                        <img alt="Profile" th:src="${post.writerProfilePhotoUrl}">
-                        <span class="nickname" th:text="${post.writerNickname}"></span>
+<body>
+<div class="mobile-container">
+    <header class="viewer-header">
+        <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+        <h1 class="title">Fin'd</h1>
+    </header>
+    <main class="main-content">
+        <div class="feed-container">
+            <!-- Controller로부터 받은 'posts' 목록을 순서대로 보여줍니다. -->
+            <div class="post-card" th:each="post : ${posts}" th:id="'post-' + ${post.id}">
+                <div class="post-header">
+                    <div class="post-author">
+                        <a class="profile-link" th:href="'/profile/' + ${post.writerNickname}">
+                            <img alt="Author Profile" class="profile-img" th:src="${post.writerProfilePhotoUrl}">
+                        </a>
+                        <div class="post-author-info">
+                            <a class="profile-link name" th:href="'/profile/' + ${post.writerNickname}"
+                               th:text="${post.writerNickname}"></a>
+                            <div class="time" th:text="${#temporals.format(post.createdAt, 'M월 d일')}"></div>
+                        </div>
                     </div>
-                    <button class="delete-btn" th:if="${post.isAuthor}">🗑️</button>
                 </div>
-                <div class="image-container">
-                    <img alt="Fin'd Image" th:src="${post.contentCaptureUrl}">
-                </div>
-                <div class="footer">
-                    <span th:text="${post.locationName}"></span>
-                    <div>
-                        <span th:text="${post.createdAt}"></span> |
-                        <span th:text="${post.remainingTime}"></span>
-                    </div>
+                <div class="post-content">
+                    <img alt="Fin'd content" th:src="${post.contentCaptureUrl}">
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 </div>
-
-<!-- ⬇️ 스택형/스와이프/삭제 로직 JS 추가 (module) -->
-
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const backBtn = document.querySelector('.viewer-header .back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                // 브라우저의 '뒤로가기' 기능을 실행하여 이전 페이지(프로필)로 돌아갑니다.
+                history.back();
+            });
+        }
+    });
+</script>
 </body>
 </html>
+

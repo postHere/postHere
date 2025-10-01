@@ -555,3 +555,36 @@ a {
     padding-top: 2.5rem;
     padding-bottom: 2.5rem;
 }
+
+/* ===== Forum 카드 전용: 위치 텍스트를 이미지 '아래'로 표시 ===== */
+.post-item.post-item--forum {
+    position: static; /* 오버레이 기준 제거 */
+    display: block;
+}
+
+.post-item.post-item--forum .post-item__image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+}
+
+/* 오버레이 해제: 아래로 내려오게 */
+.post-item.post-item--forum .post-item__location {
+    position: static; /* absolute → static */
+    margin: 8px 2px 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.3;
+    text-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 이미지 없는 카드(텍스트 스니펫)에서도 아래에 붙도록 */
+.post-item.post-item--forum .post-item__text + .post-item__location {
+    margin-top: 6px;
+}

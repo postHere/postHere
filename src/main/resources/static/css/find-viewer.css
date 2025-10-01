@@ -221,10 +221,184 @@ html, body {
     color: #8e8e8e;
 }
 
-.delete-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    color: #8e8e8e;
+
+#findStack,
+#findStack .card {
+    touch-action: pan-y; /* 가로 스와이프는 JS가 처리 */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: contain; /* 상위로 스크롤/바운스 전파 차단 */
+}
+
+#findStack img {
+    pointer-events: none;
+}
+
+/* ===== Fin'd Viewer 카드 오버레이 ===== */
+.fv-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .15);
+    background: #000; /* 이미지 로딩 전 깜빡임 방지 */
+}
+
+.fv-card > img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.fv-overlay-top {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+
+.fv-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, .6);
+}
+
+.fv-nickname {
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.fv-location {
+    font-size: 12px;
+    opacity: .95;
+}
+
+.fv-overlay-bottom {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+    font-size: 13px;
+}
+
+.fv-sep {
+    opacity: .85;
+}
+
+.no-image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #ececec;
+}
+
+/* 스택/카드에서 가로 제스처를 우리가 처리 */
+#findStack,
+#findStack .fv-card {
+    touch-action: none; /* 끊김 있으면 none, 세로 스크롤 필요하면 pan-y */
+}
+
+/* 카드 위에 얹은 오버레이가 이벤트를 가로채지 않도록 */
+.fv-overlay-top,
+.fv-overlay-bottom,
+.fv-top-text,
+.fv-nickname,
+.fv-location {
+    pointer-events: none;
+}
+
+/* 스택 컨테이너: 겹칠 영역을 만들고 상대 좌표계 제공 */
+#findStack {
+    position: relative;
+    width: 100%;
+    max-width: 520px; /* 기기폭에 맞게 조절 */
+    aspect-ratio: 1 / 1; /* 정사각형(필요에 따라 4/5 등으로 바꿔도 됨) */
+    margin: 0 auto; /* 가운데 정렬 */
+    touch-action: none; /* 가로 스와이프 우리가 처리 */
+}
+
+/* 스택 카드: 서로 겹치게 절대배치 */
+#findStack .fv-card {
+    position: absolute;
+    inset: 0; /* 컨테이너에 꽉 차게 */
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 20px rgba(0, 0, 0, .18);
+    background: #eee;
+    will-change: transform;
+    transition: transform .28s ease, opacity .28s ease;
+}
+
+/* 카드 이미지 */
+#findStack .fv-card > img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+/* 카드 위·아래 오버레이 (글자) */
+.fv-overlay-top {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+    pointer-events: none; /* 터치 스와이프가 가려지지 않게 */
+}
+
+.fv-overlay-top {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+}
+
+
+.fv-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.fv-nickname {
+    font-weight: 700;
+}
+
+.fv-location {
+    font-size: 13px;
+    opacity: .9;
+}
+
+.fv-date, .fv-remaining, .fv-sep {
+    font-size: 13px;
+    opacity: .9;
+}
+
+/* 아래 살짝 깔리는 카드 느낌(네 JS가 translateY/scale 설정함) */
+#findStack .fv-card[data-pos="1"] {
+    filter: brightness(.98);
+}
+
+#findStack .fv-card[data-pos="2"] {
+    filter: brightness(.95);
+}
+
+/* 혹시 예전 .card 규칙이 남아 겹침을 깨면 무력화 */
+.swipe-container .card {
+    position: static !important;
 }

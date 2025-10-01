@@ -124,6 +124,33 @@ export function initMainNav() {
         });
     });
 
+    // ===== [수정] 하단 '메시지(봉투)' 아이콘은 이제 /find/on-map 으로 이동 =====
+    //  - 요구사항 변경: 작성 페이지(/find)가 아니라 on-map 페이지로 바로 이동해야 함
+    //  - PLUS 토글의 아이콘들(.toggle-item)은 건드리지 않음
+    (() => {
+        // [변경 설명]
+        // 1) 우선 id로 탐색하고, 없으면 href="/find/on-map" 앵커를 보조 탐색
+        // 2) 안전을 위해 href를 명시적으로 '/find/on-map'으로 고정
+        // 3) 다른 스크립트의 재바인딩을 방지하기 위해 클릭 시 location.assign으로 강제 내비게이션
+        const findCompose =
+            document.getElementById('nav-find-compose')
+            || document.querySelector('.footer-nav a[href="/find/on-map"]')
+            || document.querySelector('.footer-nav a[href="/find"]'); // 레거시 호환: 이전 href가 /find 였던 경우
+
+        if (findCompose) {
+            // (1) href 고정
+            findCompose.setAttribute('href', '/find/on-map'); // ▼▼▼ [변경] 작성 페이지가 아닌 on-map으로 고정
+            // (2) 혹시 남아 있을 수 있는 불필요 속성 제거
+            findCompose.removeAttribute('data-on-map');
+
+            // (3) 클릭 강제 라우팅 (다른 스크립트가 preventDefault 걸어도 확실히 이동)
+            findCompose.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                location.assign('/find/on-map'); // ▼▼▼ [변경] on-map으로 확정 이동
+            });
+        }
+    })();
 
     // ===== 미읽음 배지 갱신 (단일 호출) =====
     async function fetchUnreadCount() {

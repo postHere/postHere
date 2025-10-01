@@ -6,7 +6,8 @@
     <!-- CSRF 메타: notification.js에서 /notification POST 호출 시 헤더로 첨부 -->
     <meta name="_csrf" th:attr="content=${_csrf?.token}">
     <meta name="_csrf_header" th:attr="content=${_csrf?.headerName}">
-    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <!-- [유지] iOS safe-area 활성화 (지원 환경에선 env() 값 사용) -->
+    <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport">
     <title>Notification</title>
 
     <link rel="stylesheet" th:href="@{/css/index.css}">
@@ -17,16 +18,21 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- PWA -->
     <link rel="manifest" th:href="@{/pwa/manifest.json}">
+
     <!-- 페이지 스크립트: 목록 로딩/읽음 처리/뱃지 갱신 수행 -->
     <script defer th:src="@{/js/bundle.js}"></script>
 </head>
 <body id="page-notifications">
 <div id="app-container">
 
-    <!-- 상단바: 좌측 뒤로가기 + 가운데 타이틀 -->
-    <!-- [변경] fixed 헤더 유지: 최신 알림이 '헤더 바로 밑'에 보이도록 CSS 상단 패딩을 헤더 높이로만 부여 -->
+    <!-- [신규] safe-area 전용 스페이서: 항상 레이아웃 공간을 '먼저' 차지 -->
+    <div aria-hidden="true" class="safe-top-spacer"></div>
+
+    <!-- [유지] 시각적 헤더(52.8px 고정). safe-area 아래에서 시작 -->
     <header class="noti-topbar">
-        <h2 class="noti-title">알림</h2>
+        <div class="noti-topbar-inner">
+            <h2 class="noti-title">알림</h2>
+        </div>
     </header>
 
     <!-- 알림 목록 컨테이너: notification.js가 innerHTML로 카드 목록 렌더링 -->

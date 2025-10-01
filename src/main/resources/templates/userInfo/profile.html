@@ -53,7 +53,7 @@
                             </div>
                         </div>
                     </div>
-                    <button class="profile-action-btn" id="open-edit-modal-btn">&gt;&gt;</button>
+                    <button class="profile-action-btn" id="open-edit-modal-btn"></button>
                 </section>
             </div>
 
@@ -62,9 +62,6 @@
                 <a th:href="@{/park}">
                     <section class="guestbook">
                         <p class="guestbook__content">
-                            Yoshihiro Togashi created not just an adventure, but a profound exploration of humanity,
-                            making
-                            Hunter × Hunter one of the greatest works in manga and anime history.
                         </p>
                     </section>
                 </a>
@@ -74,11 +71,11 @@
             <section class="posts-section">
                 <div class="content-tabs">
                     <button class="content-tabs__button active" id="tab-find" th:if="${isMyProfile}">Fin'd
-                        <span>&gt;</span>
                     </button>
                     <button class="content-tabs__button" id="tab-forum"
                             th:classappend="${!isMyProfile} ? 'active' : ''">
-                        Forum <span>&gt;</span></button>
+                        Forum
+                    </button>
                 </div>
                 <div class="content-carousel-wrapper" id="carousel-wrapper">
                     <div class="content-carousel" id="carousel"></div>

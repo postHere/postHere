@@ -1,5 +1,5 @@
 // /static/js/pages/notification.js
-// 역할: 알림 목록 로딩 + (읽음 처리 단일 엔드포인트 연계)
+// 역할: 알림 목록 로딩 + (읽음 처리 단일 엔드포인트 연계) + 메인 네비 빨간 점(배지) 제어
 // 템플릿과의 매칭: #list
 
 export function initNotification() {
@@ -21,6 +21,19 @@ export function initNotification() {
             const h = nav ? Math.ceil(nav.getBoundingClientRect().height) : 0;
             const px = (h && Number.isFinite(h)) ? `${h}px` : null;
             if (px) document.documentElement.style.setProperty('--footer-height', px);
+            // [참고] 하단 안전영역(env(safe-area-inset-bottom))은 CSS에서 calc에 포함하여 처리합니다.
+        } catch { /* ignore */
+        }
+    }
+
+    // [추가] 헤더 실제 높이를 측정해 CSS 변수로 반영(얇은 헤더/세로 중앙정렬 유지용)
+    function syncHeaderHeightVar() {
+        try {
+            // .noti-topbar 자체에 safe-area 상단 패딩이 포함되어 있으므로, 헤더의 '보이는 전체 높이'를 사용
+            const header = document.querySelector('.noti-topbar');
+            const h = header ? Math.ceil(header.getBoundingClientRect().height) : 56;
+            const px = (h && Number.isFinite(h)) ? `${h}px` : '56px';
+            document.documentElement.style.setProperty('--header-height', px);
         } catch { /* ignore */
         }
     }
@@ -29,6 +42,14 @@ export function initNotification() {
     setTimeout(syncFooterHeightVar, 300);
     window.addEventListener('resize', syncFooterHeightVar);
     window.addEventListener('orientationchange', syncFooterHeightVar);
+
+    // [추가] 헤더 높이도 초기/지연/반응형 시점에 동기화
+    syncHeaderHeightVar();
+    setTimeout(syncHeaderHeightVar, 300);
+    // [추가] 폰트 로딩/레이아웃 확정 이후 한 번 더 실측(타이틀 줄높이 반영)
+    window.addEventListener('load', syncHeaderHeightVar);
+    window.addEventListener('resize', syncHeaderHeightVar);
+    window.addEventListener('orientationchange', syncHeaderHeightVar);
 
     const API_BASE = '/api/notifications';
 
@@ -63,9 +84,20 @@ export function initNotification() {
         return `${dd}d`;
     }
 
+    // ===== 빨간 점(배지) 관련 메서드 =====
     function setNavDotVisible(visible) {
         const dot = document.getElementById('nav-bell-dot');
         if (dot) dot.style.display = visible ? 'inline-block' : 'none';
+    }
+
+    async function refreshNavDotFromServer() {
+        try {
+            const count = await postJson(`${API_BASE}/unread-count`, {});
+            setNavDotVisible(Number(count) > 0);
+        } catch (e) {
+            // 서버 오류 시 배지 상태는 유지
+            console.debug('[notification] unread-count failed:', e?.message || e);
+        }
     }
 
     function attachLeaveHandlersOnce() {
@@ -97,38 +129,81 @@ export function initNotification() {
             empty.className = 'empty';
             empty.textContent = '새 알림이 없습니다.';
             $list.appendChild(empty);
+            // 목록이 비었을 때도 서버 카운트와 동기화
+            refreshNavDotFromServer();
             return;
         }
 
         const frag = document.createDocumentFragment();
+        let hasUnreadInBatch = false;
 
         items.forEach((it) => {
-            const id = it.id ?? null;
-            const code = it.type ?? null;
-            const createdAt = it.createdAt ?? null;
-            const read = it.isRead ?? false;
+            const id = it.id ?? it.notificationId ?? it.notification_pk ?? null;
+            const code = it.type ?? it.notificationCode ?? it.code ?? null;
+            const createdAt = it.createdAt ?? it.created_at ?? null;
+            const read =
+                (typeof it.isRead === 'boolean') ? it.isRead :
+                    (typeof it.read === 'boolean') ? it.read :
+                        (typeof it.checkStatus === 'boolean') ? it.checkStatus :
+                            (typeof it.checked === 'boolean') ? it.checked : false;
 
-            // ▼▼▼ 1. 변수를 먼저 선언하고 초기값을 할당합니다. ▼▼▼
+            if (!read) hasUnreadInBatch = true;
+
+            // 공통 변수
             let fixedText = '';
             let actorNick = '';
             let avatarUrl = '';
-            let link = it.link || '#'; // link는 DTO에 있으면 우선 사용
+            let link = it.link || '#';
 
-            // ▼▼▼ 2. if/else 블록에서는 값만 변경합니다. ▼▼▼
             if (code === 'FIND_FOUND') {
+                // FIND_FOUND 전용: 텍스트만(아바타 없음)
                 fixedText = it.text || '습득물이 발견되었습니다.';
-                // actorNick은 '' (빈 문자열) 유지
-            } else {
-                fixedText = mapText(code);
-                actorNick = it.actor?.nickname ?? '(알 수 없음)';
-                avatarUrl = it.actor?.profilePhotoUrl ?? '/images/profile-default.png';
-                // FOLLOW 타입 등 link가 없는 경우 actorNick으로 프로필 링크 생성
-                if (!it.link && actorNick) {
-                    link = `/profile/${encodeURIComponent(actorNick)}`;
-                }
+                const row = document.createElement('a');
+                row.className = 'noti-card';
+                if (id != null) row.dataset.id = String(id);
+                row.href = link;
+                row.setAttribute('aria-label', fixedText);
+                row.dataset.unread = String(!read);
+
+                const main = document.createElement('div');
+                main.className = 'noti-main';
+
+                const head = document.createElement('div');
+                head.className = 'noti-head';
+
+                const timeEl = document.createElement('span');
+                timeEl.className = 'noti-time';
+                timeEl.textContent = timeAgo(createdAt);
+
+                head.appendChild(timeEl);
+
+                const textEl = document.createElement('div');
+                textEl.className = 'noti-text';
+                textEl.textContent = fixedText;
+
+                main.appendChild(head);
+                main.appendChild(textEl);
+                row.appendChild(main);
+                frag.appendChild(row);
+                return; // 다음 아이템
             }
 
-            // ▼▼▼ 3. 이제 모든 변수에 안전하게 접근할 수 있습니다. ▼▼▼
+            // 일반 알림
+            fixedText = mapText(code);
+            actorNick =
+                it.actor?.nickname ??
+                it.followerNickname ??
+                it.actor?.name ??
+                it.follower?.nickname ??
+                it.following?.follower?.nickname ??
+                '';
+            avatarUrl = it.actor?.profilePhotoUrl ?? it.followerProfilePhotoUrl ?? '/images/profile-default.png';
+
+            // FOLLOW 등 link가 없으면 프로필로
+            if (!it.link && actorNick) {
+                link = `/profile/${encodeURIComponent(actorNick)}`;
+            }
+
             const row = document.createElement('a');
             row.className = 'noti-card';
             if (id != null) row.dataset.id = String(id);
@@ -136,66 +211,59 @@ export function initNotification() {
             row.setAttribute('aria-label', actorNick ? `${actorNick} ${fixedText}` : fixedText);
             row.dataset.unread = String(!read);
 
-            if (code === 'FIND_FOUND') {
-                // FIND_FOUND 전용 렌더링
-                const main = document.createElement('div');
-                main.className = 'noti-main';
-                const head = document.createElement('div');
-                head.className = 'noti-head';
-                const timeEl = document.createElement('span');
-                timeEl.className = 'noti-time';
-                timeEl.textContent = timeAgo(createdAt);
-                const textEl = document.createElement('div');
-                textEl.className = 'noti-text';
-                textEl.textContent = fixedText;
+            const img = document.createElement('img');
+            img.className = 'noti-avatar';
+            img.alt = actorNick ? `${actorNick} profile` : 'profile';
+            img.src = avatarUrl || '/images/profile-default.png';
+            img.onerror = () => {
+                img.src = '/images/profile-default.png';
+            };
+            row.appendChild(img);
 
-                head.appendChild(timeEl);
-                main.appendChild(head);
-                main.appendChild(textEl);
-                row.appendChild(main);
-            } else {
-                // 일반 알림 렌더링
-                const img = document.createElement('img');
-                img.className = 'noti-avatar';
-                img.alt = `${actorNick} profile`;
-                img.src = avatarUrl;
-                img.onerror = () => {
-                    img.src = '/images/profile-default.png';
-                };
-                row.appendChild(img);
+            const main = document.createElement('div');
+            main.className = 'noti-main';
 
-                const main = document.createElement('div');
-                main.className = 'noti-main';
-                const head = document.createElement('div');
-                head.className = 'noti-head';
-                const nickEl = document.createElement('span');
-                nickEl.className = 'noti-nick';
-                nickEl.textContent = actorNick;
-                const timeEl = document.createElement('span');
-                timeEl.className = 'noti-time';
-                timeEl.textContent = timeAgo(createdAt);
+            const head = document.createElement('div');
+            head.className = 'noti-head';
 
-                head.appendChild(nickEl);
-                head.appendChild(timeEl);
+            const nickEl = document.createElement('span');
+            nickEl.className = 'noti-nick';
+            nickEl.textContent = actorNick || '(알 수 없음)';
 
-                const textEl = document.createElement('div');
-                textEl.className = 'noti-text';
-                textEl.textContent = fixedText;
+            const timeEl = document.createElement('span');
+            timeEl.className = 'noti-time';
+            timeEl.textContent = timeAgo(createdAt);
 
-                main.appendChild(head);
-                main.appendChild(textEl);
+            head.appendChild(nickEl);
+            head.appendChild(timeEl);
 
-                if (it.commentPreview) {
-                    const pv = document.createElement('div');
-                    pv.className = 'noti-preview';
-                    pv.textContent = String(it.commentPreview);
-                    main.appendChild(pv);
-                }
-                row.appendChild(main);
+            const textEl = document.createElement('div');
+            textEl.className = 'noti-text';
+            textEl.textContent = String(fixedText);
+
+            main.appendChild(head);
+            main.appendChild(textEl);
+
+            if (it.commentPreview) {
+                const pv = document.createElement('div');
+                pv.className = 'noti-preview';
+                pv.textContent = String(it.commentPreview);
+                main.appendChild(pv);
             }
+
+            row.appendChild(main);
             frag.appendChild(row);
         });
+
         $list.appendChild(frag);
+
+        // 현재 배치에 미읽음이 있으면 종 아이콘 배지도 켬 (서버 카운트 동기화 전 즉시 반영)
+        if (hasUnreadInBatch) {
+            setNavDotVisible(true);
+        } else {
+            // 배치가 모두 읽음 표시라면 서버 카운트와 동기화
+            refreshNavDotFromServer();
+        }
     }
 
     // ====== 무한 스크롤 로딩 ======
@@ -223,10 +291,14 @@ export function initNotification() {
                 page += 1;
             }
 
+            // 최초 진입 시 한 번만 전체 읽음 처리 트리거(팀의 기존 엔드포인트 유지)
             if (!readAllOnce) {
                 readAllOnce = true;
                 try {
+                    // 기존 호환 엔드포인트: '/notification' (서버에서 read-all 처리하도록 구성되어 있음)
                     await postJson('/notification', {});
+                    // 읽음 처리 직후 종 아이콘 배지 OFF + leave handler 등록
+                    setNavDotVisible(false);
                     attachLeaveHandlersOnce();
                 } catch (e) {
                     console.debug('[notification] read-all failed:', e?.message || e);
@@ -311,7 +383,11 @@ export function initNotification() {
         delete scrollEl.__infHandler;
     }
 
-    // 최초 로드
+    // ===== 초기 실행 =====
+    // 1) 메인 네비 배지 상태를 서버 카운트로 동기화
+    refreshNavDotFromServer();
+
+    // 2) 리스트 스크롤/바운스/로드
     attachBounce($list);
     attachInfiniteScroll($list);
     load({append: false});

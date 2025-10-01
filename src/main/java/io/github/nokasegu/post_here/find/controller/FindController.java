@@ -1,22 +1,18 @@
 package io.github.nokasegu.post_here.find.controller;
 
-import io.github.nokasegu.post_here.common.dto.WrapperDTO;
-import io.github.nokasegu.post_here.common.exception.Code;
 import io.github.nokasegu.post_here.common.security.CustomUserDetails;
+import io.github.nokasegu.post_here.find.domain.FindEntity;
 import io.github.nokasegu.post_here.find.dto.FindDetailViewDto;
-import io.github.nokasegu.post_here.find.dto.FindNearbyResponseDto;
 import io.github.nokasegu.post_here.find.service.FindService;
-import io.github.nokasegu.post_here.location.dto.LocationRequestDto;
-import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
@@ -28,23 +24,29 @@ public class FindController {
     private final FindService findService;
     private final UserInfoService userInfoService;
 
+    //구글 API 키 삽입
+    @Value("${google.maps.api.key:}")
+    private String googleMapsApiKey;
+
     @GetMapping("/find")
-    public String findController(Model model) {
-        log.debug("testtttttttttttttt");
+    public String find() {
         return "/find/find-write";
     }
 
-    @GetMapping("/around-finds")
-    public WrapperDTO<List<FindNearbyResponseDto>> whereAmI(@RequestBody LocationRequestDto location) {
+    @GetMapping("/find/{no}")
+    public String findUpdate(@PathVariable Long no, Model model) {
 
-        UserInfoEntity user = userInfoService.getUserInfoByEmail(location.getUser());
-        List<FindNearbyResponseDto> findList = findService.getFindsInArea(location.getLng(), location.getLat(), user.getId());
+        FindEntity find = findService.getFindById(no);
+        model.addAttribute("find_no", find.getId());
+        model.addAttribute("find_url", find.getContentOverwriteUrl());
 
-        return WrapperDTO.<List<FindNearbyResponseDto>>builder()
-                .status(Code.OK.getCode())
-                .message(Code.OK.getValue())
-                .data(findList)
-                .build();
+        return "find/find-overwrite";
+    }
+
+    @GetMapping("/find/on-map")
+    public String findOnMap(Model model) {
+        model.addAttribute("googleMapsApiKey", googleMapsApiKey);
+        return "/find/find-on-map";
     }
 
     @GetMapping("/find/feed/{startFindId}")

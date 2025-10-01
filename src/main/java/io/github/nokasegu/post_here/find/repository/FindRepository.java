@@ -34,11 +34,12 @@ public interface FindRepository extends JpaRepository<FindEntity, Long> {
                     WHERE
                         fw.follower_id = :userId
                     HAVING
-                        distanceInMeters <= 500
+                        distanceInMeters <= 200
                     ORDER BY
                         distanceInMeters ASC
                     """, nativeQuery = true)
     List<FindNearbyDto> findNearby(@Param("lng") double lng, @Param("lat") double lat, @Param("userId") Long userId);
+    // ▼▼▼ [변경] 500m → 200m 로 범위 축소 (프런트/기획 반영)
 
     @Query(
             value = """

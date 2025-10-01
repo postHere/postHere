@@ -548,7 +548,7 @@ export function initProfile() {
             if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
             try {
-                const response = await fetch('/api/profile/image', {
+                const response = await fetch('/profile/image', {
                     method: 'POST',
                     headers: headers, // FormData 전송 시 Content-Type은 브라우저가 자동으로 설정되므로 넣지 않습니다.
                     body: formData

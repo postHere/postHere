@@ -185,7 +185,7 @@ export function initProfile() {
                     link = `/forum/feed#post-${post.id}`;
                 } else {
                     // ✅ 네가 새로 추가한 매핑에 맞춤: /find/original/{id}
-                    link = `/find/original/${post.id}`;
+                    link = `/find/feed/${post.id}`;
                 }
 
                 console.log("Post ID:", post.id, "CreatedAt:", post.createdAt, "ExpiresAt:", post.expiresAt);
@@ -216,10 +216,14 @@ export function initProfile() {
                         : `<div class="post-item__text" style="${SNIPPET_STYLE}">${esc(snip)}</div>`;
 
                     pageHTML += `
-                        <a href="${link}" class="post-item">
-                            ${imgHtml}
-                            <p class="post-item__location">📍 ${esc(post.location || '위치 정보 없음')}</p>
-                        </a>`;
+                        <div class="post-item-container"> 
+                            <div class="post-item-block"> 
+                                <a href="${link}" class="post-item">
+                                    ${imgHtml}
+                                    <p class="post-item__location">📍 ${esc(post.location || '위치 정보 없음')}</p>
+                                </a>
+                            </div>
+                        </div>`;
                 } else {
                     // 기존 Fin'd 렌더 (이미지 전제)
 

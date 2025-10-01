@@ -211,10 +211,14 @@ export function initProfile() {
                         : `<div class="post-item__text" style="${SNIPPET_STYLE}">${esc(snip)}</div>`;
 
                     pageHTML += `
-                        <a href="${link}" class="post-item">
-                            ${imgHtml}
-                            <p class="post-item__location">📍 ${esc(post.location || '위치 정보 없음')}</p>
-                        </a>`;
+                        <div class="post-item-container"> 
+                            <div class="post-item-block"> 
+                                <a href="${link}" class="post-item">
+                                    ${imgHtml}
+                                    <p class="post-item__location">📍 ${esc(post.location || '위치 정보 없음')}</p>
+                                </a>
+                            </div>
+                        </div>`;
                 } else {
                     // 기존 Fin'd 렌더 (이미지 전제)
 

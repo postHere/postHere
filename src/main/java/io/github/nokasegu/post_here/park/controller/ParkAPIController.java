@@ -6,8 +6,6 @@ import io.github.nokasegu.post_here.park.service.ParkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +23,6 @@ public class ParkAPIController {
     /**
      * AJAX 요청을 처리하여 특정 유저의 Park 정보를 JSON으로 반환합니다.
      */
-    @ResponseBody
     @GetMapping("/profile/park/{nickname}")
     public ResponseEntity<ParkResponseDto> getParkData(@PathVariable String nickname) {
         try {
@@ -38,7 +35,6 @@ public class ParkAPIController {
     }
 
     @PostMapping("/profile/park/{nickname}")
-    @ResponseBody
     public ResponseEntity<String> createPark(
             @PathVariable String nickname,
             @RequestParam("content_capture") MultipartFile imageFile) {
@@ -67,27 +63,4 @@ public class ParkAPIController {
             return ResponseEntity.internalServerError().body("Park 생성 중 오류가 발생했습니다.");
         }
     }
-
-    /**
-     * [추가] 현재 로그인된 사용자의 Park 정보를 JSON으로 반환합니다.
-     *
-     * @param userDetails Spring Security가 제공하는 현재 사용자 정보
-     * @return Park 정보 DTO 또는 404 응답
-     */
-    @GetMapping("/users/me/park")
-    public ResponseEntity<ParkResponseDto> getMyParkData(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            // 로그인되지 않은 경우 401 Unauthorized 응답
-            return ResponseEntity.status(401).build();
-        }
-        try {
-            // userDetails.getUsername()은 사용자 이메일을 반환합니다.
-            ParkResponseDto parkDto = parkService.findParkByOwnerEmail(userDetails.getUsername());
-            return ResponseEntity.ok(parkDto);
-        } catch (IllegalArgumentException e) {
-            // 해당 유저의 Park 정보가 없을 경우 404 Not Found 응답
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
 }

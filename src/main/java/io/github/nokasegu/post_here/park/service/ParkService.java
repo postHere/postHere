@@ -8,6 +8,7 @@ import io.github.nokasegu.post_here.userInfo.domain.UserInfoEntity;
 import io.github.nokasegu.post_here.userInfo.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,9 @@ public class ParkService {
     private final UserInfoRepository userInfoRepository;
     private final ParkRepository parkRepository;
     private final S3UploaderService s3UploaderService;
+
+    @Value("${custom.aws.s3.default-park}")
+    private String DEFAULT_PARK;
 
     /**
      * 유저 닉네임을 기반으로 Park 정보를 조회하는 비즈니스 로직
@@ -40,7 +44,9 @@ public class ParkService {
             log.info("{} 님의 기존 Park {}개를 삭제합니다.", nickname, existingParks.size());
             // 3-1. S3에서 모든 기존 이미지 삭제
             for (ParkEntity park : existingParks) {
-                s3UploaderService.delete(park.getContentCaptureUrl());
+                if (!park.getContentCaptureUrl().equals(DEFAULT_PARK)) {
+                    s3UploaderService.delete(park.getContentCaptureUrl());
+                }
             }
             // 3-2. DB에서 모든 기존 데이터 한번에 삭제
             parkRepository.deleteAll(existingParks);

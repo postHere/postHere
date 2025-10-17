@@ -168,9 +168,11 @@ public class FindService {
 
         UserInfoEntity user = userInfoService.getUserInfoByEmail(email);
 
-        String dirName = "/find/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
-        String originUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName);
-        String overwriteUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName);
+        String dirName1 = "/find/" + findRequestDto.getLat() + ", " + findRequestDto.getLng();
+        String originUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName1);
+
+        String dirName2 = "/overwrite/" + findRequestDto.getLat() + ", " + findRequestDto.getLng();
+        String overwriteUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName2);
 
         Point point = geometryFactory.createPoint(new Coordinate(findRequestDto.getLng(), findRequestDto.getLat()));
 

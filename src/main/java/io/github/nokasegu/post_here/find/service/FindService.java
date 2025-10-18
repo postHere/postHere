@@ -170,10 +170,10 @@ public class FindService {
 
         UserInfoEntity user = userInfoService.getUserInfoByEmail(email);
 
-        String dirName1 = "/find/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
+        String dirName1 = "find/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
         String originUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName1);
 
-        String dirName2 = "/overwrite/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
+        String dirName2 = "overwrite/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
         String overwriteUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName2);
 
         Point point = geometryFactory.createPoint(new Coordinate(findRequestDto.getLng(), findRequestDto.getLat()));
@@ -224,11 +224,15 @@ public class FindService {
 
         try {
             URI uri = new URI(url);
-            result = uri.getPath();
+            String path = uri.getPath();
+
+            int lastIndex = path.lastIndexOf("/");
+            result = path.substring(1, lastIndex);
+
         } catch (URISyntaxException e) {
             log.error("URL 구조가 올바르지 않습니다 : {}", e.getMessage());
         }
-        
+
         log.info("{}", result);
         return result;
     }

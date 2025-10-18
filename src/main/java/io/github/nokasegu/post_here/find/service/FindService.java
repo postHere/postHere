@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -168,9 +170,11 @@ public class FindService {
 
         UserInfoEntity user = userInfoService.getUserInfoByEmail(email);
 
-        String dirName = "/find/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
-        String originUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName);
-        String overwriteUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName);
+        String dirName1 = "/find/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
+        String originUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName1);
+
+        String dirName2 = "/overwrite/" + findRequestDto.getLat() + "_" + findRequestDto.getLng();
+        String overwriteUrl = s3UploaderService.upload(findRequestDto.getContent_capture(), dirName2);
 
         Point point = geometryFactory.createPoint(new Coordinate(findRequestDto.getLng(), findRequestDto.getLat()));
 
@@ -215,7 +219,18 @@ public class FindService {
     }
 
     private String getDirname(String url) {
-        return url.substring(0, url.lastIndexOf("/"));
+
+        String result = null;
+
+        try {
+            URI uri = new URI(url);
+            result = uri.getPath();
+        } catch (URISyntaxException e) {
+            log.error("URL 구조가 올바르지 않습니다 : {}", e.getMessage());
+        }
+        
+        log.info("{}", result);
+        return result;
     }
 
     @Transactional(readOnly = true)

@@ -154,6 +154,7 @@ export async function initBackgroundGeolocation() {
 export async function stopBackgroundTracking() {
     try {
         await BackgroundGeolocation.stop();
+        isInitialized = false;
         console.log('백그라운드 위치 추적이 중지되었습니다.');
     } catch (e) {
         console.error('위치 추적기 중지 중 오류 발생:', e);

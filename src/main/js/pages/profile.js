@@ -1,3 +1,5 @@
+import {stopBackgroundTracking} from "../modules/location-tracker";
+
 export function initProfile() {
 
     // --- 1. UI 요소 및 상태 변수 정의 ---
@@ -579,6 +581,7 @@ export function initProfile() {
                     // 일부 설정에서는 redirected가 false일 수 있음
                     window.location.href = '/login';
                 }
+                await stopBackgroundTracking();
             } catch (error) {
                 console.error('Error during logout:', error);
             }

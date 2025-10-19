@@ -42,8 +42,7 @@ public class S3UploaderService {
                 .build();
 
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(multipartFile.getBytes()));
-
-        return "https://" + bucket + ".ap-northeast-2.s3.amazonaws.com/" + fileName;
+        return "https://" + bucket + ".s3.ap-northeast-2.amazonaws.com/" + fileName;
     }
 
     /**

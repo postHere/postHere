@@ -31,6 +31,6 @@ public class ParkController {
         // 모델에 기존 이미지 URL 추가
         model.addAttribute("park_url", parkDto.getContentCaptureUrl());
 
-        return "/park/park-write";
+        return "park/park-write";
     }
 }
